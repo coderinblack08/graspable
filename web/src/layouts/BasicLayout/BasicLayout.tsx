@@ -40,7 +40,7 @@ const BasicLayout = ({ children }: BasicLayoutProps) => {
           </Button>
           <Link>Pricing</Link>
           <Divider orientation="vertical" h={6} />
-          <Link>Login</Link>
+          <Link href={routes.login()}>Login</Link>
           <Button href={routes.signup()} as="a" variant="outline">
             Register
           </Button>

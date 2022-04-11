@@ -9,6 +9,7 @@ import {
   Input,
   Text,
 } from "@chakra-ui/react";
+import { routes } from "@redwoodjs/router";
 import { MetaTags } from "@redwoodjs/web";
 import React from "react";
 
@@ -34,7 +35,12 @@ const HomePage: React.FC = () => {
             friendly competitions.
           </Text>
           <HStack mt={8} spacing={3}>
-            <Button rightIcon={<ChevronRightIcon boxSize={6} />} size="lg">
+            <Button
+              as="a"
+              href={routes.signup()}
+              rightIcon={<ChevronRightIcon boxSize={6} />}
+              size="lg"
+            >
               Try 31 Days Free
             </Button>
             <Button size="lg" variant="outline">
