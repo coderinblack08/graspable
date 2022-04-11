@@ -1,52 +1,24 @@
-import { ChevronDownIcon, ChevronRightIcon } from "@chakra-ui/icons";
+import { ChevronRightIcon } from "@chakra-ui/icons";
 import {
   Box,
   Button,
-  Container,
   Flex,
   Heading,
   HStack,
   Image,
   Input,
-  Link,
   Text,
 } from "@chakra-ui/react";
-import { routes } from "@redwoodjs/router";
 import { MetaTags } from "@redwoodjs/web";
 import React from "react";
 
 const HomePage: React.FC = () => {
   return (
-    <Container maxW="5xl">
+    <>
       <MetaTags title="Graspable" />
-      <Flex align="center" justify="space-between" p={4} as="nav">
-        <Link href={routes.home()}>
-          <Image h={6} src="/logo.svg" alt="graspable" />
-        </Link>
-        <HStack spacing={5}>
-          <Button
-            px={0}
-            variant="ghost"
-            fontWeight="normal"
-            rightIcon={<ChevronDownIcon boxSize="20px" />}
-          >
-            Products
-          </Button>
-          <Button
-            px={0}
-            variant="ghost"
-            fontWeight="normal"
-            rightIcon={<ChevronDownIcon boxSize="20px" />}
-          >
-            Resources
-          </Button>
-          <Link>Pricing</Link>
-          <Button variant="outline">Log In</Button>
-        </HStack>
-      </Flex>
       <Flex justify="space-between" align="center" py={28} px={5}>
         <Box>
-          <Heading as="h1" lineHeight="normal" fontSize="6xl">
+          <Heading as="h1" lineHeight="shorter" fontSize="6xl">
             Engaging Lessons <br />
             For Every Classroom
           </Heading>
@@ -154,7 +126,7 @@ const HomePage: React.FC = () => {
       <Box as="footer" color="gray.400" fontSize="xl" pb={8} textAlign="center">
         Copyright © 2022 Graspable. All rights reserved.
       </Box>
-    </Container>
+    </>
   );
 };
 
