@@ -7,15 +7,18 @@ import {
   Heading,
   HStack,
   Image,
+  Input,
   Link,
   Text,
 } from "@chakra-ui/react";
 import { routes } from "@redwoodjs/router";
+import { MetaTags } from "@redwoodjs/web";
 import React from "react";
 
 const HomePage: React.FC = () => {
   return (
     <Container maxW="5xl">
+      <MetaTags title="Graspable" />
       <Flex align="center" justify="space-between" p={4} as="nav">
         <Link href={routes.home()}>
           <Image h={6} src="/logo.svg" alt="graspable" />
@@ -111,6 +114,45 @@ const HomePage: React.FC = () => {
             </Text>
           </Box>
         </HStack>
+      </Box>
+
+      <Flex pos="relative" w="full" mt={24}>
+        <Box
+          _before={{
+            height: "6px",
+            width: "100%",
+            background: "url('/divider-pattern.png')",
+            display: "block",
+            position: "absolute",
+            top: "0",
+            left: "50%",
+            right: "50%",
+            content: "''",
+            transform: "translate(-50%, -50%)",
+            "background-position": "bottom",
+            opacity: 0.25,
+          }}
+        />
+      </Flex>
+
+      <Box py={24} maxW="3xl" mx="auto">
+        <Heading as="h3" fontSize="3xl">
+          Get Updated
+        </Heading>
+        <Text color="gray.600" fontSize="xl" mt={1}>
+          Sign up to our newsletter to get the latest news and updates about
+          Graspable.
+        </Text>
+        <HStack mt={4}>
+          <Input size="lg" placeholder="Enter Email Address" />
+          <Button size="lg" flexShrink={0}>
+            Notify Me
+          </Button>
+        </HStack>
+      </Box>
+
+      <Box as="footer" color="gray.400" fontSize="xl" pb={8} textAlign="center">
+        Copyright © 2022 Graspable. All rights reserved.
       </Box>
     </Container>
   );
