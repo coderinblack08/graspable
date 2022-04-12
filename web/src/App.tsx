@@ -5,6 +5,7 @@ import { FatalErrorBoundary, RedwoodProvider } from "@redwoodjs/web";
 import { RedwoodApolloProvider } from "@redwoodjs/web/apollo";
 
 import FatalErrorPage from "src/pages/FatalErrorPage";
+import { extendTheme } from "@chakra-ui/react";
 import Routes from "src/Routes";
 
 import "./index.css";
@@ -14,12 +15,18 @@ const supabaseClient = createClient(
   process.env.SUPABASE_KEY
 );
 
+const theme = extendTheme({
+  styles: {
+    global: {},
+  },
+});
+
 const App = () => (
   <FatalErrorBoundary page={FatalErrorPage}>
     <RedwoodProvider titleTemplate="%PageTitle">
       <AuthProvider client={supabaseClient} type="supabase">
         <ColorModeScript />
-        <ChakraProvider>
+        <ChakraProvider theme={theme}>
           <RedwoodApolloProvider>
             <Routes />
           </RedwoodApolloProvider>

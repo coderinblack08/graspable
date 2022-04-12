@@ -9,7 +9,7 @@ import {
   Input,
   Text,
 } from "@chakra-ui/react";
-import { routes } from "@redwoodjs/router";
+import { Link, routes } from "@redwoodjs/router";
 import { MetaTags } from "@redwoodjs/web";
 import React from "react";
 
@@ -35,14 +35,11 @@ const HomePage: React.FC = () => {
             friendly competitions.
           </Text>
           <HStack mt={8} spacing={3}>
-            <Button
-              as="a"
-              href={routes.signup()}
-              rightIcon={<ChevronRightIcon boxSize={6} />}
-              size="lg"
-            >
-              Try 31 Days Free
-            </Button>
+            <Link to={routes.signup()}>
+              <Button rightIcon={<ChevronRightIcon boxSize={6} />} size="lg">
+                Try 31 Days Free
+              </Button>
+            </Link>
             <Button size="lg" variant="outline">
               Watch Demo
             </Button>
@@ -117,7 +114,7 @@ const HomePage: React.FC = () => {
         <Heading as="h3" fontSize="3xl">
           Get Updated
         </Heading>
-        <Text color="gray.600" fontSize="xl" mt={1}>
+        <Text color="gray.600" fontSize="xl" mt={2}>
           Sign up to our newsletter to get the latest news and updates about
           Graspable.
         </Text>

@@ -61,9 +61,26 @@ const SignupPage = () => {
           </Heading>
           <VStack as={Form} mt={4} onSubmit={onSubmit}>
             {error && <Text color="red.500">{error}</Text>}
-            <Input as={TextField} name="email" placeholder="Email" />
-            <Input as={PasswordField} name="password" placeholder="Password" />
-            <Button as={Submit} type="submit" w="full" isLoading={loading}>
+            <Input
+              as={TextField}
+              size="lg"
+              name="name"
+              placeholder="Full Name"
+            />
+            <Input as={TextField} size="lg" name="email" placeholder="Email" />
+            <Input
+              as={PasswordField}
+              size="lg"
+              name="password"
+              placeholder="Password"
+            />
+            <Button
+              size="lg"
+              as={Submit}
+              type="submit"
+              w="full"
+              isLoading={loading}
+            >
               Register
             </Button>
             <Text w="full">
