@@ -1,12 +1,13 @@
-import { SearchIcon } from "@chakra-ui/icons";
-import { HiMenu, HiOutlineBell } from "react-icons/hi";
+import { AddIcon, SearchIcon } from "@chakra-ui/icons";
 import {
   Avatar,
   Box,
   Button,
+  Container,
   Flex,
   Grid,
   GridItem,
+  Heading,
   HStack,
   Icon,
   IconButton,
@@ -21,17 +22,19 @@ import {
   MenuDivider,
   MenuItem,
   MenuList,
-  Tag,
 } from "@chakra-ui/react";
 import { useAuth } from "@redwoodjs/auth";
 import { Link, navigate, routes } from "@redwoodjs/router";
+import { MetaTags } from "@redwoodjs/web";
 import React from "react";
+import { HiMenu } from "react-icons/hi";
 
 const DashboardPage: React.FC = () => {
   const { logOut } = useAuth();
 
   return (
     <Box bg="gray.50" h="100vh">
+      <MetaTags title="Dashboard" />
       <Box
         as="nav"
         w="full"
@@ -39,13 +42,8 @@ const DashboardPage: React.FC = () => {
         borderBottom="2px solid"
         borderColor="gray.100"
       >
-        <Box mx="auto" maxW="6xl">
-          <Grid
-            gap={8}
-            templateColumns="1fr 2fr 1fr"
-            borderBottom="1px solid"
-            borderColor="gray.100"
-          >
+        <Box mx="auto" maxW="5xl">
+          <Grid templateColumns="1fr 2fr 1fr">
             <GridItem align="center" as={Flex} pl={8} py={4}>
               <Link to={routes.dashboard()}>
                 <Image h={6} src="/logo.svg" alt="graspable" />
@@ -67,15 +65,24 @@ const DashboardPage: React.FC = () => {
               </InputGroup>
             </GridItem>
 
-            <GridItem pl={8} py={4}>
+            <GridItem pr={8} py={4}>
               <HStack justify="end" spacing={4}>
                 <HStack spacing={0}>
-                  <IconButton
-                    aria-label="Menu"
-                    color="gray.400"
-                    icon={<Icon as={HiMenu} boxSize={6} />}
-                    variant="ghost"
-                  />
+                  <Menu>
+                    <MenuButton
+                      as={IconButton}
+                      aria-label="Menu"
+                      color="gray.400"
+                      icon={<Icon as={HiMenu} boxSize={6} />}
+                      variant="ghost"
+                    />
+                    <MenuList>
+                      <MenuItem>Home</MenuItem>
+                      <MenuItem>Grades</MenuItem>
+                      <MenuItem>Subscription</MenuItem>
+                      <MenuItem>Marketplace</MenuItem>
+                    </MenuList>
+                  </Menu>
                 </HStack>
                 <Menu>
                   <MenuButton>
@@ -99,6 +106,35 @@ const DashboardPage: React.FC = () => {
             </GridItem>
           </Grid>
         </Box>
+      </Box>
+      <Box>
+        <Container maxW="5xl" px={8} py={20}>
+          <Flex justify="space-between" align="center">
+            <Heading size="lg" as="h1">
+              Courses
+            </Heading>
+            <Button bg="gray.200" leftIcon={<AddIcon boxSize={3} />}>
+              Add Course
+            </Button>
+          </Flex>
+          <Box
+            px={8}
+            py={20}
+            mt={6}
+            bg="white"
+            rounded="2xl"
+            border="2px solid"
+            borderColor="gray.100"
+            fontFamily="mono"
+            textAlign="center"
+            color="gray.400"
+            fontSize="lg"
+            lineHeight="taller"
+          >
+            ʕ•́ᴥ•̀ʔっ No Courses Present
+            <br /> Click on + Add Course To Begin
+          </Box>
+        </Container>
       </Box>
     </Box>
   );

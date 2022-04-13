@@ -9,6 +9,7 @@ import {
   Input,
   Text,
 } from "@chakra-ui/react";
+import { Form, Submit, TextField } from "@redwoodjs/forms";
 import { Link, routes } from "@redwoodjs/router";
 import { MetaTags } from "@redwoodjs/web";
 import React from "react";
@@ -118,12 +119,21 @@ const HomePage: React.FC = () => {
           Sign up to our newsletter to get the latest news and updates about
           Graspable.
         </Text>
-        <HStack mt={4}>
-          <Input size="lg" placeholder="Enter Email Address" />
-          <Button size="lg" flexShrink={0}>
-            Notify Me
-          </Button>
-        </HStack>
+        <Form onSubmit={async (data) => {}}>
+          <HStack mt={4}>
+            <Input
+              size="lg"
+              type="email"
+              placeholder="Enter Email Address"
+              name="email"
+              as={TextField}
+              isRequired
+            />
+            <Button size="lg" flexShrink={0} type="submit" as={Submit}>
+              Notify Me
+            </Button>
+          </HStack>
+        </Form>
       </Box>
 
       <Box as="footer" color="gray.400" fontSize="xl" pb={8} textAlign="center">
