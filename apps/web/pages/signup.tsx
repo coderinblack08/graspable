@@ -9,9 +9,10 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { BasicLayout } from "../layouts/BasicLayout";
+import { useForm } from "react-hook-form";
 
 const SignupPage = () => {
-  const onSubmit = async (data: any) => {};
+  const { register, handleSubmit } = useForm();
 
   return (
     <BasicLayout>
@@ -26,18 +27,24 @@ const SignupPage = () => {
         <Heading fontSize="3xl" as="h1">
           Create an account
         </Heading>
-        <VStack mt={4} onSubmit={onSubmit}>
-          <Select size="lg">
+        <VStack
+          mt={4}
+          as="form"
+          onSubmit={handleSubmit(async (data) => {
+            console.log(data);
+          })}
+        >
+          <Select size="lg" {...register("role")}>
             <option value="teacher">Teacher</option>
             <option value="student">Student</option>
           </Select>
-          <Input size="lg" name="name" placeholder="Full Name" />
-          <Input size="lg" name="email" placeholder="Email" />
+          <Input size="lg" placeholder="Full Name" {...register("name")} />
+          <Input size="lg" placeholder="Email" {...register("email")} />
           <Input
             size="lg"
             type="password"
-            name="password"
             placeholder="Password"
+            {...register("password")}
           />
           <Button size="lg" type="submit" w="full">
             Register
