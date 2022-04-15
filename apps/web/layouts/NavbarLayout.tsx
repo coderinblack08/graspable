@@ -1,14 +1,12 @@
-import { HiMenu, HiSearch } from "react-icons/hi";
-import NextLink from "next/link";
 import {
   Avatar,
   Box,
+  Container,
   Flex,
   Grid,
   GridItem,
   HStack,
   Icon,
-  Link,
   IconButton,
   Image,
   Input,
@@ -16,21 +14,21 @@ import {
   InputLeftElement,
   InputRightElement,
   Kbd,
+  Link,
   Menu,
   MenuButton,
   MenuDivider,
   MenuItem,
   MenuList,
 } from "@chakra-ui/react";
+import NextLink from "next/link";
+import { HiMenu, HiOutlineSearch } from "react-icons/hi";
 
-interface DashboardLayoutProps {}
+interface NavbarLayoutProps {}
 
-export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
-  children,
-}) => {
+export const NavbarLayout: React.FC<NavbarLayoutProps> = ({ children }) => {
   return (
     <Box bg="gray.50" h="100vh">
-      <MetaTags title="Dashboard" />
       <Box
         as="nav"
         w="full"
@@ -38,7 +36,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         borderBottom="2px solid"
         borderColor="gray.100"
       >
-        <Box mx="auto" maxW="5xl">
+        <Box mx="auto" maxW="7xl">
           <Grid templateColumns="1fr 2fr 1fr">
             <GridItem align="center" as={Flex} pl={8} py={4}>
               <NextLink href="/dashboard" passHref>
@@ -51,7 +49,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             <GridItem py={4} h="full" algin="center" justify="center" as={Flex}>
               <InputGroup>
                 <InputLeftElement pointerEvents="none">
-                  <Icon as={HiSearch} boxSize={4} color="gray.300" />
+                  <Icon as={HiOutlineSearch} boxSize={5} color="gray.300" />
                 </InputLeftElement>
                 <Input rounded="xl" placeholder="Search" />
                 <InputRightElement mr={3}>
@@ -98,7 +96,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </Grid>
         </Box>
       </Box>
-      {children}
+
+      <Container maxW="5xl" py={16} px={5}>
+        {children}
+      </Container>
     </Box>
   );
 };

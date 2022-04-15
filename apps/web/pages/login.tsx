@@ -7,11 +7,16 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import NextLink from "next/link";
+import { useRouter } from "next/router";
+import { useForm } from "react-hook-form";
 import { BasicLayout } from "../layouts/BasicLayout";
+import { auth } from "../lib/firebase";
 
 const SignupPage = () => {
-  const onSubmit = async (data: any) => {};
+  const { register, handleSubmit } = useForm();
+  const router = useRouter();
 
   return (
     <BasicLayout>
@@ -25,13 +30,24 @@ const SignupPage = () => {
             <Link color="blue.500">Sign Up</Link>
           </NextLink>
         </Text>
-        <VStack mt={4} onSubmit={onSubmit}>
-          <Input size="lg" name="email" placeholder="Email" />
+        <VStack
+          mt={4}
+          as="form"
+          onSubmit={handleSubmit(async ({ email, password }) => {
+            try {
+              await signInWithEmailAndPassword(auth, email, password);
+              router.push("/dashboard");
+            } catch (error) {
+              console.error(error);
+            }
+          })}
+        >
+          <Input size="lg" placeholder="Email" {...register("email")} />
           <Input
             size="lg"
             type="password"
-            name="password"
             placeholder="Password"
+            {...register("password")}
           />
           <Button size="lg" type="submit" w="full">
             Sign In

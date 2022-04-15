@@ -9,9 +9,9 @@ import {
   Input,
   Text,
 } from "@chakra-ui/react";
-import { MdChevronRight } from "react-icons/md";
-import React from "react";
 import NextLink from "next/link";
+import React from "react";
+import { MdChevronRight } from "react-icons/md";
 import { BasicLayout } from "../layouts/BasicLayout";
 
 const HomePage: React.FC = () => {
