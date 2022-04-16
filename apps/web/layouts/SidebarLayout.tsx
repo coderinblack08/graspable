@@ -18,10 +18,10 @@ import {
   MenuDivider,
   MenuItem,
   MenuList,
-  Tag,
   Text,
   VStack,
 } from "@chakra-ui/react";
+import axios from "axios";
 import { signOut } from "firebase/auth";
 import NextLink from "next/link";
 import { useRouter } from "next/router";
@@ -35,14 +35,18 @@ import {
   HiOutlineUsers,
   HiOutlineViewGrid,
 } from "react-icons/hi";
-import { auth } from "../lib/firebase";
-import { useAuthState } from "react-firebase-hooks/auth";
+import useSWR, { useSWRConfig } from "swr";
+import { auth } from "../lib/firebase-client";
+import { fetcher } from "../lib/swr-fetcher";
+import { User } from "../types";
 
 interface SidebarLayoutProps {}
 
 export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const router = useRouter();
-  const [user, loading, error] = useAuthState(auth);
+  // const [user, loading, error] = useAuthState(auth);
+  const { cache } = useSWRConfig();
+  const { data: user } = useSWR<User>("/api/auth/account", fetcher);
 
   return (
     <Flex h="100vh" bg="gray.50">
@@ -100,7 +104,6 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
               rounded="xl"
               variant="ghost"
               leftIcon={<Icon as={HiOutlineViewGrid} boxSize={6} />}
-              rightIcon={<Tag colorScheme="blue">SOON</Tag>}
               w="full"
               justifyContent="left"
             >
@@ -127,13 +130,10 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
           <MenuButton borderTop="solid 2px" borderColor="gray.100" p={5}>
             <Flex justifyContent="space-between" alignItems="center">
               <HStack spacing={4}>
-                <Avatar
-                  src={user?.photoURL || ""}
-                  name={user?.displayName || ""}
-                />
+                <Avatar name={user?.name} />
                 <Box>
                   <Text fontSize="lg" fontWeight="bold">
-                    {user?.displayName}
+                    {user?.name}
                   </Text>
                   <Text color="gray.500">Free Trial</Text>
                 </Box>
@@ -148,6 +148,10 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
             <MenuItem
               onClick={async () => {
                 await signOut(auth);
+                await axios.post("/api/auth/logout", null, {
+                  withCredentials: true,
+                });
+                cache.clear();
                 router.push("/");
               }}
             >

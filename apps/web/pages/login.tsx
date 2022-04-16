@@ -7,15 +7,20 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
+import axios from "axios";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import NextLink from "next/link";
 import { useRouter } from "next/router";
 import { useForm } from "react-hook-form";
 import { BasicLayout } from "../layouts/BasicLayout";
-import { auth } from "../lib/firebase";
+import { auth } from "../lib/firebase-client";
 
 const SignupPage = () => {
-  const { register, handleSubmit } = useForm();
+  const {
+    register,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm();
   const router = useRouter();
 
   return (
@@ -35,7 +40,17 @@ const SignupPage = () => {
           as="form"
           onSubmit={handleSubmit(async ({ email, password }) => {
             try {
-              await signInWithEmailAndPassword(auth, email, password);
+              const { user } = await signInWithEmailAndPassword(
+                auth,
+                email,
+                password
+              );
+              await axios.post("/api/auth/login", null, {
+                headers: {
+                  authorization: await user.getIdToken(),
+                },
+                withCredentials: true,
+              });
               router.push("/dashboard");
             } catch (error) {
               console.error(error);
@@ -49,7 +64,7 @@ const SignupPage = () => {
             placeholder="Password"
             {...register("password")}
           />
-          <Button size="lg" type="submit" w="full">
+          <Button isLoading={isSubmitting} size="lg" type="submit" w="full">
             Sign In
           </Button>
         </VStack>

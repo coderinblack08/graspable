@@ -8,6 +8,7 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
+import axios from "axios";
 import {
   createUserWithEmailAndPassword,
   sendEmailVerification,
@@ -17,10 +18,14 @@ import { doc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
 import { useForm } from "react-hook-form";
 import { BasicLayout } from "../layouts/BasicLayout";
-import { auth, db } from "../lib/firebase";
+import { auth, db } from "../lib/firebase-client";
 
 const SignupPage = () => {
-  const { register, handleSubmit } = useForm();
+  const {
+    register,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm();
   const router = useRouter();
 
   return (
@@ -40,13 +45,14 @@ const SignupPage = () => {
                 password
               );
               await updateProfile(user, { displayName: name });
-              await setDoc(doc(db, "users", user.uid), {
-                email,
-                password,
-                role,
-                name,
-              });
+              await setDoc(doc(db, "users", user.uid), { email, role, name });
               await sendEmailVerification(user);
+              await axios.post("/api/auth/login", null, {
+                headers: {
+                  authorization: await user.getIdToken(),
+                },
+                withCredentials: true,
+              });
               router.push("/dashboard");
             } catch (error) {
               console.error(error);
@@ -65,7 +71,7 @@ const SignupPage = () => {
             placeholder="Password"
             {...register("password")}
           />
-          <Button size="lg" type="submit" w="full">
+          <Button isLoading={isSubmitting} size="lg" type="submit" w="full">
             Register
           </Button>
           <Text w="full">

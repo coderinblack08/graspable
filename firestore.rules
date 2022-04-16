@@ -4,5 +4,9 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if request.auth.uid == userId;
     }
+    match /courses/{courseId} {
+      allow read: if true;
+      allow write: if request.auth.uid == request.resource.data.userId;
+    }
   }
 }
