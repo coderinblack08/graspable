@@ -20,7 +20,7 @@ import StudiousCat from "../public/studious-cat.png";
 import TypingTeacher from "../public/typing-teacher.png";
 import ComputerMonitor from "../public/computer-monitor.png";
 import ImaginativeKid from "../public/imaginative-kid.png";
-import { ChakraNextImage, Sizes } from "../components/ChakraNextImage";
+import { ChakraNextImage } from "../components/ChakraNextImage";
 
 const HomePage: React.FC = () => {
   const bodySize = { base: "md", md: "xl", lg: "1.3rem" };
