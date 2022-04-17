@@ -12,11 +12,15 @@ import {
   useBreakpointValue,
   VStack,
 } from "@chakra-ui/react";
-import dynamic from "next/dynamic";
 import NextLink from "next/link";
 import React from "react";
 import { MdChevronRight } from "react-icons/md";
 import { BasicLayout } from "../layouts/BasicLayout";
+import StudiousCat from "../public/studious-cat.png";
+import TypingTeacher from "../public/typing-teacher.png";
+import ComputerMonitor from "../public/computer-monitor.png";
+import ImaginativeKid from "../public/imaginative-kid.png";
+import { ChakraNextImage, Sizes } from "../components/ChakraNextImage";
 
 const HomePage: React.FC = () => {
   const bodySize = { base: "md", md: "xl", lg: "1.3rem" };
@@ -72,10 +76,12 @@ const HomePage: React.FC = () => {
             </Button>
           </Flex>
         </Container>
-        <Image
+        <ChakraNextImage
+          alt="Studious Cat"
           display={{ base: "none", lg: "block" }}
-          src="/studious-cat.png"
+          src={StudiousCat}
           h="25rem"
+          placeholder="blur"
         />
       </Flex>
 
@@ -85,7 +91,7 @@ const HomePage: React.FC = () => {
           gap={{ base: 6, lg: 10 }}
           alignItems={{ base: "start", lg: "center" }}
         >
-          <Image src="/typing-teacher.png" h={64} />
+          <ChakraNextImage src={TypingTeacher} h={64} />
           <Box maxW="2xl">
             <Heading as="h2" fontSize={{ base: "2xl", md: "4xl" }}>
               Digital Lesson Plans
@@ -115,7 +121,7 @@ const HomePage: React.FC = () => {
               publishers to convert your lessons into digital resources.
             </Text>
           </Box>
-          <Image src="/computer-monitor.png" h={56} />
+          <ChakraNextImage src={ComputerMonitor} h={56} />
         </HStack>
 
         <HStack
@@ -123,7 +129,7 @@ const HomePage: React.FC = () => {
           gap={{ base: 6, lg: 10 }}
           alignItems={{ base: "start", lg: "center" }}
         >
-          <Image src="/imaginative-kid.png" h={64} />
+          <ChakraNextImage src={ImaginativeKid} h={64} />
           <Box maxW="2xl">
             <Heading as="h2" fontSize={{ base: "2xl", md: "4xl" }}>
               Promote Collaboration
