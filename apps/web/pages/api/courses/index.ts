@@ -4,10 +4,13 @@ import { admin } from "../../../lib/firebase-admin";
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     const { uid } = await admin.auth.verifySessionCookie(req.cookies.jid, true);
-    const user = (await admin.db.collection("users").doc(uid).get()).data();
-    res.status(200).json({ ...user, id: uid });
-  } catch (error: any) {
-    res.status(401).json({ error: error.message });
+    const data = await admin.db
+      .collection("courses")
+      .where("userId", "==", uid)
+      .get();
+    res.json(admin.reduce(data));
+  } catch (error) {
+    res.status(500).json(error);
   }
 };
 

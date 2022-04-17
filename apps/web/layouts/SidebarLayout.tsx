@@ -27,6 +27,7 @@ import NextLink from "next/link";
 import { useRouter } from "next/router";
 import React from "react";
 import {
+  HiOutlineBookOpen,
   HiOutlineChartBar,
   HiOutlineChevronDown,
   HiOutlineHome,
@@ -37,7 +38,6 @@ import {
 } from "react-icons/hi";
 import useSWR, { useSWRConfig } from "swr";
 import { auth } from "../lib/firebase-client";
-import { fetcher } from "../lib/swr-fetcher";
 import { User } from "../types";
 
 interface SidebarLayoutProps {}
@@ -46,7 +46,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const router = useRouter();
   // const [user, loading, error] = useAuthState(auth);
   const { cache } = useSWRConfig();
-  const { data: user } = useSWR<User>("/api/auth/account", fetcher);
+  const { data: user } = useSWR<User>("/api/auth/account");
 
   return (
     <Flex h="100vh" bg="gray.50">
@@ -61,7 +61,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         borderRight="solid 2px"
         borderColor="gray.100"
       >
-        <Box px={4} py={6}>
+        <Box px={4} py={8}>
           <NextLink href="/" passHref>
             <Link display="inline-flex">
               <Image h={6} src="/logo.svg" alt="graspable" />
@@ -89,6 +89,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
             >
               Dashboard
             </Button>
+
             <Button
               color="gray.600"
               rounded="xl"
@@ -99,6 +100,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
             >
               Leaderboard
             </Button>
+
             <Button
               color="gray.600"
               rounded="xl"
@@ -109,6 +111,23 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
             >
               Marketplace
             </Button>
+
+            <Button
+              color="gray.600"
+              rounded="xl"
+              variant="ghost"
+              w="full"
+              rightIcon={
+                <Icon ml="auto" as={HiOutlineChevronDown} boxSize={5} />
+              }
+              justifyContent="space-between"
+            >
+              <HStack>
+                <Icon as={HiOutlineBookOpen} boxSize={6} />
+                <Text>Courses</Text>
+              </HStack>
+            </Button>
+
             <Button
               color="gray.600"
               rounded="xl"
@@ -141,7 +160,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
               <Icon as={HiOutlineSelector} boxSize={7} color="gray.500" />
             </Flex>
           </MenuButton>
-          <MenuList>
+          <MenuList w={`19rem`}>
             <MenuItem>Settings</MenuItem>
             <MenuItem>Subscription</MenuItem>
             <MenuDivider />
@@ -160,7 +179,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
           </MenuList>
         </Menu>
       </Flex>
-      <Container w="full" px={8} py={16} maxW="4xl">
+      <Container w="full" px={8} py={20} maxW="4xl">
         {children}
       </Container>
     </Flex>

@@ -18,12 +18,14 @@ import { addDoc, collection } from "firebase/firestore";
 import React from "react";
 import { useForm } from "react-hook-form";
 import { HiOutlineFolderAdd } from "react-icons/hi";
+import { useSWRConfig } from "swr";
 import { auth, db } from "../lib/firebase-client";
 
 interface NewCourseModalProps {}
 
 export const NewCourseModal: React.FC<NewCourseModalProps> = ({}) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { mutate } = useSWRConfig();
   const {
     handleSubmit,
     register,
@@ -47,11 +49,16 @@ export const NewCourseModal: React.FC<NewCourseModalProps> = ({}) => {
           <ModalCloseButton />
           <Box
             as="form"
-            onSubmit={handleSubmit(async (data) => {
-              await addDoc(collection(db, "courses"), {
-                ...data,
+            onSubmit={handleSubmit(async (values) => {
+              const data = {
+                ...values,
+                lessons: [],
                 userId: auth.currentUser?.uid,
-              });
+              };
+              const { id } = await addDoc(collection(db, "courses"), data);
+              mutate("/api/courses", (old: any[]) =>
+                old.concat({ ...data, id })
+              );
               onClose();
             })}
           >
