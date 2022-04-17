@@ -12,12 +12,15 @@ import {
   useBreakpointValue,
   VStack,
 } from "@chakra-ui/react";
+import dynamic from "next/dynamic";
 import NextLink from "next/link";
 import React from "react";
 import { MdChevronRight } from "react-icons/md";
 import { BasicLayout } from "../layouts/BasicLayout";
 
 const HomePage: React.FC = () => {
+  const bodySize = { base: "md", md: "xl", lg: "1.3rem" };
+
   return (
     <BasicLayout>
       <Flex
@@ -47,7 +50,7 @@ const HomePage: React.FC = () => {
           </Text>
           <Flex
             mt={{ base: 6, md: 8 }}
-            flexDir={{ base: "column", sm: "row" }}
+            flexDir={{ base: "column", lg: "row" }}
             gap={2}
           >
             <NextLink href="/signup" passHref>
@@ -87,12 +90,7 @@ const HomePage: React.FC = () => {
             <Heading as="h2" fontSize={{ base: "2xl", md: "4xl" }}>
               Digital Lesson Plans
             </Heading>
-            <Text
-              lineHeight="tall"
-              color="gray.600"
-              fontSize={{ base: "md", sm: "lg", md: "1.3rem" }}
-              mt={3}
-            >
+            <Text lineHeight="tall" color="gray.600" fontSize={bodySize} mt={3}>
               Type or draw your lesson plans online. Import existing class notes
               or documents with photos or PDFs. Insert checkpoints and
               interactive widgets to survey the class&apos;s overall confidence
@@ -111,18 +109,13 @@ const HomePage: React.FC = () => {
             <Heading as="h2" fontSize={{ base: "2xl", md: "4xl" }}>
               Teachers Marketplace
             </Heading>
-            <Text
-              lineHeight="tall"
-              color="gray.600"
-              fontSize={{ base: "md", sm: "lg", md: "1.3rem" }}
-              mt={3}
-            >
+            <Text lineHeight="tall" color="gray.600" fontSize={bodySize} mt={3}>
               Sell copies of you lessons to other teachers on our marketplace to
               earn extra cash on the side. We plan to work with textbook
               publishers to convert your lessons into digital resources.
             </Text>
           </Box>
-          <Image src="/computer-monitor.png" h={64} />
+          <Image src="/computer-monitor.png" h={56} />
         </HStack>
 
         <HStack
@@ -135,12 +128,7 @@ const HomePage: React.FC = () => {
             <Heading as="h2" fontSize={{ base: "2xl", md: "4xl" }}>
               Promote Collaboration
             </Heading>
-            <Text
-              lineHeight="tall"
-              color="gray.600"
-              fontSize={{ base: "md", sm: "lg", md: "1.3rem" }}
-              mt={3}
-            >
+            <Text lineHeight="tall" color="gray.600" fontSize={bodySize} mt={3}>
               Use questions, games, individual and team competitions with
               leaderboards, and forums for discussion to stir up collaboration
               within your classroom.
@@ -172,7 +160,7 @@ const HomePage: React.FC = () => {
         <Heading as="h3" fontSize={{ base: "2xl", md: "4xl" }}>
           Get Updated
         </Heading>
-        <Text color="gray.600" fontSize={{ base: "md", md: "xl" }} mt={2}>
+        <Text color="gray.600" fontSize={bodySize} mt={2}>
           Sign up to our newsletter to get the latest news and updates about
           Graspable.
         </Text>
@@ -187,13 +175,20 @@ const HomePage: React.FC = () => {
           <Button
             size={useBreakpointValue({ base: "md", md: "lg" })}
             flexShrink={0}
+            px={8}
             type="submit"
           >
             Notify Me
           </Button>
         </Flex>
       </Box>
-      <Box as="footer" color="gray.400" fontSize="xl" pb={8} textAlign="center">
+      <Box
+        as="footer"
+        color="gray.400"
+        fontSize={bodySize}
+        pb={{ base: 4, md: 8 }}
+        textAlign="center"
+      >
         Copyright © 2022 Graspable. All rights reserved.
       </Box>
     </BasicLayout>

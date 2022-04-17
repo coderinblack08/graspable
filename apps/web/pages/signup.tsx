@@ -4,7 +4,6 @@ import {
   Heading,
   Input,
   Link,
-  Select,
   Text,
   VStack,
 } from "@chakra-ui/react";
@@ -18,6 +17,7 @@ import { doc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
 import { useForm } from "react-hook-form";
 import { BasicLayout } from "../layouts/BasicLayout";
+import { Select } from "../lib/chakra-theme";
 import { auth, db } from "../lib/firebase-client";
 
 const SignupPage = () => {
@@ -30,8 +30,8 @@ const SignupPage = () => {
 
   return (
     <BasicLayout>
-      <Box p={5} maxW="2xl" mx="auto" py={32}>
-        <Heading fontSize="3xl" as="h1">
+      <Box p={5} maxW="2xl" mx="auto" py={{ base: 16, md: 24, lg: 32 }}>
+        <Heading fontSize={{ base: "2xl", md: "3xl" }} as="h1">
           Create an account
         </Heading>
         <VStack

@@ -12,6 +12,11 @@ import {
   Image,
   Link as ChakraLink,
   Link,
+  Menu,
+  MenuButton,
+  MenuDivider,
+  MenuItem,
+  MenuList,
   useToken,
 } from "@chakra-ui/react";
 import NextLink from "next/link";
@@ -64,12 +69,28 @@ export const BasicLayout: React.FC = ({ children }: BasicLayoutProps) => {
             </Link>
           </NextLink>
         </HStack>
-        <IconButton
-          variant="outline"
-          display={{ base: "block", lg: "none" }}
-          icon={<Icon as={HiMenu} boxSize={5} />}
-          aria-label="menu"
-        />
+
+        <Menu>
+          <MenuButton
+            as={IconButton}
+            variant="outline"
+            display={{ base: "block", lg: "none" }}
+            icon={<Icon as={HiMenu} boxSize={5} />}
+            aria-label="menu"
+          />
+          <MenuList>
+            <MenuItem>Products</MenuItem>
+            <MenuItem>Resources</MenuItem>
+            <MenuItem>Pricing</MenuItem>
+            <MenuDivider />
+            <NextLink href="/login" passHref>
+              <MenuItem as="a">Log In</MenuItem>
+            </NextLink>
+            <NextLink href="/signup" passHref>
+              <MenuItem as="a">Sign Up</MenuItem>
+            </NextLink>
+          </MenuList>
+        </Menu>
       </Flex>
       <Box px={4}>{children}</Box>
     </Container>

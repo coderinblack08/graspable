@@ -1,6 +1,14 @@
-import { extendTheme } from "@chakra-ui/react";
+import { chakra, Select as ChakraSelect, extendTheme } from "@chakra-ui/react";
 import { theme as DefaultTheme } from "@chakra-ui/theme";
 import { createBreakpoints, mode } from "@chakra-ui/theme-tools";
+
+export const Select = chakra(ChakraSelect, {
+  baseStyle: {
+    rounded: "xl",
+    border: "2px solid",
+    borderColor: "gray.100",
+  },
+});
 
 export const theme = extendTheme({
   breakpoints: createBreakpoints({
@@ -76,6 +84,7 @@ export const theme = extendTheme({
       variants: {
         outline: {
           rounded: "xl",
+          borderColor: "gray.100",
           border: "2px solid",
         },
       },
@@ -130,8 +139,6 @@ export const theme = extendTheme({
     },
   },
   fonts: {
-    serif: "Lora, serif",
-    eudoxus: "Eudoxus Sans, Inter, system-ui, sans-serif",
     heading: "Inter, system-ui, sans-serif",
     body: "Inter, system-ui, sans-serif",
   },
@@ -206,39 +213,6 @@ export const theme = extendTheme({
               color: "inherit",
               p: 0,
               background: "none",
-            },
-            ".hljs-comment, .hljs-quote": {
-              color: "#616161",
-            },
-
-            ".hljs-variable, .hljs-template-variable,  .hljs-attribute, .hljs-tag, .hljs-name, .hljs-regexp, .hljs-link, .hljs-name, .hljs-selector-id, .hljs-selector-class":
-              {
-                color: "#F98181",
-              },
-
-            ".hljs-number,  .hljs-meta, .hljs-built_in, .hljs-builtin-name, .hljs-literal,  .hljs-type, .hljs-params":
-              {
-                color: "#FBBC88",
-              },
-
-            ".hljs-string, .hljs-symbol, .hljs-bullet": {
-              color: "#B9F18D",
-            },
-
-            ".hljs-title, .hljs-section": {
-              color: "#FAF594",
-            },
-
-            ".hljs-keyword, .hljs-selector-tag": {
-              color: "#70CFF8",
-            },
-
-            ".hljs-emphasis": {
-              fontStyle: "italic",
-            },
-
-            ".hljs-strong": {
-              fontWeight: 700,
             },
           },
           blockquote: {

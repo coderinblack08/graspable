@@ -10,7 +10,6 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  Select,
   useDisclosure,
   VStack,
 } from "@chakra-ui/react";
@@ -19,6 +18,7 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { HiOutlineFolderAdd } from "react-icons/hi";
 import { useSWRConfig } from "swr";
+import { Select } from "../lib/chakra-theme";
 import { auth, db } from "../lib/firebase-client";
 
 interface NewCourseModalProps {}
