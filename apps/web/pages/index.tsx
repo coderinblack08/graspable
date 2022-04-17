@@ -76,13 +76,13 @@ const HomePage: React.FC = () => {
             </Button>
           </Flex>
         </Container>
-        <ChakraNextImage
-          alt="Studious Cat"
-          display={{ base: "none", lg: "block" }}
-          src={StudiousCat}
-          h="25rem"
-          placeholder="blur"
-        />
+        <Box display={{ base: "none", lg: "block" }}>
+          <ChakraNextImage
+            alt="Studious Cat"
+            src={StudiousCat}
+            placeholder="blur"
+          />
+        </Box>
       </Flex>
 
       <VStack spacing={16}>
@@ -91,7 +91,7 @@ const HomePage: React.FC = () => {
           gap={{ base: 6, lg: 10 }}
           alignItems={{ base: "start", lg: "center" }}
         >
-          <ChakraNextImage src={TypingTeacher} h={64} />
+          <ChakraNextImage src={TypingTeacher} />
           <Box maxW="2xl">
             <Heading as="h2" fontSize={{ base: "2xl", md: "4xl" }}>
               Digital Lesson Plans
@@ -121,7 +121,7 @@ const HomePage: React.FC = () => {
               publishers to convert your lessons into digital resources.
             </Text>
           </Box>
-          <ChakraNextImage src={ComputerMonitor} h={56} />
+          <ChakraNextImage src={ComputerMonitor} />
         </HStack>
 
         <HStack
@@ -129,7 +129,7 @@ const HomePage: React.FC = () => {
           gap={{ base: 6, lg: 10 }}
           alignItems={{ base: "start", lg: "center" }}
         >
-          <ChakraNextImage src={ImaginativeKid} h={64} />
+          <ChakraNextImage src={ImaginativeKid} />
           <Box maxW="2xl">
             <Heading as="h2" fontSize={{ base: "2xl", md: "4xl" }}>
               Promote Collaboration
