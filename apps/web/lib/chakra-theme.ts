@@ -27,7 +27,7 @@ export const theme = extendTheme({
   components: {
     Button: {
       baseStyle: (props: any) => ({
-        color: mode("gray.500", "gray.400")(props),
+        color: mode("gray.800", "gray.400")(props),
         borderRadius: "xl",
         _focus: { boxShadow: "none" },
         "&:focus-visible": { boxShadow: "outline" },
@@ -35,11 +35,6 @@ export const theme = extendTheme({
       colors: {
         gray: {
           bg: "gray.200",
-        },
-      },
-      sizes: {
-        lg: {
-          fontSize: "md",
         },
       },
       variants: {
@@ -144,7 +139,6 @@ export const theme = extendTheme({
     global: (props: any) => ({
       body: {
         margin: 0,
-        fontWeight: "medium",
         WebkitFontSmoothing: "antialiased",
         MozOsxFontSmoothing: "grayscale",
         a: {

@@ -91,7 +91,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
             </Button>
 
             <Button
-              color="gray.600"
+              color="gray.500"
               rounded="xl"
               variant="ghost"
               leftIcon={<Icon as={HiOutlineChartBar} boxSize={6} />}
@@ -102,7 +102,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
             </Button>
 
             <Button
-              color="gray.600"
+              color="gray.500"
               rounded="xl"
               variant="ghost"
               leftIcon={<Icon as={HiOutlineViewGrid} boxSize={6} />}
@@ -113,7 +113,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
             </Button>
 
             <Button
-              color="gray.600"
+              color="gray.500"
               rounded="xl"
               variant="ghost"
               w="full"
@@ -129,7 +129,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
             </Button>
 
             <Button
-              color="gray.600"
+              color="gray.500"
               rounded="xl"
               variant="ghost"
               w="full"
@@ -160,7 +160,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
               <Icon as={HiOutlineSelector} boxSize={7} color="gray.500" />
             </Flex>
           </MenuButton>
-          <MenuList w={`19rem`}>
+          <MenuList w="19rem">
             <MenuItem>Settings</MenuItem>
             <MenuItem>Subscription</MenuItem>
             <MenuDivider />

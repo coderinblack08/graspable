@@ -1,18 +1,21 @@
 import React from "react";
 import { MdKeyboardArrowDown } from "react-icons/md";
 import {
+  Box,
   Button,
   Container,
   Divider,
   Flex,
   HStack,
   Icon,
+  IconButton,
   Image,
   Link as ChakraLink,
   Link,
   useToken,
 } from "@chakra-ui/react";
 import NextLink from "next/link";
+import { HiMenu } from "react-icons/hi";
 
 type BasicLayoutProps = {
   children?: React.ReactNode;
@@ -22,14 +25,14 @@ export const BasicLayout: React.FC = ({ children }: BasicLayoutProps) => {
   const gray300 = useToken("colors", "gray.300");
 
   return (
-    <Container maxW="5xl">
+    <Container maxW="5xl" px={0}>
       <Flex align="center" justify="space-between" p={4} as="nav">
         <NextLink href="/" passHref>
           <Link>
-            <Image h={6} src="/logo.svg" alt="graspable" />
+            <Image h={{ base: 5, sm: 6 }} src="/logo.svg" alt="graspable" />
           </Link>
         </NextLink>
-        <HStack spacing={5}>
+        <HStack spacing={5} display={{ base: "none", lg: "flex" }}>
           <Button
             px={0}
             color="gray.600"
@@ -61,8 +64,14 @@ export const BasicLayout: React.FC = ({ children }: BasicLayoutProps) => {
             </Link>
           </NextLink>
         </HStack>
+        <IconButton
+          variant="outline"
+          display={{ base: "block", lg: "none" }}
+          icon={<Icon as={HiMenu} boxSize={5} />}
+          aria-label="menu"
+        />
       </Flex>
-      {children}
+      <Box px={4}>{children}</Box>
     </Container>
   );
 };

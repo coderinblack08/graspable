@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  Container,
   Flex,
   Heading,
   HStack,
@@ -8,6 +9,8 @@ import {
   Image,
   Input,
   Text,
+  useBreakpointValue,
+  VStack,
 } from "@chakra-ui/react";
 import NextLink from "next/link";
 import React from "react";
@@ -17,47 +20,79 @@ import { BasicLayout } from "../layouts/BasicLayout";
 const HomePage: React.FC = () => {
   return (
     <BasicLayout>
-      <Flex justify="space-between" align="center" py={28} px={5}>
-        <Box>
-          <Heading as="h1" lineHeight="shorter" fontSize="6xl">
+      <Flex
+        justify="space-between"
+        align="center"
+        py={{ base: 12, sm: 20, md: 28 }}
+      >
+        <Container maxW="2xl" px={0}>
+          <Heading
+            lineHeight="shorter"
+            as="h1"
+            fontSize={{ base: "3xl", sm: "4xl", md: "5xl", lg: "6xl" }}
+          >
             Engaging Lessons <br />
             For Every Classroom
           </Heading>
           <Text
             color="gray.600"
-            fontSize="1.3rem"
-            lineHeight="tall"
+            fontSize={{ base: "sm", sm: "lg", md: "1.3rem" }}
+            lineHeight={{ base: "taller", sm: "tall" }}
             maxW="xl"
-            mt={6}
+            mt={{ base: 4, md: 6 }}
           >
             Guide your students&apos; learning through an interactive platform
             focused on developing problem solving and collaboration skills with
             friendly competitions.
           </Text>
-          <HStack mt={8} spacing={3}>
+          <Flex
+            mt={{ base: 6, md: 8 }}
+            flexDir={{ base: "column", sm: "row" }}
+            gap={2}
+          >
             <NextLink href="/signup" passHref>
               <Button
                 rightIcon={<Icon as={MdChevronRight} boxSize={6} />}
-                size="lg"
+                size={useBreakpointValue({ base: "md", sm: "lg" })}
+                fontSize={{ base: "sm", sm: "lg" }}
                 as="a"
               >
                 Try 31 Days Free
               </Button>
             </NextLink>
-            <Button size="lg" variant="outline">
+            <Button
+              size={useBreakpointValue({ base: "md", sm: "lg" })}
+              fontSize={{ base: "sm", sm: "lg" }}
+              variant="outline"
+            >
               Watch Demo
             </Button>
-          </HStack>
-        </Box>
-        <Image src="/studious-cat.png" h="25rem" />
+          </Flex>
+        </Container>
+        <Image
+          display={{ base: "none", lg: "block" }}
+          src="/studious-cat.png"
+          h="25rem"
+        />
       </Flex>
 
-      <Box p={5}>
-        <HStack spacing={10}>
+      <VStack spacing={16}>
+        <HStack
+          flexDir={{ base: "column", lg: "row" }}
+          gap={{ base: 6, lg: 10 }}
+          alignItems={{ base: "start", lg: "center" }}
+        >
           <Image src="/typing-teacher.png" h={64} />
           <Box maxW="2xl">
-            <Heading as="h2">Digital Lesson Plans</Heading>
-            <Text lineHeight="tall" color="gray.600" fontSize="xl" mt={3}>
+            <Heading as="h2" fontSize={{ base: "2xl", md: "4xl" }}>
+              Digital Lesson Plans
+            </Heading>
+            <Text
+              lineHeight="tall"
+              color="gray.600"
+              fontSize={{ base: "md", sm: "lg", md: "1.3rem" }}
+              mt={3}
+            >
               Type or draw your lesson plans online. Import existing class notes
               or documents with photos or PDFs. Insert checkpoints and
               interactive widgets to survey the class&apos;s overall confidence
@@ -65,13 +100,23 @@ const HomePage: React.FC = () => {
             </Text>
           </Box>
         </HStack>
-      </Box>
 
-      <Box p={5}>
-        <HStack spacing={10}>
+        <HStack
+          flexDir={{ base: "column-reverse", lg: "row" }}
+          gap={{ base: 6, lg: 10 }}
+          alignItems={{ base: "start", lg: "center" }}
+          spacing={0}
+        >
           <Box maxW="2xl">
-            <Heading as="h2">Teachers Marketplace</Heading>
-            <Text lineHeight="tall" color="gray.600" fontSize="xl" mt={3}>
+            <Heading as="h2" fontSize={{ base: "2xl", md: "4xl" }}>
+              Teachers Marketplace
+            </Heading>
+            <Text
+              lineHeight="tall"
+              color="gray.600"
+              fontSize={{ base: "md", sm: "lg", md: "1.3rem" }}
+              mt={3}
+            >
               Sell copies of you lessons to other teachers on our marketplace to
               earn extra cash on the side. We plan to work with textbook
               publishers to convert your lessons into digital resources.
@@ -79,21 +124,30 @@ const HomePage: React.FC = () => {
           </Box>
           <Image src="/computer-monitor.png" h={64} />
         </HStack>
-      </Box>
 
-      <Box p={5}>
-        <HStack spacing={10}>
+        <HStack
+          flexDir={{ base: "column", lg: "row" }}
+          gap={{ base: 6, lg: 10 }}
+          alignItems={{ base: "start", lg: "center" }}
+        >
           <Image src="/imaginative-kid.png" h={64} />
           <Box maxW="2xl">
-            <Heading as="h2">Promote Collaboration</Heading>
-            <Text lineHeight="tall" color="gray.600" fontSize="xl" mt={3}>
+            <Heading as="h2" fontSize={{ base: "2xl", md: "4xl" }}>
+              Promote Collaboration
+            </Heading>
+            <Text
+              lineHeight="tall"
+              color="gray.600"
+              fontSize={{ base: "md", sm: "lg", md: "1.3rem" }}
+              mt={3}
+            >
               Use questions, games, individual and team competitions with
               leaderboards, and forums for discussion to stir up collaboration
               within your classroom.
             </Text>
           </Box>
         </HStack>
-      </Box>
+      </VStack>
 
       <Flex pos="relative" w="full" mt={24}>
         <Box
@@ -114,26 +168,30 @@ const HomePage: React.FC = () => {
         />
       </Flex>
 
-      <Box py={24} maxW="3xl" mx="auto">
-        <Heading as="h3" fontSize="3xl">
+      <Box py={24} maxW={{ base: "2xl", lg: "3xl" }} mx="auto">
+        <Heading as="h3" fontSize={{ base: "2xl", md: "4xl" }}>
           Get Updated
         </Heading>
-        <Text color="gray.600" fontSize="xl" mt={2}>
+        <Text color="gray.600" fontSize={{ base: "md", md: "xl" }} mt={2}>
           Sign up to our newsletter to get the latest news and updates about
           Graspable.
         </Text>
-        <HStack mt={4}>
+        <Flex gap={2} flexDir={{ base: "column", md: "row" }} mt={4}>
           <Input
-            size="lg"
+            size={useBreakpointValue({ base: "md", md: "lg" })}
             type="email"
             placeholder="Enter Email Address"
             name="email"
             isRequired
           />
-          <Button size="lg" flexShrink={0} type="submit">
+          <Button
+            size={useBreakpointValue({ base: "md", md: "lg" })}
+            flexShrink={0}
+            type="submit"
+          >
             Notify Me
           </Button>
-        </HStack>
+        </Flex>
       </Box>
       <Box as="footer" color="gray.400" fontSize="xl" pb={8} textAlign="center">
         Copyright © 2022 Graspable. All rights reserved.
