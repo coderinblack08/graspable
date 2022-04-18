@@ -21,12 +21,23 @@ import {
   MenuItem,
   MenuList,
 } from "@chakra-ui/react";
+import axios from "axios";
+import { signOut } from "firebase/auth";
 import NextLink from "next/link";
+import { useRouter } from "next/router";
 import { HiMenu, HiOutlineSearch } from "react-icons/hi";
+import useSWR, { useSWRConfig } from "swr";
+import { auth } from "../lib/firebase-client";
+import { User } from "../types";
 
 interface NavbarLayoutProps {}
 
 export const NavbarLayout: React.FC<NavbarLayoutProps> = ({ children }) => {
+  const router = useRouter();
+  // const [user, loading, error] = useAuthState(auth);
+  const { cache } = useSWRConfig();
+  const { data: user } = useSWR<User>("/api/auth/account");
+
   return (
     <Box bg="gray.50" h="100vh">
       <Box
@@ -82,13 +93,24 @@ export const NavbarLayout: React.FC<NavbarLayoutProps> = ({ children }) => {
                 </HStack>
                 <Menu>
                   <MenuButton>
-                    <Avatar size="sm" boxSize={9} />
+                    <Avatar name={user?.name} size="md" boxSize={10} />
                   </MenuButton>
                   <MenuList>
                     <MenuItem>Settings</MenuItem>
                     <MenuItem>Subscription</MenuItem>
                     <MenuDivider />
-                    <MenuItem>Log Out</MenuItem>
+                    <MenuItem
+                      onClick={async () => {
+                        await signOut(auth);
+                        await axios.post("/api/auth/logout", null, {
+                          withCredentials: true,
+                        });
+                        cache.clear();
+                        router.push("/");
+                      }}
+                    >
+                      Log Out
+                    </MenuItem>
                   </MenuList>
                 </Menu>
               </HStack>
@@ -97,7 +119,7 @@ export const NavbarLayout: React.FC<NavbarLayoutProps> = ({ children }) => {
         </Box>
       </Box>
 
-      <Container maxW="5xl" py={16} px={5}>
+      <Container maxW="4xl" py={20} px={5}>
         {children}
       </Container>
     </Box>

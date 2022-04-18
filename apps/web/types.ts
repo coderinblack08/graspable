@@ -9,7 +9,7 @@ export interface Course {
   id: string;
   name: string;
   subject: string;
-  lessons: string[]; // order of lessons
+  lessons: Lesson[];
 }
 
 export interface Lesson {

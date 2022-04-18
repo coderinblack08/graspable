@@ -77,11 +77,7 @@ const HomePage: React.FC = () => {
           </Flex>
         </Container>
         <Box display={{ base: "none", lg: "block" }}>
-          <ChakraNextImage
-            alt="Studious Cat"
-            src={StudiousCat}
-            placeholder="blur"
-          />
+          <ChakraNextImage alt="Studious Cat" src={StudiousCat} />
         </Box>
       </Flex>
 

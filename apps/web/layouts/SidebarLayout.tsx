@@ -80,15 +80,18 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
             </InputRightElement>
           </InputGroup>
           <VStack>
-            <Button
-              color="gray.600"
-              rounded="xl"
-              leftIcon={<Icon as={HiOutlineHome} boxSize={6} />}
-              w="full"
-              justifyContent="left"
-            >
-              Dashboard
-            </Button>
+            <NextLink href="/dashboard" passHref>
+              <Button
+                color="gray.600"
+                rounded="xl"
+                leftIcon={<Icon as={HiOutlineHome} boxSize={6} />}
+                w="full"
+                justifyContent="left"
+                as="a"
+              >
+                Dashboard
+              </Button>
+            </NextLink>
 
             <Button
               color="gray.500"
@@ -157,7 +160,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
                   <Text color="gray.500">Free Trial</Text>
                 </Box>
               </HStack>
-              <Icon as={HiOutlineSelector} boxSize={7} color="gray.500" />
+              <Icon as={HiOutlineSelector} boxSize={6} color="gray.500" />
             </Flex>
           </MenuButton>
           <MenuList w="19rem">
