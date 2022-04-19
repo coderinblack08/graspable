@@ -6,7 +6,6 @@ import {
   Heading,
   HStack,
   Icon,
-  Image,
   Input,
   Text,
   useBreakpointValue,
@@ -15,15 +14,19 @@ import {
 import NextLink from "next/link";
 import React from "react";
 import { MdChevronRight } from "react-icons/md";
+import { ChakraNextImage } from "../components/ChakraNextImage";
 import { BasicLayout } from "../layouts/BasicLayout";
-import StudiousCat from "../public/studious-cat.png";
-import TypingTeacher from "../public/typing-teacher.png";
 import ComputerMonitor from "../public/computer-monitor.png";
 import ImaginativeKid from "../public/imaginative-kid.png";
-import { ChakraNextImage } from "../components/ChakraNextImage";
+import StudiousCat from "../public/studious-cat.png";
+import TypingTeacher from "../public/typing-teacher.png";
 
 const HomePage: React.FC = () => {
-  const bodySize = { base: "md", md: "xl", lg: "1.3rem" };
+  const responsiveBodySize = { base: "md", md: "xl", lg: "1.3rem" };
+  const responsiveButtonSize = useBreakpointValue(
+    { base: "md", sm: "lg" },
+    "lg"
+  );
 
   return (
     <BasicLayout>
@@ -60,7 +63,7 @@ const HomePage: React.FC = () => {
             <NextLink href="/signup" passHref>
               <Button
                 rightIcon={<Icon as={MdChevronRight} boxSize={6} />}
-                size={useBreakpointValue({ base: "md", sm: "lg" })}
+                size={responsiveButtonSize}
                 fontSize={{ base: "sm", sm: "lg" }}
                 as="a"
               >
@@ -68,7 +71,7 @@ const HomePage: React.FC = () => {
               </Button>
             </NextLink>
             <Button
-              size={useBreakpointValue({ base: "md", sm: "lg" })}
+              size={responsiveButtonSize}
               fontSize={{ base: "sm", sm: "lg" }}
               variant="outline"
             >
@@ -92,7 +95,12 @@ const HomePage: React.FC = () => {
             <Heading as="h2" fontSize={{ base: "2xl", md: "4xl" }}>
               Digital Lesson Plans
             </Heading>
-            <Text lineHeight="tall" color="gray.600" fontSize={bodySize} mt={3}>
+            <Text
+              lineHeight="tall"
+              color="gray.600"
+              fontSize={responsiveBodySize}
+              mt={3}
+            >
               Type or draw your lesson plans online. Import existing class notes
               or documents with photos or PDFs. Insert checkpoints and
               interactive widgets to survey the class&apos;s overall confidence
@@ -111,7 +119,12 @@ const HomePage: React.FC = () => {
             <Heading as="h2" fontSize={{ base: "2xl", md: "4xl" }}>
               Teachers Marketplace
             </Heading>
-            <Text lineHeight="tall" color="gray.600" fontSize={bodySize} mt={3}>
+            <Text
+              lineHeight="tall"
+              color="gray.600"
+              fontSize={responsiveBodySize}
+              mt={3}
+            >
               Sell copies of you lessons to other teachers on our marketplace to
               earn extra cash on the side. We plan to work with textbook
               publishers to convert your lessons into digital resources.
@@ -130,7 +143,12 @@ const HomePage: React.FC = () => {
             <Heading as="h2" fontSize={{ base: "2xl", md: "4xl" }}>
               Promote Collaboration
             </Heading>
-            <Text lineHeight="tall" color="gray.600" fontSize={bodySize} mt={3}>
+            <Text
+              lineHeight="tall"
+              color="gray.600"
+              fontSize={responsiveBodySize}
+              mt={3}
+            >
               Use questions, games, individual and team competitions with
               leaderboards, and forums for discussion to stir up collaboration
               within your classroom.
@@ -162,20 +180,20 @@ const HomePage: React.FC = () => {
         <Heading as="h3" fontSize={{ base: "2xl", md: "4xl" }}>
           Get Updated
         </Heading>
-        <Text color="gray.600" fontSize={bodySize} mt={2}>
+        <Text color="gray.600" fontSize={responsiveBodySize} mt={2}>
           Sign up to our newsletter to get the latest news and updates about
           Graspable.
         </Text>
         <Flex gap={2} flexDir={{ base: "column", md: "row" }} mt={4}>
           <Input
-            size={useBreakpointValue({ base: "md", md: "lg" })}
+            size={responsiveButtonSize}
             type="email"
             placeholder="Enter Email Address"
             name="email"
             isRequired
           />
           <Button
-            size={useBreakpointValue({ base: "md", md: "lg" })}
+            size={responsiveButtonSize}
             flexShrink={0}
             px={8}
             type="submit"
@@ -187,7 +205,7 @@ const HomePage: React.FC = () => {
       <Box
         as="footer"
         color="gray.400"
-        fontSize={bodySize}
+        fontSize={responsiveBodySize}
         pb={{ base: 4, md: 8 }}
         textAlign="center"
       >
