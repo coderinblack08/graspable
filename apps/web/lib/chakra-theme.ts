@@ -20,23 +20,23 @@ export const theme = extendTheme({
   }),
   colors: {
     gray: {
-      50: "#FAFAFA",
-      100: "#F5F5F5",
-      200: "#E5E5E5",
-      300: "#D4D4D4",
-      400: "#A3A3A3",
-      500: "#737373",
-      600: "#525252",
-      700: "#404040",
-      800: "#262626",
-      900: "#171717",
+      50: "#f9fafb",
+      100: "#f3f4f6",
+      200: "#e5e7eb",
+      300: "#d1d5db",
+      400: "#9ca3af",
+      500: "#6b7280",
+      600: "#4b5563",
+      700: "#374151",
+      800: "#1f2937",
+      900: "#111827",
     },
   },
   components: {
     Button: {
       baseStyle: (props: any) => ({
         color: mode("gray.800", "gray.400")(props),
-        borderRadius: "xl",
+        borderRadius: "lg",
         _focus: { boxShadow: "none" },
         "&:focus-visible": { boxShadow: "outline" },
       }),
@@ -44,24 +44,26 @@ export const theme = extendTheme({
         gray: {
           bg: "gray.200",
         },
+        black: {
+          bg: "gray.800",
+        },
       },
       variants: {
-        ghost: (props: any) => {
-          const defaults = DefaultTheme.components.Button.variants.ghost(props);
-          return {
-            ...defaults,
-            color: props.colorScheme === "gray" ? "gray.400" : defaults.color,
-          };
-        },
+        // ghost: (props: any) => {
+        //   const defaults = DefaultTheme.components.Button.variants.ghost(props);
+        //   return {
+        //     ...defaults,
+        //     color: props.colorScheme === "gray" ? "gray.400" : defaults.color,
+        //   };
+        // },
         outline: (props: any) => {
           const defaults =
             DefaultTheme.components.Button.variants.outline(props);
           return {
             ...defaults,
-            border: "2px solid",
             borderColor:
               props.colorScheme === "gray"
-                ? mode("gray.100", "gray.700")(props)
+                ? mode("gray.200", "gray.700")(props)
                 : defaults.borderColor,
             _hover: { bg: "transparent" },
             _active: { bg: "transparent" },
@@ -93,15 +95,13 @@ export const theme = extendTheme({
       parts: ["list", "divider", "item"],
       baseStyle: (props: any) => ({
         list: {
-          border: "2px solid",
-          borderColor: mode("gray.100", "gray.700")(props),
+          borderColor: mode("gray.200", "gray.700")(props),
           bgColor: mode("white", "gray.800")(props),
-          rounded: "xl",
-          shadow: "none",
+          rounded: "lg",
         },
         divider: {
           borderBottom: "2px solid",
-          borderColor: mode("gray.100", "gray.700")(props),
+          borderColor: mode("gray.200", "gray.700")(props),
         },
         item: {
           color: mode("gray.500", "gray.400")(props),
@@ -132,6 +132,8 @@ export const theme = extendTheme({
           textAlign: "center",
         },
         closeButton: {
+          m: 2,
+          color: "gray.400",
           _focus: { boxShadow: "none" },
           "&:focus-visible": { boxShadow: "outline" },
         },
@@ -144,30 +146,22 @@ export const theme = extendTheme({
   },
   styles: {
     global: (props: any) => ({
+      // ":root": {
+      //   fontSize: "14px",
+      // },
       body: {
         margin: 0,
         WebkitFontSmoothing: "antialiased",
         MozOsxFontSmoothing: "grayscale",
-        a: {
-          color: "blue.500",
-          "&:hover": {
-            textDecoration: "none",
-          },
-        },
-        "*, ::before, ::after": {
-          borderColor: "#9fa3b114",
-        },
-        ".clear": {
-          clear: "both",
-        },
         ".ProseMirror, .typography": {
-          mt: 4,
-          color: "gray.500",
+          py: 2,
+          color: "gray.600",
+          fontSize: "lg",
           lineHeight: "taller",
           "> * + *": {
-            marginTop: "0.75em",
+            marginTop: "0.5em",
           },
-          "p.is-empty::before": {
+          ".is-empty:first-child::before": {
             content: "attr(data-placeholder)",
             color: "gray.300",
             float: "left",
@@ -179,17 +173,19 @@ export const theme = extendTheme({
           },
           h1: {
             fontSize: "1.6rem",
-            color: "gray.600",
+            letterSpacing: "-0.025rem",
+            color: "gray.900",
             my: 6,
           },
           h2: {
             fontSize: "1.4rem",
-            color: "gray.600",
+            letterSpacing: "-0.025rem",
+            color: "gray.900",
             my: 4,
           },
           h3: {
             fontSize: "1.2rem",
-            color: "gray.600",
+            color: "gray.900",
           },
           "h1, h2, h3, h4,  h5, h6 ": {
             lineHeight: "1.1",
@@ -216,8 +212,8 @@ export const theme = extendTheme({
             },
           },
           blockquote: {
-            pl: 4,
-            borderLeft: "2px solid rgba(13, 13, 13, 0.1)",
+            pl: 5,
+            borderLeft: "3px solid rgba(13, 13, 13, 0.1)",
           },
           "span[data-spoiler]": {
             bg: mode("gray.900", "gray.100")(props),

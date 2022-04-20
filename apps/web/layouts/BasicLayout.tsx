@@ -1,5 +1,3 @@
-import React from "react";
-import { MdKeyboardArrowDown } from "react-icons/md";
 import {
   Box,
   Button,
@@ -10,7 +8,6 @@ import {
   Icon,
   IconButton,
   Image,
-  Link as ChakraLink,
   Link,
   Menu,
   MenuButton,
@@ -20,7 +17,9 @@ import {
   useToken,
 } from "@chakra-ui/react";
 import NextLink from "next/link";
+import React from "react";
 import { HiMenu } from "react-icons/hi";
+import { MdKeyboardArrowDown } from "react-icons/md";
 
 type BasicLayoutProps = {
   children?: React.ReactNode;
@@ -56,7 +55,7 @@ export const BasicLayout: React.FC = ({ children }: BasicLayoutProps) => {
           >
             Resources
           </Button>
-          <ChakraLink color="gray.600">Pricing</ChakraLink>
+          <Link color="gray.600">Pricing</Link>
           <Divider sx={{ borderColor: gray300 }} orientation="vertical" h={6} />
           <NextLink href="/login" passHref>
             <Link color="gray.600">Log In</Link>

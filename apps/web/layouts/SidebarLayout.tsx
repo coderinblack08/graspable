@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Container,
+  Divider,
   Flex,
   HStack,
   Icon,
@@ -28,17 +29,14 @@ import { useRouter } from "next/router";
 import React from "react";
 import {
   HiOutlineBookOpen,
-  HiOutlineChartBar,
-  HiOutlineChevronDown,
   HiOutlineHome,
+  HiOutlineQuestionMarkCircle,
   HiOutlineSearch,
-  HiOutlineSelector,
-  HiOutlineUsers,
   HiOutlineViewGrid,
 } from "react-icons/hi";
 import useSWR, { useSWRConfig } from "swr";
 import { auth } from "../lib/firebase-client";
-import { User } from "../types";
+import { Course, User } from "../types";
 
 interface SidebarLayoutProps {}
 
@@ -47,9 +45,10 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   // const [user, loading, error] = useAuthState(auth);
   const { cache } = useSWRConfig();
   const { data: user } = useSWR<User>("/api/auth/account");
+  const { data: courses } = useSWR<Course[]>("/api/courses");
 
   return (
-    <Flex h="100vh" bg="gray.50">
+    <Flex h="100vh">
       <Flex
         flexShrink={0}
         flexDir="column"
@@ -57,21 +56,20 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         as="nav"
         h="full"
         w="xs"
-        bg="white"
         borderRight="solid 2px"
         borderColor="gray.100"
       >
-        <Box px={4} py={8}>
-          <NextLink href="/" passHref>
-            <Link display="inline-flex">
+        <Box px={3} py={7}>
+          <NextLink href="/dashboard" passHref>
+            <Link display="inline-block" userSelect="none">
               <Image h={6} src="/logo.svg" alt="graspable" />
             </Link>
           </NextLink>
-          <InputGroup my={3}>
+          <InputGroup w="full" userSelect="none" my={3}>
             <InputLeftElement pointerEvents="none">
               <Icon as={HiOutlineSearch} boxSize={5} color="gray.300" />
             </InputLeftElement>
-            <Input rounded="xl" placeholder="Search" />
+            <Input rounded="xl" placeholder="Search" bg="white" />
             <InputRightElement mr={3}>
               <HStack spacing={1} color="gray.500">
                 <Kbd>⌘</Kbd>
@@ -79,11 +77,11 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
               </HStack>
             </InputRightElement>
           </InputGroup>
-          <VStack>
+          <VStack align="left">
             <NextLink href="/dashboard" passHref>
               <Button
                 color="gray.600"
-                rounded="xl"
+                rounded="lg"
                 leftIcon={<Icon as={HiOutlineHome} boxSize={6} />}
                 w="full"
                 justifyContent="left"
@@ -95,18 +93,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
 
             <Button
               color="gray.500"
-              rounded="xl"
-              variant="ghost"
-              leftIcon={<Icon as={HiOutlineChartBar} boxSize={6} />}
-              w="full"
-              justifyContent="left"
-            >
-              Leaderboard
-            </Button>
-
-            <Button
-              color="gray.500"
-              rounded="xl"
+              rounded="lg"
               variant="ghost"
               leftIcon={<Icon as={HiOutlineViewGrid} boxSize={6} />}
               w="full"
@@ -117,51 +104,46 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
 
             <Button
               color="gray.500"
-              rounded="xl"
+              rounded="lg"
               variant="ghost"
+              leftIcon={<Icon as={HiOutlineQuestionMarkCircle} boxSize={6} />}
               w="full"
-              rightIcon={
-                <Icon ml="auto" as={HiOutlineChevronDown} boxSize={5} />
-              }
-              justifyContent="space-between"
+              justifyContent="left"
             >
-              <HStack>
-                <Icon as={HiOutlineBookOpen} boxSize={6} />
-                <Text>Courses</Text>
-              </HStack>
+              Help Center
             </Button>
 
-            <Button
-              color="gray.500"
-              rounded="xl"
-              variant="ghost"
-              w="full"
-              rightIcon={
-                <Icon ml="auto" as={HiOutlineChevronDown} boxSize={5} />
-              }
-              justifyContent="space-between"
-            >
-              <HStack>
-                <Icon as={HiOutlineUsers} boxSize={6} />
-                <Text>Cohorts</Text>
-              </HStack>
-            </Button>
+            {(courses?.length || 0) > 0 && (
+              <Divider borderColor="gray.100" border="1px solid" />
+            )}
+
+            {courses?.map((course) => (
+              <Button
+                key={course.id}
+                color="gray.500"
+                w="full"
+                variant="ghost"
+                leftIcon={<Icon as={HiOutlineBookOpen} boxSize={6} />}
+                justifyContent="left"
+              >
+                {course.name}
+              </Button>
+            ))}
           </VStack>
         </Box>
         <Menu placement="top">
-          <MenuButton borderTop="solid 2px" borderColor="gray.100" p={5}>
-            <Flex justifyContent="space-between" alignItems="center">
-              <HStack spacing={4}>
-                <Avatar name={user?.name} />
-                <Box>
-                  <Text fontSize="lg" fontWeight="bold">
-                    {user?.name}
-                  </Text>
-                  <Text color="gray.500">Free Trial</Text>
-                </Box>
-              </HStack>
-              <Icon as={HiOutlineSelector} boxSize={6} color="gray.500" />
-            </Flex>
+          <MenuButton
+            p={4}
+            userSelect="none"
+            borderTop="2px solid"
+            borderColor="gray.100"
+          >
+            <HStack spacing={4}>
+              <Avatar rounded="lg" name={user?.name} size="md" boxSize={10} />
+              <Text fontSize="lg" fontWeight="bold">
+                Kevin Lu
+              </Text>
+            </HStack>
           </MenuButton>
           <MenuList w="19rem">
             <MenuItem>Settings</MenuItem>
@@ -182,7 +164,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
           </MenuList>
         </Menu>
       </Flex>
-      <Container w="full" px={8} py={20} maxW="4xl">
+      <Container bg="gray.50" px={8} py={16} maxW="5xl">
         {children}
       </Container>
     </Flex>

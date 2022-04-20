@@ -7,16 +7,15 @@ import {
   ModalBody,
   ModalCloseButton,
   ModalContent,
-  ModalFooter,
   ModalHeader,
   ModalOverlay,
   useDisclosure,
   VStack,
 } from "@chakra-ui/react";
+import { IconPlus } from "@tabler/icons";
 import { addDoc, collection } from "firebase/firestore";
 import React from "react";
 import { useForm } from "react-hook-form";
-import { HiOutlineFolderAdd } from "react-icons/hi";
 import { useSWRConfig } from "swr";
 import { Select } from "../lib/chakra-theme";
 import { auth, db } from "../lib/firebase-client";
@@ -35,10 +34,10 @@ export const NewCourseModal: React.FC<NewCourseModalProps> = ({}) => {
   return (
     <>
       <Button
+        w="full"
+        size="lg"
         onClick={onOpen}
-        leftIcon={<Icon as={HiOutlineFolderAdd} boxSize={5} />}
-        colorScheme="blue"
-        mt={4}
+        leftIcon={<Icon as={IconPlus} boxSize={6} />}
       >
         New Course
       </Button>
@@ -62,28 +61,31 @@ export const NewCourseModal: React.FC<NewCourseModalProps> = ({}) => {
               onClose();
             })}
           >
-            <ModalBody>
-              <VStack>
-                <Select {...register("subject")}>
+            <ModalBody py={6}>
+              <VStack spacing={3}>
+                <Select
+                  iconColor="gray.300"
+                  iconSize={24}
+                  size="lg"
+                  {...register("subject")}
+                >
                   <option value="mathematics">Mathematics</option>
                   <option value="biology">Biology</option>
                   <option value="chemistry">Chemistry</option>
                   <option value="physics">Physics</option>
                   <option value="language">Language</option>
                 </Select>
-                <Input placeholder="Name" {...register("name")} />
+                <Input size="lg" placeholder="Name" {...register("name")} />
+                <Button
+                  isLoading={isSubmitting}
+                  w="full"
+                  size="lg"
+                  type="submit"
+                >
+                  Submit
+                </Button>
               </VStack>
             </ModalBody>
-            <ModalFooter pb={6}>
-              <Button
-                isLoading={isSubmitting}
-                colorScheme="blue"
-                w="full"
-                type="submit"
-              >
-                Submit
-              </Button>
-            </ModalFooter>
           </Box>
         </ModalContent>
       </Modal>

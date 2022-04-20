@@ -1,39 +1,56 @@
-import { Accordion, Box, Flex, Heading, Text, VStack } from "@chakra-ui/react";
+import {
+  Box,
+  Container,
+  Flex,
+  HStack,
+  Image,
+  Link,
+  Spacer,
+  StackDivider,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
 import { NextPage } from "next";
+import NextLink from "next/link";
 import useSWR from "swr";
+import { AccountDropdown } from "../components/AccountDropdown";
 import { CourseCard } from "../components/CourseCard";
 import { NewCourseModal } from "../components/NewCourseModal";
-import { NavbarLayout } from "../layouts/NavbarLayout";
+import { Select } from "../lib/chakra-theme";
 import { Course } from "../types";
 
 const DashboardPage: NextPage = () => {
   const { data: courses } = useSWR<Course[]>("/api/courses");
 
   return (
-    <NavbarLayout>
-      <Flex
-        pb={6}
-        alignItems="end"
-        justify="space-between"
-        borderBottom="2px solid"
-        borderColor="gray.100"
-      >
-        <Box>
-          <Heading size="lg" as="h1">
-            Dashboard
-          </Heading>
-          <Text color="gray.600" fontSize="lg" mt={2}>
-            Manage your courses and notifications
-          </Text>
-        </Box>
-        <NewCourseModal />
+    <Container px={4} py={24} maxW="3xl">
+      <Flex justify="space-between" align="center" mb={4}>
+        <NextLink href="/" passHref>
+          <Link display="inline-block" userSelect="none">
+            <Image h={{ base: 5, sm: 6 }} src="/logo.svg" alt="graspable" />
+          </Link>
+        </NextLink>
+        <AccountDropdown />
       </Flex>
-      <Accordion allowToggle mt={6} as={VStack} spacing={4}>
+      <VStack spacing={4}>
         {courses?.map((course) => (
-          <CourseCard key={course.id} course={course} />
+          <CourseCard course={course} key={course.id} />
         ))}
-      </Accordion>
-    </NavbarLayout>
+        <NewCourseModal />
+      </VStack>
+      <Flex mt={4} justify="space-between" color="gray.400">
+        <HStack spacing={2}>
+          <Link>Home</Link>
+          <Text>·</Text>
+          <Link>Marketplace</Link>
+          <Text>·</Text>
+          <Link>Pricing</Link>
+          <Text>·</Text>
+          <Link>Help Center</Link>
+        </HStack>
+        <Link>Feedback?</Link>
+      </Flex>
+    </Container>
   );
 };
 
