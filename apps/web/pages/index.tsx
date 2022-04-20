@@ -51,9 +51,8 @@ const HomePage: React.FC = () => {
             maxW="xl"
             mt={{ base: 4, md: 6 }}
           >
-            Guide your students&apos; learning through an interactive platform
-            focused on developing problem solving and collaboration skills with
-            friendly competitions.
+            Graspable aims to help teachers ditch boring slideshows for
+            interactive lesson plans that actually stick.
           </Text>
           <Flex
             mt={{ base: 6, md: 8 }}

@@ -25,8 +25,8 @@ export const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
       flexDir="column"
       overflow="hidden"
       rounded="lg"
-      border="2px solid"
-      borderColor="gray.100"
+      border="1px solid"
+      borderColor="gray.200"
       p={5}
     >
       <LinkBox as="article" w="full" textAlign="left">

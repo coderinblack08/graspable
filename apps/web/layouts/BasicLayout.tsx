@@ -2,7 +2,6 @@ import {
   Box,
   Button,
   Container,
-  Divider,
   Flex,
   HStack,
   Icon,
@@ -19,7 +18,6 @@ import {
 import NextLink from "next/link";
 import React from "react";
 import { HiMenu } from "react-icons/hi";
-import { MdKeyboardArrowDown } from "react-icons/md";
 
 type BasicLayoutProps = {
   children?: React.ReactNode;
@@ -37,7 +35,7 @@ export const BasicLayout: React.FC = ({ children }: BasicLayoutProps) => {
           </Link>
         </NextLink>
         <HStack spacing={5} display={{ base: "none", lg: "flex" }}>
-          <Button
+          {/* <Button
             px={0}
             color="gray.600"
             variant="ghost"
@@ -56,7 +54,7 @@ export const BasicLayout: React.FC = ({ children }: BasicLayoutProps) => {
             Resources
           </Button>
           <Link color="gray.600">Pricing</Link>
-          <Divider sx={{ borderColor: gray300 }} orientation="vertical" h={6} />
+          <Divider sx={{ borderColor: gray300 }} orientation="vertical" h={6} /> */}
           <NextLink href="/login" passHref>
             <Link color="gray.600">Log In</Link>
           </NextLink>

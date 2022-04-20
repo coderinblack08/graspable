@@ -35,9 +35,9 @@ import {
 import { NextPage } from "next";
 import NextLink from "next/link";
 import { useRouter } from "next/router";
+import { Editor } from "../../editor/Editor";
 import useSWR from "swr";
 import { AccountDropdown } from "../../components/AccountDropdown";
-import { LessonEditor } from "../../components/LessonEditor";
 import { auth, db } from "../../lib/firebase-client";
 import { Course, Lesson } from "../../types";
 
@@ -67,8 +67,8 @@ const CoursePage: NextPage = () => {
               </Link>
             </NextLink>
           </Box>
-          <Box m={4} pb={4} borderBottom="1px solid" borderColor="gray.200">
-            <Flex align="center" justify="space-between">
+          <Box m={2} pb={2} borderBottom="1px solid" borderColor="gray.200">
+            <Flex align="center" justify="space-between" m={2}>
               <Heading size="md" as="h1" isTruncated mr={4}>
                 {course?.name}
               </Heading>
@@ -91,7 +91,7 @@ const CoursePage: NextPage = () => {
               />
             </InputGroup>
           </Box>
-          <VStack mx={4} spacing={1}>
+          <VStack mx={2} spacing={1}>
             {lessons?.map((lesson, index) => (
               <Button
                 bg={index === 0 ? "blue.50" : "white"}
@@ -160,7 +160,7 @@ const CoursePage: NextPage = () => {
           <AccountDropdown />
         </HStack>
         <Container px={12} maxW="4xl" py={16}>
-          <LessonEditor />
+          <Editor />
         </Container>
       </Box>
     </Flex>
