@@ -1,8 +1,9 @@
-import { BaseEditor, Element } from "slate";
+import { BaseEditor, BaseElement, Element } from "slate";
 import { ReactEditor } from "slate-react";
+import { EditableProps } from "slate-react/dist/components/editable";
 
 type CustomElement = { type: string; children: CustomText[] };
-type CustomText = { text: string; placeholder?: boolean };
+type CustomText = { text: string; isEmpty?: boolean };
 
 export enum ElementType {
   Paragraph = "paragraph",
@@ -10,8 +11,8 @@ export enum ElementType {
   ListItem = "list-item",
   BulletedList = "bulleted-list",
   NumberedList = "numbered-list",
-  Blockquote = "block-quote",
-  CodeBlock = "code-block",
+  Blockquote = "blockquote",
+  CodeBlock = "codeblock",
   Image = "image",
 }
 
@@ -24,17 +25,6 @@ export enum Mark {
   Highlight = "highlight",
 }
 
-export const isReferenceableBlockElement = (element: Element): boolean => {
-  return (
-    element.type === ElementType.Paragraph ||
-    element.type === ElementType.Heading ||
-    element.type === ElementType.ListItem ||
-    element.type === ElementType.Blockquote ||
-    element.type === ElementType.CodeBlock ||
-    element.type === ElementType.Image
-  );
-};
-
 declare module "slate" {
   interface CustomTypes {
     Editor: BaseEditor & ReactEditor;
@@ -42,3 +32,15 @@ declare module "slate" {
     Text: CustomText;
   }
 }
+
+export type SlatePluginProps = {
+  commands: Command[];
+  editableProps: EditableProps;
+  Outside: React.MemoExoticComponent<() => JSX.Element>;
+};
+
+export type Command = {
+  key: string;
+  description: string;
+  request?: (props?: { search?: string }) => Promise<unknown>;
+};

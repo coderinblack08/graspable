@@ -20,7 +20,6 @@ export const TitleInput = forwardRef<HTMLElement, TitleInputProps>(
 
     return (
       <Heading
-        py={2}
         ref={ref}
         fontSize="4xl"
         fontWeight="semibold"
