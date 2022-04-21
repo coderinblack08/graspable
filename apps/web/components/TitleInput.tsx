@@ -27,20 +27,19 @@ export const TitleInput = forwardRef<HTMLElement, TitleInputProps>(
         letterSpacing="-0.01em"
         w="full"
         resize="none"
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            ReactEditor.focus(editor);
-          }
-          if (e.key == "ArrowDown" && editor) {
-            ReactEditor.focus(editor);
-          }
-        }}
+        // onKeyDown={(e) => {
+        //   if (e.key === "Enter") {
+        //     e.preventDefault();
+        //     ReactEditor.focus(editor);
+        //   }
+        //   if (e.key == "ArrowDown" && editor) {
+        //     ReactEditor.focus(editor);
+        //   }
+        // }}
         onInput={() => updateTitleRefHeight()}
         _focus={{ outline: "none" }}
         _placeholder={{ color: "gray.300" }}
         placeholder="Untitled"
-        value="Untitled"
         as="textarea"
       />
     );

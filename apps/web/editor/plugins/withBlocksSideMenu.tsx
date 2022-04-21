@@ -2,15 +2,21 @@ import { Box, Fade, Flex, Icon, IconButton, Tooltip } from "@chakra-ui/react";
 import { IconDotsVertical, IconPlus } from "@tabler/icons";
 import { ComponentType, useEffect, useState } from "react";
 import { Path, Range } from "slate";
-import { ReactEditor, RenderElementProps, useSlateStatic } from "slate-react";
+import {
+  ReactEditor,
+  RenderElementProps,
+  useSlate,
+  useSlateStatic,
+} from "slate-react";
 import { useHover } from "../../lib/use-hover";
+import { isReferenceableBlockElement } from "../types/slate";
 
 export default function withBlockSideMenu(
   EditorElement: ComponentType<RenderElementProps>
 ) {
   const ElementWithSideMenu = (props: RenderElementProps) => {
     const { element } = props;
-    const editor = useSlateStatic();
+    const editor = useSlate();
     const [isOnLine, setIsOnLine] = useState(false);
     const [hoverRef, isHovered] = useHover<HTMLDivElement>();
 
@@ -23,6 +29,10 @@ export default function withBlockSideMenu(
         setIsOnLine(false);
       }
     }, [editor.selection, element]);
+
+    if (!isReferenceableBlockElement(element)) {
+      return <EditorElement {...props} />;
+    }
 
     return (
       <Box
@@ -37,7 +47,12 @@ export default function withBlockSideMenu(
           right: "100%",
         }}
       >
-        <Flex left={isHovered && isOnLine ? -16 : -8} pos="absolute">
+        <Flex
+          left={isHovered && isOnLine ? -16 : -8}
+          pos="absolute"
+          contentEditable={false}
+          userSelect="none"
+        >
           <Fade in={isHovered}>
             <IconButton
               ml={isHovered && isOnLine ? 2 : 0}
@@ -51,20 +66,17 @@ export default function withBlockSideMenu(
             />
           </Fade>
           {isOnLine && (
-            <Tooltip label={<Box>Insert '/'</Box>}>
-              <IconButton
-                size="xs"
-                variant="ghost"
-                icon={<Icon as={IconPlus} boxSize="18px" color="gray.400" />}
-                aria-label="More"
-              />
-            </Tooltip>
+            <IconButton
+              size="xs"
+              variant="ghost"
+              icon={<Icon as={IconPlus} boxSize="18px" color="gray.400" />}
+              aria-label="More"
+            />
           )}
         </Flex>
         <EditorElement {...props} />
       </Box>
     );
   };
-
   return ElementWithSideMenu;
 }

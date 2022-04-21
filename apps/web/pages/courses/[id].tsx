@@ -33,13 +33,18 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { NextPage } from "next";
+import dynamic from "next/dynamic";
 import NextLink from "next/link";
 import { useRouter } from "next/router";
-import { Editor } from "../../editor/Editor";
 import useSWR from "swr";
 import { AccountDropdown } from "../../components/AccountDropdown";
 import { auth, db } from "../../lib/firebase-client";
 import { Course, Lesson } from "../../types";
+
+const Editor = dynamic<{}>(
+  () => import("../../editor/Editor").then((mod) => mod.Editor),
+  { ssr: false }
+);
 
 const CoursePage: NextPage = () => {
   const {
@@ -94,6 +99,7 @@ const CoursePage: NextPage = () => {
           <VStack mx={2} spacing={1}>
             {lessons?.map((lesson, index) => (
               <Button
+                key={lesson.id}
                 bg={index === 0 ? "blue.50" : "white"}
                 _hover={{ bg: "gray.50" }}
                 leftIcon={<Icon as={IconBook} color="gray.400" boxSize={6} />}
@@ -159,7 +165,7 @@ const CoursePage: NextPage = () => {
           </Tooltip>
           <AccountDropdown />
         </HStack>
-        <Container px={12} maxW="4xl" py={16}>
+        <Container px={16} maxW="4xl" py={16}>
           <Editor />
         </Container>
       </Box>
