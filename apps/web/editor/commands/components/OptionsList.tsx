@@ -1,4 +1,4 @@
-import { Box } from "@chakra-ui/react";
+import { Box, Heading, Text } from "@chakra-ui/react";
 import useEventListener from "@use-it/event-listener";
 import { useState } from "react";
 import { useSlateStatic } from "slate-react";
@@ -57,6 +57,11 @@ export function OptionsList({
         rounded="lg"
         bg="white"
         overflow="hidden"
+        // sx={{
+        //   pos: "absolute",
+        //   left: clientRect.x,
+        //   top: clientRect.y + clientRect.height,
+        // }}
       >
         {commands.map((op, index) => (
           <Box
@@ -80,10 +85,12 @@ export function OptionsList({
               },
             }}
           >
-            <Box>
-              <div>{op.key}</div>
-              <small>{op.description}</small>
-            </Box>
+            <Heading fontSize="md" fontWeight="medium" as="h3">
+              {op.key}
+            </Heading>
+            <Text fontSize="sm" mt={1}>
+              {op.description}
+            </Text>
           </Box>
         ))}
       </Box>

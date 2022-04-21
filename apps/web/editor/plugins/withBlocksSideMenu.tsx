@@ -6,7 +6,8 @@ import { ReactEditor, RenderElementProps, useSlate } from "slate-react";
 import { useHover } from "../../lib/use-hover";
 
 export default function withBlockSideMenu(
-  EditorElement: ComponentType<RenderElementProps>
+  EditorElement: ComponentType<RenderElementProps>,
+  { onPress }: { onPress: () => void }
 ) {
   const ElementWithSideMenu = (props: RenderElementProps) => {
     const { element, children } = props;
@@ -63,6 +64,7 @@ export default function withBlockSideMenu(
               variant="ghost"
               icon={<Icon as={IconPlus} boxSize="18px" color="gray.400" />}
               onClick={() => {
+                onPress();
                 Editor.insertText(editor, "/");
                 ReactEditor.focus(editor);
               }}

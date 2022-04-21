@@ -26,7 +26,9 @@ export const Editor: React.FC = () => {
   ]);
 
   const renderElement = useMemo(() => {
-    return withBlockSideMenu(withVerticalSpacing(EditorElement));
+    return withBlockSideMenu(withVerticalSpacing(EditorElement), {
+      onPress: () => setToolbarCanBeVisible(true),
+    });
   }, []);
 
   const onSlateChange = useCallback((newValue: Descendant[]) => {

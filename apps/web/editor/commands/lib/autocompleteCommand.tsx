@@ -5,7 +5,7 @@ export function autocompleteCommand(editor: Editor) {
   let search = "";
   let modifier = "";
 
-  if (editor.selection != null && Range.isCollapsed(editor.selection)) {
+  if (editor.selection !== null && Range.isCollapsed(editor.selection)) {
     const [_, path] = Editor.node(editor, editor.selection, { depth: 1 });
     const range = Editor.range(
       editor,
@@ -14,8 +14,7 @@ export function autocompleteCommand(editor: Editor) {
     );
     const text = Editor.string(editor, range);
     const matches = text.match(/(\/)([^\s]*$)/);
-
-    if (matches != null) {
+    if (matches !== null) {
       showAutoComplete = true;
       search = matches[2];
       modifier = matches[1];
