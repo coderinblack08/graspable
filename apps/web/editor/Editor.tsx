@@ -20,14 +20,17 @@ import { ElementType } from "./types/slate";
 import { handleEnter, handleIndent, handleUnindent } from "./formatting";
 import withBlockBreakout from "./plugins/withBlockBreakout";
 import withCustomDeleteBackward from "./plugins/withCustomDeleteBackward";
+import withNormalization from "./plugins/withNormalization";
 
 export const Editor: React.FC = () => {
   const isMounted = useIsMounted();
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const [toolbarCanBeVisible, setToolbarCanBeVisible] = useState(true);
   const [editor] = useState<SlateEditor>(() =>
-    withCustomDeleteBackward(
-      withBlockBreakout(withHistory(withReact(createEditor())))
+    withNormalization(
+      withCustomDeleteBackward(
+        withBlockBreakout(withHistory(withReact(createEditor())))
+      )
     )
   );
   const [value, setValue] = useState<Descendant[]>([
@@ -85,7 +88,9 @@ export const Editor: React.FC = () => {
   return (
     <Box h="full">
       <TitleInput editor={editor} ref={titleRef} />
-      {/* <pre>{JSON.stringify(value, null, 2)}</pre> */}
+      {/* <Box as="pre" fontSize="xs">
+        {JSON.stringify(value, null, 2)}
+      </Box> */}
       <Slate editor={editor} value={value} onChange={onSlateChange}>
         {toolbarCanBeVisible && ReactEditor.isFocused(editor) && (
           <Autocomplete

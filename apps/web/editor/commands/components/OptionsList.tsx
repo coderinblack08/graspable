@@ -43,7 +43,7 @@ export function OptionsList({
         setSelectedIndex(selectedIndex - 1);
       } else if (e.key === "ArrowUp" && selectedIndex <= 0) {
         setSelectedIndex(lastIndex);
-      } else if (e.key === "Enter") {
+      } else if (e.key === "Enter" && option) {
         insertNewBlock(editor, search || "", option.key, true);
       }
     },
@@ -85,7 +85,7 @@ export function OptionsList({
             tabIndex={0}
             role="button"
             onMouseDown={() => {
-              insertNewBlock(editor, search || "", option.key, true);
+              insertNewBlock(editor, search || "", op.key, true);
               ReactEditor.focus(editor);
             }}
             bg={selectedIndex === index ? "blue.50" : "white"}

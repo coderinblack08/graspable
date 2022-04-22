@@ -28,14 +28,32 @@ const toggleBlock = (editor: Editor, format: ElementType) => {
   const isActive = isBlockActive(editor, format);
   const isList = isListType(format);
 
-  Transforms.unwrapNodes(editor, {
-    match: (n) =>
-      !Editor.isEditor(n) &&
-      SlateElement.isElement(n) &&
-      isListType(n.type) &&
-      !isTextType(format),
-    split: true,
-  });
+  // Transforms.unwrapNodes(editor, {
+  //   match: (n) =>
+  //     !Editor.isEditor(n) &&
+  //     SlateElement.isElement(n) &&
+  //     isListType(n.type) &&
+  //     !isTextType(format),
+  //   split: true,
+  // });
+  const continueUnwrappingList = () => {
+    const formatIsTextAndNotActive = !isActive && isTextType(format);
+
+    const hasListTypeAbove = Editor.above(editor, {
+      match: (n) =>
+        !Editor.isEditor(n) && SlateElement.isElement(n) && isListType(n.type),
+    });
+
+    return formatIsTextAndNotActive && hasListTypeAbove;
+  };
+
+  do {
+    Transforms.unwrapNodes(editor, {
+      match: (n) =>
+        !Editor.isEditor(n) && SlateElement.isElement(n) && isListType(n.type),
+      split: true,
+    });
+  } while (continueUnwrappingList());
 
   const newProperties = {
     type: isActive

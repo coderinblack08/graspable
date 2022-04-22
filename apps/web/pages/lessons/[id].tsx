@@ -23,7 +23,7 @@ const CoursePage: NextPage = () => {
 
   return (
     <CourseLayout courseId={lesson?.courseId} currentLessonId={lesson?.id}>
-      <Flex flexDir="column" w="full">
+      <Flex flexDir="column" w="full" overflowY="auto" h="full">
         <HStack justify="end" px={8} py={4}>
           <Tooltip label="Begin live session">
             <IconButton
@@ -48,7 +48,7 @@ const CoursePage: NextPage = () => {
           </Tooltip>
           <AccountDropdown />
         </HStack>
-        <Container h="full" overflowY="auto" px={20} maxW="4xl" py={16}>
+        <Container h="full" px={20} maxW="4xl" py={16}>
           <Editor />
         </Container>
       </Flex>

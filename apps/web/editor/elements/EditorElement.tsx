@@ -26,9 +26,9 @@ export default function EditorElement(props: RenderElementProps) {
       );
     case ElementType.ListItem:
       return (
-        <ListItem>
+        <Box as="li">
           <span {...attributes}>{children}</span>
-        </ListItem>
+        </Box>
       );
     case ElementType.BulletedList:
       return (
