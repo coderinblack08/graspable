@@ -1,6 +1,6 @@
-import { Node } from "slate";
+import { Node, Text } from "slate";
 import { Editor, Element, Path, Transforms } from "slate";
-import { ElementType } from "./types/slate";
+import { ElementType, Mark } from "./types/slate";
 
 export const isTextType = (
   type: ElementType
@@ -14,23 +14,23 @@ export const isListType = (
   return type === ElementType.BulletedList || type === ElementType.NumberedList;
 };
 
-// export const toggleMark = (editor: Editor, format: Mark) => {
-//   const isActive = isMarkActive(editor, format);
+export const toggleMark = (editor: Editor, format: Mark) => {
+  const isActive = isMarkActive(editor, format);
 
-//   if (isActive) {
-//     Editor.removeMark(editor, format);
-//   } else {
-//     Editor.addMark(editor, format, true);
-//   }
-// };
+  if (isActive) {
+    Editor.removeMark(editor, format);
+  } else {
+    Editor.addMark(editor, format, true);
+  }
+};
 
-// export const isMarkActive = (editor: Editor, format: Mark) => {
-//   const [match] = Editor.nodes(editor, {
-//     match: (n) => Text.isText(n) && n[format] === true,
-//     mode: "all",
-//   });
-//   return !!match;
-// };
+export const isMarkActive = (editor: Editor, format: Mark) => {
+  const [match] = Editor.nodes(editor, {
+    match: (n) => Text.isText(n) && (n as any)[format] === true,
+    mode: "all",
+  });
+  return !!match;
+};
 
 export const isElementActive = (
   editor: Editor,

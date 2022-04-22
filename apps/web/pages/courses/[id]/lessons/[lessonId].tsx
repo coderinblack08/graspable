@@ -9,20 +9,21 @@ import {
 import { IconPlayerPlay, IconSettings, IconUserPlus } from "@tabler/icons";
 import { NextPage } from "next";
 import { useRouter } from "next/router";
-import useSWR from "swr";
-import { AccountDropdown } from "../../components/AccountDropdown";
-import { Editor } from "../../editor/Editor";
-import { CourseLayout } from "../../layouts/CourseLayout";
-import { Lesson } from "../../types";
+import { useQuery } from "react-query";
+import { AccountDropdown } from "../../../../components/AccountDropdown";
+import { TitleInput } from "../../../../components/TitleInput";
+import { Editor } from "../../../../editor/Editor";
+import { CourseLayout } from "../../../../layouts/CourseLayout";
+import { Lesson } from "../../../../types";
 
 const CoursePage: NextPage = () => {
   const {
-    query: { id },
+    query: { id: courseId, lessonId },
   } = useRouter();
-  const { data: lesson } = useSWR<Lesson>(`/api/lessons/${id}`);
+  const { data: lesson } = useQuery<Lesson>(`/api/lessons/${lessonId}`);
 
   return (
-    <CourseLayout courseId={lesson?.courseId} currentLessonId={lesson?.id}>
+    <CourseLayout courseId={courseId?.toString()} currentLessonId={lesson?.id}>
       <Flex flexDir="column" w="full" overflowY="auto" h="full">
         <HStack justify="end" px={8} py={4}>
           <Tooltip label="Begin live session">
@@ -49,6 +50,7 @@ const CoursePage: NextPage = () => {
           <AccountDropdown />
         </HStack>
         <Container h="full" px={20} maxW="4xl" py={16}>
+          <TitleInput lesson={lesson} />
           <Editor />
         </Container>
       </Flex>

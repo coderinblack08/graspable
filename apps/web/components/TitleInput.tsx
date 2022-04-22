@@ -1,48 +1,51 @@
 import { Heading } from "@chakra-ui/react";
-import React, { forwardRef, useCallback, useEffect } from "react";
-import { Editor as SlateEditor } from "slate";
-import { ReactEditor } from "slate-react";
+import React, { useCallback, useEffect, useRef } from "react";
+import { Lesson } from "../types";
 
 interface TitleInputProps {
-  editor: SlateEditor;
+  lesson: Lesson | undefined;
 }
 
-export const TitleInput = forwardRef<HTMLElement, TitleInputProps>(
-  ({ editor }, ref: any) => {
-    const updateTitleRefHeight = useCallback(() => {
-      if (ref.current) {
-        ref.current.style.height = "0px";
-        ref.current.style.height = ref.current.scrollHeight + "px";
-      }
-    }, [ref]);
+export const TitleInput: React.FC<TitleInputProps> = ({ lesson }) => {
+  const ref = useRef<HTMLElement>(null);
 
-    useEffect(() => updateTitleRefHeight(), [updateTitleRefHeight]);
+  const updateTitleRefHeight = useCallback(() => {
+    if (ref.current) {
+      ref.current.style.height = "0px";
+      ref.current.style.height = ref.current.scrollHeight + "px";
+    }
+  }, [ref]);
 
-    return (
-      <Heading
-        ref={ref}
-        fontSize="4xl"
-        fontWeight="semibold"
-        letterSpacing="-0.01em"
-        w="full"
-        resize="none"
-        // onKeyDown={(e) => {
-        //   if (e.key === "Enter") {
-        //     e.preventDefault();
-        //     ReactEditor.focus(editor);
-        //   }
-        //   if (e.key == "ArrowDown" && editor) {
-        //     ReactEditor.focus(editor);
-        //   }
-        // }}
-        onInput={() => updateTitleRefHeight()}
-        _focus={{ outline: "none" }}
-        _placeholder={{ color: "gray.300" }}
-        placeholder="Untitled"
-        as="textarea"
-      />
-    );
-  }
-);
+  useEffect(() => updateTitleRefHeight(), [updateTitleRefHeight]);
+
+  return (
+    <Heading
+      ref={ref as any}
+      fontSize="4xl"
+      fontWeight="semibold"
+      letterSpacing="-0.05em"
+      w="full"
+      resize="none"
+      // onKeyDown={(e) => {
+      //   if (e.key === "Enter") {
+      //     e.preventDefault();
+      //     ReactEditor.focus(editor);
+      //   }
+      //   if (e.key == "ArrowDown" && editor) {
+      //     ReactEditor.focus(editor);
+      //   }
+      // }}
+      onInput={() => updateTitleRefHeight()}
+      _focus={{ outline: "none" }}
+      _placeholder={{ color: "gray.300" }}
+      placeholder="Untitled"
+      as="textarea"
+      defaultValue={lesson?.name === "Untitled" ? "" : lesson?.name}
+      onChange={(e: any) => {
+        console.log(e.target.value);
+      }}
+    />
+  );
+};
 
 TitleInput.displayName = "TitleInput";

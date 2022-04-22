@@ -14,17 +14,20 @@ import {
 } from "@chakra-ui/react";
 import { IconPlus } from "@tabler/icons";
 import { addDoc, collection } from "firebase/firestore";
+import { useRouter } from "next/router";
 import React from "react";
 import { useForm } from "react-hook-form";
-import { useSWRConfig } from "swr";
+import { useQueryClient } from "react-query";
 import { Select } from "../lib/chakra-theme";
 import { auth, db } from "../lib/firebase-client";
+import { Course } from "../types";
 
 interface NewCourseModalProps {}
 
 export const NewCourseModal: React.FC<NewCourseModalProps> = ({}) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { mutate } = useSWRConfig();
+  const cache = useQueryClient();
+  const router = useRouter();
   const {
     handleSubmit,
     register,
@@ -55,9 +58,10 @@ export const NewCourseModal: React.FC<NewCourseModalProps> = ({}) => {
                 userId: auth.currentUser?.uid,
               };
               const { id } = await addDoc(collection(db, "courses"), data);
-              mutate("/api/courses", (old: any[]) =>
-                old.concat({ ...data, id })
+              cache.setQueryData<Course[]>("/api/courses", (old) =>
+                old ? [...old, { ...data, id } as any] : []
               );
+              router.push("/courses/[id]", `/courses/${id}`);
               onClose();
             })}
           >

@@ -7,6 +7,7 @@ import {
   MenuDivider,
   MenuItem,
   MenuList,
+  Portal,
 } from "@chakra-ui/react";
 import axios from "axios";
 import { signOut } from "firebase/auth";
@@ -36,26 +37,28 @@ export const AccountDropdown: React.FC<AccountDropdownProps> = ({}) => {
       >
         {account?.name}
       </MenuButton>
-      <MenuList>
-        <MenuItem>Settings</MenuItem>
-        <MenuItem>Subscription</MenuItem>
-        <MenuDivider />
-        <MenuItem
-          color="red.400"
-          _hover={{ bg: "red.50" }}
-          _focus={{ bg: "red.50" }}
-          onClick={async () => {
-            await signOut(auth);
-            await axios.post("/api/auth/logout", null, {
-              withCredentials: true,
-            });
-            cache.clear();
-            router.push("/");
-          }}
-        >
-          Log Out
-        </MenuItem>
-      </MenuList>
+      <Portal>
+        <MenuList>
+          <MenuItem>Settings</MenuItem>
+          <MenuItem>Subscription</MenuItem>
+          <MenuDivider />
+          <MenuItem
+            color="red.400"
+            _hover={{ bg: "red.50" }}
+            _focus={{ bg: "red.50" }}
+            onClick={async () => {
+              await signOut(auth);
+              await axios.post("/api/auth/logout", null, {
+                withCredentials: true,
+              });
+              cache.clear();
+              router.push("/");
+            }}
+          >
+            Log Out
+          </MenuItem>
+        </MenuList>
+      </Portal>
     </Menu>
   );
 };

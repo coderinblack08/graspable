@@ -9,14 +9,15 @@ import {
   InputGroup,
   InputLeftElement,
   Link,
+  Spinner,
   Text,
   VStack,
 } from "@chakra-ui/react";
 import {
   IconBook,
   IconDots,
+  IconMessage,
   IconPlus,
-  IconQuestionMark,
   IconSearch,
   IconUserPlus,
 } from "@tabler/icons";
@@ -29,8 +30,9 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import NextLink from "next/link";
+import { useRouter } from "next/router";
 import React from "react";
-import useSWR from "swr";
+import { useQuery, useQueryClient } from "react-query";
 import { auth, db } from "../lib/firebase-client";
 import { Course, Lesson } from "../types";
 
@@ -44,8 +46,10 @@ export const CourseLayout: React.FC<CourseLayoutProps> = ({
   currentLessonId,
   children,
 }) => {
-  const { data: course } = useSWR<Course>(`/api/courses/${courseId}`);
-  const { data: lessons } = useSWR<Lesson[]>(
+  const router = useRouter();
+  const cache = useQueryClient();
+  const { data: course } = useQuery<Course>(`/api/courses/${courseId}`);
+  const { data: lessons } = useQuery<Lesson[]>(
     `/api/courses/${courseId}/lessons`
   );
 
@@ -59,7 +63,7 @@ export const CourseLayout: React.FC<CourseLayoutProps> = ({
         borderRight="1px solid"
         borderColor="gray.200"
       >
-        <Flex flexDir="column" h="full">
+        <Flex flexDir="column" h="full" overflowY="auto">
           <Box>
             <Box px={4} pt={4}>
               <NextLink href="/dashboard" passHref>
@@ -93,18 +97,17 @@ export const CourseLayout: React.FC<CourseLayoutProps> = ({
               </InputGroup>
             </Box>
           </Box>
-          <VStack mx={2} spacing={1} h="full" overflowY="auto">
+          <VStack mx={2} spacing={1} h="full">
             {lessons?.map((lesson) => (
               <NextLink
                 key={lesson.id}
-                href="/lessons/[id]"
-                as={`/lessons/${lesson.id}`}
+                href="/courses/[id]/lessons/[lessonId]"
+                as={`/courses/${courseId}/lessons/${lesson.id}`}
                 passHref
               >
                 <Button
                   as="a"
                   bg={currentLessonId === lesson.id ? "blue.50" : "white"}
-                  _hover={{ bg: "gray.50" }}
                   leftIcon={<Icon as={IconBook} color="gray.400" boxSize={6} />}
                   iconSpacing={2.5}
                   fontWeight="medium"
@@ -137,6 +140,11 @@ export const CourseLayout: React.FC<CourseLayoutProps> = ({
                 await updateDoc(doc(db, "courses", course?.id!), {
                   lessons: arrayUnion(id),
                 });
+                cache.setQueryData<Lesson[]>(
+                  `/api/courses/${course?.id}/lessons`,
+                  (old) => (old ? [{ ...data, id } as any, ...old] : [])
+                );
+                router.push("/lessons/[id]", `/lessons/${id}`);
               }}
             >
               New Lesson
@@ -165,12 +173,7 @@ export const CourseLayout: React.FC<CourseLayoutProps> = ({
             color="gray.500"
             fontWeight="medium"
             leftIcon={
-              <Icon
-                color="gray.400"
-                w="full"
-                as={IconQuestionMark}
-                boxSize={5}
-              />
+              <Icon color="gray.400" w="full" as={IconMessage} boxSize={5} />
             }
             variant="ghost"
             w="full"

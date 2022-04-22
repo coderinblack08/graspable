@@ -11,8 +11,8 @@ import {
 import { IconPlus } from "@tabler/icons";
 import { NextPage } from "next";
 import { useRouter } from "next/router";
-import { AccountDropdown } from "../../components/AccountDropdown";
-import { CourseLayout } from "../../layouts/CourseLayout";
+import { AccountDropdown } from "../../../components/AccountDropdown";
+import { CourseLayout } from "../../../layouts/CourseLayout";
 
 const CoursePage: NextPage = () => {
   const {
@@ -34,6 +34,7 @@ const CoursePage: NextPage = () => {
               transition="all 0.2s"
               src="/dashboard-wireframe.svg"
               alt="Wireframe of dashboard"
+              draggable={false}
               w={96}
             />
             <HStack color="gray.400">

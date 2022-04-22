@@ -5,22 +5,20 @@ import {
   HStack,
   Image,
   Link,
-  Spacer,
-  StackDivider,
   Text,
   VStack,
 } from "@chakra-ui/react";
 import { NextPage } from "next";
 import NextLink from "next/link";
-import useSWR from "swr";
+import { useQuery } from "react-query";
 import { AccountDropdown } from "../components/AccountDropdown";
 import { CourseCard } from "../components/CourseCard";
 import { NewCourseModal } from "../components/NewCourseModal";
-import { Select } from "../lib/chakra-theme";
 import { Course } from "../types";
 
 const DashboardPage: NextPage = () => {
-  const { data: courses } = useSWR<Course[]>("/api/courses");
+  // const { data: courses } = useSWR<Course[]>("/api/courses");
+  const { data: courses } = useQuery<Course[]>("/api/courses");
 
   return (
     <Container px={4} py={24} maxW="3xl">

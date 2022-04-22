@@ -3,7 +3,7 @@ import { ReactEditor } from "slate-react";
 import { EditableProps } from "slate-react/dist/components/editable";
 
 type CustomElement = { type: ElementType; children: CustomText[] };
-type CustomText = { text: string; isEmpty?: boolean };
+type CustomText = { text: string } & Partial<Record<Mark, boolean>>;
 
 export enum ElementType {
   Paragraph = "paragraph",

@@ -6,11 +6,42 @@ import {
   IconItalic,
   IconStrikethrough,
   IconUnderline,
+  TablerIcon,
 } from "@tabler/icons";
 import { useEffect, useState } from "react";
 import { Editor, Range } from "slate";
 import { useFocused, useSlate } from "slate-react";
+import { isMarkActive, toggleMark } from "../formatting";
+import { Mark } from "../types/slate";
 import EditorPopover from "./EditorPopover";
+
+function FormatButton({ format, icon }: { format: Mark; icon: TablerIcon }) {
+  const editor = useSlate();
+  return (
+    <IconButton
+      as="span"
+      role="button"
+      aria-label={format}
+      onPointerDown={(event) => event.preventDefault()}
+      onPointerUp={(event) => {
+        if (event.button === 0) {
+          event.preventDefault();
+          toggleMark(editor, format);
+        }
+      }}
+      rounded="none"
+      size="sm"
+      variant="ghost"
+      icon={
+        <Icon
+          color={isMarkActive(editor, format) ? "blue.500" : "gray.500"}
+          as={icon}
+          boxSize={4}
+        />
+      }
+    />
+  );
+}
 
 export default function HoveringToolbar() {
   const editor = useSlate();
@@ -41,49 +72,12 @@ export default function HoveringToolbar() {
           border="1px solid"
           borderColor="gray.200"
         >
-          <IconButton
-            aria-label="Bold"
-            rounded="none"
-            size="sm"
-            variant="ghost"
-            // onClick={() => }
-            icon={<Icon color="gray.500" as={IconBold} boxSize={4} />}
-          />
-          <IconButton
-            aria-label="Italic"
-            variant="ghost"
-            icon={<Icon color="gray.500" as={IconItalic} boxSize={4} />}
-            rounded="none"
-            size="sm"
-          />
-          <IconButton
-            aria-label="Underline"
-            variant="ghost"
-            icon={<Icon color="gray.500" as={IconUnderline} boxSize={4} />}
-            rounded="none"
-            size="sm"
-          />
-          <IconButton
-            aria-label="Strikethrough"
-            variant="ghost"
-            icon={<Icon color="gray.500" as={IconStrikethrough} boxSize={4} />}
-            rounded="none"
-            size="sm"
-          />
-          <IconButton
-            aria-label="Code"
-            variant="ghost"
-            icon={<Icon color="gray.500" as={IconCode} boxSize={4} />}
-            rounded="none"
-            size="sm"
-          />
-          <IconButton
-            aria-label="Highlight"
-            variant="ghost"
-            icon={<Icon color="gray.500" as={IconHighlight} boxSize={4} />}
-            rounded="none"
-            size="sm"
-          />
+          <FormatButton icon={IconBold} format={Mark.Bold} />
+          <FormatButton icon={IconItalic} format={Mark.Italic} />
+          <FormatButton icon={IconUnderline} format={Mark.Underline} />
+          <FormatButton icon={IconStrikethrough} format={Mark.Strikethrough} />
+          <FormatButton icon={IconCode} format={Mark.Code} />
+          <FormatButton icon={IconHighlight} format={Mark.Highlight} />
         </HStack>
       )}
     </EditorPopover>

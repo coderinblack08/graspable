@@ -1,5 +1,5 @@
-import { isHotkey } from "is-hotkey";
 import { Box, Kbd, Text } from "@chakra-ui/react";
+import { isHotkey } from "is-hotkey";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   createEditor,
@@ -13,14 +13,15 @@ import { TitleInput } from "../components/TitleInput";
 import { useIsMounted } from "../lib/use-is-mounted";
 import { Autocomplete } from "./commands/components/Autocomplete";
 import EditorElement from "./elements/EditorElement";
+import EditorLeaf from "./elements/EditorLeaf";
 import HoveringToolbar from "./elements/HoveringToolbox";
-import withBlockSideMenu from "./plugins/withBlocksSideMenu";
-import withVerticalSpacing from "./plugins/withVerticalSpacing";
-import { ElementType } from "./types/slate";
-import { handleEnter, handleIndent, handleUnindent } from "./formatting";
+import { handleIndent, handleUnindent } from "./formatting";
 import withBlockBreakout from "./plugins/withBlockBreakout";
+import withBlockSideMenu from "./plugins/withBlocksSideMenu";
 import withCustomDeleteBackward from "./plugins/withCustomDeleteBackward";
 import withNormalization from "./plugins/withNormalization";
+import withVerticalSpacing from "./plugins/withVerticalSpacing";
+import { ElementType } from "./types/slate";
 
 export const Editor: React.FC = () => {
   const isMounted = useIsMounted();
@@ -87,7 +88,6 @@ export const Editor: React.FC = () => {
 
   return (
     <Box h="full">
-      <TitleInput editor={editor} ref={titleRef} />
       {/* <Box as="pre" fontSize="xs">
         {JSON.stringify(value, null, 2)}
       </Box> */}
@@ -123,6 +123,7 @@ export const Editor: React.FC = () => {
         <Editable
           style={{ height: "100%" }}
           renderElement={renderElement}
+          renderLeaf={EditorLeaf}
           placeholder={
             (
               <Text as="span" color="gray.600">
