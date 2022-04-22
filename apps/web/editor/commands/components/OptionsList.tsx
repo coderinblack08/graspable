@@ -1,4 +1,4 @@
-import { Box, Heading, Text } from "@chakra-ui/react";
+import { Box, Flex, Heading, Kbd, Text } from "@chakra-ui/react";
 import useEventListener from "@use-it/event-listener";
 import { useState } from "react";
 import { ReactEditor, useSlateStatic } from "slate-react";
@@ -53,6 +53,7 @@ export function OptionsList({
   return (
     <EditorPopover placement="bottom-start">
       <Box
+        w={64}
         border="1px solid"
         borderColor="gray.200"
         rounded="lg"
@@ -64,10 +65,22 @@ export function OptionsList({
         //   top: clientRect.y + clientRect.height,
         // }}
       >
+        <Flex justify="space-between" align="center" p={2} pt={4}>
+          <Text
+            fontWeight="semibold"
+            letterSpacing="wide"
+            fontSize="xs"
+            color="gray.400"
+          >
+            SUGGESTIONS
+          </Text>
+          <Kbd fontSize="md" color="gray.400">
+            ↩
+          </Kbd>
+        </Flex>
         {commands.map((op, index) => (
           <Box
             p={2}
-            w={48}
             key={op.key}
             tabIndex={0}
             role="button"
@@ -75,7 +88,7 @@ export function OptionsList({
               insertNewBlock(editor, search || "", option.key, true);
               ReactEditor.focus(editor);
             }}
-            bg={selectedIndex === index ? "gray.100" : "white"}
+            bg={selectedIndex === index ? "blue.50" : "white"}
             sx={{
               cursor: "pointer",
               "&:hover": {
@@ -87,11 +100,8 @@ export function OptionsList({
               },
             }}
           >
-            <Heading fontSize="md" fontWeight="medium" as="h3">
+            <Text fontSize="md" fontWeight="normal">
               {op.key}
-            </Heading>
-            <Text fontSize="sm" mt={1}>
-              {op.description}
             </Text>
           </Box>
         ))}

@@ -58,10 +58,6 @@ export const Editor: React.FC = () => {
         callback: () => handleUnindent(editor),
       },
       {
-        hotkey: "enter",
-        callback: () => handleEnter(editor),
-      },
-      {
         hotkey: "shift+enter",
         callback: () => Transforms.insertText(editor, "\n"),
       },
@@ -87,7 +83,7 @@ export const Editor: React.FC = () => {
   );
 
   return (
-    <Box>
+    <Box h="full">
       <TitleInput editor={editor} ref={titleRef} />
       {/* <pre>{JSON.stringify(value, null, 2)}</pre> */}
       <Slate editor={editor} value={value} onChange={onSlateChange}>
@@ -120,6 +116,7 @@ export const Editor: React.FC = () => {
         )}
         {toolbarCanBeVisible && <HoveringToolbar />}
         <Editable
+          style={{ height: "100%" }}
           renderElement={renderElement}
           placeholder={
             (
@@ -128,7 +125,7 @@ export const Editor: React.FC = () => {
               </Text>
             ) as any
           }
-          // onKeyDown={onKeyDown}
+          onKeyDown={onKeyDown}
           onPointerDown={() => setToolbarCanBeVisible(false)}
           onPointerUp={() =>
             setTimeout(() => {

@@ -46,6 +46,7 @@ export default function HoveringToolbar() {
             rounded="none"
             size="sm"
             variant="ghost"
+            // onClick={() => }
             icon={<Icon color="gray.500" as={IconBold} boxSize={4} />}
           />
           <IconButton

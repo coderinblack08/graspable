@@ -32,6 +32,23 @@ const DashboardPage: NextPage = () => {
         </NextLink>
         <AccountDropdown />
       </Flex>
+      {courses?.length === 0 ? (
+        <Box
+          mb={4}
+          border="1px solid"
+          borderColor="gray.200"
+          rounded="lg"
+          fontFamily="mono"
+          textAlign="center"
+          p={20}
+          lineHeight="taller"
+          color="gray.400"
+          fontSize="lg"
+        >
+          ʕ•́ᴥ•̀ʔっ No courses found <br />
+          Create one with the button below{" "}
+        </Box>
+      ) : null}
       <VStack spacing={4}>
         {courses?.map((course) => (
           <CourseCard course={course} key={course.id} />
