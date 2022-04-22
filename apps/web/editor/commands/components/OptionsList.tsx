@@ -1,7 +1,7 @@
 import { Box, Heading, Text } from "@chakra-ui/react";
 import useEventListener from "@use-it/event-listener";
 import { useState } from "react";
-import { useSlateStatic } from "slate-react";
+import { ReactEditor, useSlateStatic } from "slate-react";
 import { useTextSelection } from "use-text-selection";
 import EditorPopover from "../../elements/EditorPopover";
 import { Command } from "../../types/slate";
@@ -34,6 +34,7 @@ export function OptionsList({
         e.preventDefault();
         e.stopPropagation();
       }
+      // @todo: implement an escape feature
       if (e.key === "ArrowDown" && selectedIndex < lastIndex) {
         setSelectedIndex(selectedIndex + 1);
       } else if (e.key === "ArrowDown" && selectedIndex >= lastIndex) {
@@ -43,7 +44,7 @@ export function OptionsList({
       } else if (e.key === "ArrowUp" && selectedIndex <= 0) {
         setSelectedIndex(lastIndex);
       } else if (e.key === "Enter") {
-        insertNewBlock(editor, search || "", true);
+        insertNewBlock(editor, search || "", option.key, true);
       }
     },
     document.body
@@ -71,7 +72,8 @@ export function OptionsList({
             tabIndex={0}
             role="button"
             onMouseDown={() => {
-              insertNewBlock(editor, search || "", true);
+              insertNewBlock(editor, search || "", option.key, true);
+              ReactEditor.focus(editor);
             }}
             bg={selectedIndex === index ? "gray.100" : "white"}
             sx={{

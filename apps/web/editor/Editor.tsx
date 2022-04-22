@@ -1,6 +1,12 @@
+import { isHotkey } from "is-hotkey";
 import { Box, Kbd, Text } from "@chakra-ui/react";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { createEditor, Descendant, Editor as SlateEditor } from "slate";
+import {
+  createEditor,
+  Descendant,
+  Editor as SlateEditor,
+  Transforms,
+} from "slate";
 import { withHistory } from "slate-history";
 import { Editable, ReactEditor, Slate, withReact } from "slate-react";
 import { TitleInput } from "../components/TitleInput";
@@ -10,17 +16,23 @@ import EditorElement from "./elements/EditorElement";
 import HoveringToolbar from "./elements/HoveringToolbox";
 import withBlockSideMenu from "./plugins/withBlocksSideMenu";
 import withVerticalSpacing from "./plugins/withVerticalSpacing";
+import { ElementType } from "./types/slate";
+import { handleEnter, handleIndent, handleUnindent } from "./formatting";
+import withBlockBreakout from "./plugins/withBlockBreakout";
+import withCustomDeleteBackward from "./plugins/withCustomDeleteBackward";
 
 export const Editor: React.FC = () => {
   const isMounted = useIsMounted();
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const [toolbarCanBeVisible, setToolbarCanBeVisible] = useState(true);
   const [editor] = useState<SlateEditor>(() =>
-    withHistory(withReact(createEditor()))
+    withCustomDeleteBackward(
+      withBlockBreakout(withHistory(withReact(createEditor())))
+    )
   );
   const [value, setValue] = useState<Descendant[]>([
     {
-      type: "paragraph",
+      type: ElementType.Paragraph,
       children: [{ text: "" }],
     },
   ]);
@@ -35,21 +47,73 @@ export const Editor: React.FC = () => {
     setValue(newValue);
   }, []);
 
+  const hotkeys = useMemo(
+    () => [
+      {
+        hotkey: "tab",
+        callback: () => handleIndent(editor),
+      },
+      {
+        hotkey: "shift+tab",
+        callback: () => handleUnindent(editor),
+      },
+      {
+        hotkey: "enter",
+        callback: () => handleEnter(editor),
+      },
+      {
+        hotkey: "shift+enter",
+        callback: () => Transforms.insertText(editor, "\n"),
+      },
+      {
+        hotkey: "mod+enter",
+        callback: () => editor.insertBreak(),
+      },
+    ],
+    [editor]
+  );
+
+  const onKeyDown = useCallback<React.KeyboardEventHandler<HTMLDivElement>>(
+    (event) => {
+      // Handle keyboard shortcuts for adding marks
+      for (const { hotkey, callback } of hotkeys) {
+        if (isHotkey(hotkey, event.nativeEvent)) {
+          event.preventDefault();
+          callback();
+        }
+      }
+    },
+    [hotkeys]
+  );
+
   return (
     <Box>
       <TitleInput editor={editor} ref={titleRef} />
+      {/* <pre>{JSON.stringify(value, null, 2)}</pre> */}
       <Slate editor={editor} value={value} onChange={onSlateChange}>
         {toolbarCanBeVisible && ReactEditor.isFocused(editor) && (
           <Autocomplete
             modifier="/"
             commands={[
               {
-                key: "heading",
-                description: "basic heading",
+                key: ElementType.Heading,
+                description: "Basic heading",
               },
               {
-                key: "paragraph",
-                description: "basic text",
+                key: ElementType.Paragraph,
+                description: "Basic text",
+              },
+              {
+                key: ElementType.Blockquote,
+                description: "Basic quote",
+              },
+              {
+                key: ElementType.BulletedList,
+                description: "Bulleted list",
+              },
+              {
+                key: ElementType.NumberedList,
+                description: "Numbered list",
               },
             ]}
           />
@@ -59,11 +123,12 @@ export const Editor: React.FC = () => {
           renderElement={renderElement}
           placeholder={
             (
-              <Text as="span">
+              <Text as="span" color="gray.600">
                 Type here or press <Kbd>/</Kbd> for commands
               </Text>
             ) as any
           }
+          // onKeyDown={onKeyDown}
           onPointerDown={() => setToolbarCanBeVisible(false)}
           onPointerUp={() =>
             setTimeout(() => {

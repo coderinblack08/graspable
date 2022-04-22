@@ -23,7 +23,7 @@ export default function withVerticalSpacing(
       ) {
         return { my: 2 };
       } else if (elementType === ElementType.Heading) {
-        return { mb: 3, mt: 8, _first: { mt: 3 } };
+        return { mb: 3, mt: 6, _first: { mt: 3 } };
       } else {
         return { my: 3 };
       }

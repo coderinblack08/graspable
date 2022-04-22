@@ -4,6 +4,7 @@ import { ComponentType, useEffect, useState } from "react";
 import { Editor, Path, Range } from "slate";
 import { ReactEditor, RenderElementProps, useSlate } from "slate-react";
 import { useHover } from "../../lib/use-hover";
+import { ElementType } from "../types/slate";
 
 export default function withBlockSideMenu(
   EditorElement: ComponentType<RenderElementProps>,
@@ -19,18 +20,26 @@ export default function withBlockSideMenu(
       if (editor.selection && Range.isCollapsed(editor.selection)) {
         const path1 = ReactEditor.findPath(editor, element);
         const path2 = Range.end(editor.selection).path;
-        const isEmpty =
-          children[0].props.text.text === "" && children.length === 1;
+        const isEmpty = true;
+        // children[0].props.text.text === "" && children.length === 1;
         setIsOnLine(isEmpty && Path.isChild(path2, path1));
       } else {
         setIsOnLine(false);
       }
     }, [children, editor, editor.selection, element]);
 
+    if (
+      element.type === ElementType.BulletedList ||
+      element.type === ElementType.NumberedList
+    ) {
+      return <EditorElement {...props} />;
+    }
+
     return (
       <Box
         ref={hoverRef}
         pos="relative"
+        w="full"
         _before={{
           pos: "absolute",
           content: "''",
@@ -41,7 +50,11 @@ export default function withBlockSideMenu(
         }}
       >
         <Flex
-          left={isHovered && isOnLine ? -16 : -8}
+          left={`${
+            (isHovered && isOnLine ? -4 : -2) -
+            (element.type === ElementType.ListItem ? 1.5 : 0)
+          }rem`}
+          top={element.type === ElementType.Heading ? "3px" : 0}
           pos="absolute"
           contentEditable={false}
           userSelect="none"

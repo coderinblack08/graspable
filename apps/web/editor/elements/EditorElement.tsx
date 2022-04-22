@@ -15,7 +15,12 @@ export default function EditorElement(props: RenderElementProps) {
   switch (element.type) {
     case ElementType.Heading:
       return (
-        <Heading as="h1" fontSize="3xl">
+        <Heading
+          as="h1"
+          fontSize="2xl"
+          fontWeight="semibold"
+          letterSpacing="-0.01em"
+        >
           <span {...attributes}>{children}</span>
         </Heading>
       );
@@ -27,13 +32,13 @@ export default function EditorElement(props: RenderElementProps) {
       );
     case ElementType.BulletedList:
       return (
-        <UnorderedList>
+        <UnorderedList ml={6}>
           <span {...attributes}>{children}</span>
         </UnorderedList>
       );
     case ElementType.NumberedList:
       return (
-        <OrderedList>
+        <OrderedList ml={6}>
           <span {...attributes}>{children}</span>
         </OrderedList>
       );

@@ -140,7 +140,7 @@ const CoursePage: NextPage = () => {
           </VStack>
         </Box>
       </Flex>
-      <Box w="full">
+      <Box w="full" overflowY="auto">
         <HStack justify="end" px={8} py={4}>
           <Tooltip label="Begin live session">
             <IconButton
@@ -165,7 +165,7 @@ const CoursePage: NextPage = () => {
           </Tooltip>
           <AccountDropdown />
         </HStack>
-        <Container px={16} maxW="4xl" py={16}>
+        <Container px={20} maxW="4xl" py={16}>
           <Editor />
         </Container>
       </Box>

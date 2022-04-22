@@ -2,7 +2,7 @@ import { BaseEditor, BaseElement, Element } from "slate";
 import { ReactEditor } from "slate-react";
 import { EditableProps } from "slate-react/dist/components/editable";
 
-type CustomElement = { type: string; children: CustomText[] };
+type CustomElement = { type: ElementType; children: CustomText[] };
 type CustomText = { text: string; isEmpty?: boolean };
 
 export enum ElementType {
@@ -40,7 +40,7 @@ export type SlatePluginProps = {
 };
 
 export type Command = {
-  key: string;
+  key: ElementType;
   description: string;
   request?: (props?: { search?: string }) => Promise<unknown>;
 };
