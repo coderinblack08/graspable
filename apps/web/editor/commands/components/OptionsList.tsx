@@ -65,7 +65,7 @@ export function OptionsList({
         //   top: clientRect.y + clientRect.height,
         // }}
       >
-        <Flex justify="space-between" align="center" p={2} pt={4}>
+        <Flex justify="space-between" align="center" p={2}>
           <Text
             fontWeight="semibold"
             letterSpacing="wide"

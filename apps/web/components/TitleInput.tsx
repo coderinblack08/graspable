@@ -1,5 +1,6 @@
-import { Heading } from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
 import React, { useCallback, useEffect, useRef } from "react";
+import { useFormContext } from "react-hook-form";
 import { Lesson } from "../types";
 
 interface TitleInputProps {
@@ -7,7 +8,9 @@ interface TitleInputProps {
 }
 
 export const TitleInput: React.FC<TitleInputProps> = ({ lesson }) => {
-  const ref = useRef<HTMLElement>(null);
+  const { register } = useFormContext();
+  const ref = useRef<HTMLElement | null>(null);
+  const { ref: nameRef, ...rest } = register("name");
 
   const updateTitleRefHeight = useCallback(() => {
     if (ref.current) {
@@ -19,30 +22,29 @@ export const TitleInput: React.FC<TitleInputProps> = ({ lesson }) => {
   useEffect(() => updateTitleRefHeight(), [updateTitleRefHeight]);
 
   return (
-    <Heading
-      ref={ref as any}
+    <Box
       fontSize="4xl"
+      lineHeight="none"
       fontWeight="semibold"
-      letterSpacing="-0.05em"
+      letterSpacing="-0.025em"
       w="full"
       resize="none"
-      // onKeyDown={(e) => {
-      //   if (e.key === "Enter") {
-      //     e.preventDefault();
-      //     ReactEditor.focus(editor);
-      //   }
-      //   if (e.key == "ArrowDown" && editor) {
-      //     ReactEditor.focus(editor);
-      //   }
-      // }}
+      onKeyDown={(e: any) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+        }
+      }}
       onInput={() => updateTitleRefHeight()}
       _focus={{ outline: "none" }}
       _placeholder={{ color: "gray.300" }}
       placeholder="Untitled"
       as="textarea"
       defaultValue={lesson?.name === "Untitled" ? "" : lesson?.name}
-      onChange={(e: any) => {
-        console.log(e.target.value);
+      {...rest}
+      name="name"
+      ref={(e: any) => {
+        nameRef(e);
+        ref.current = e;
       }}
     />
   );

@@ -1,6 +1,13 @@
 import { Box, Kbd, Text } from "@chakra-ui/react";
 import { isHotkey } from "is-hotkey";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useFormContext } from "react-hook-form";
 import {
   createEditor,
   Descendant,
@@ -25,6 +32,7 @@ import { ElementType } from "./types/slate";
 
 export const Editor: React.FC = () => {
   const isMounted = useIsMounted();
+  const { register, setValue: setFormValue } = useFormContext();
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const [toolbarCanBeVisible, setToolbarCanBeVisible] = useState(true);
   const [editor] = useState<SlateEditor>(() =>
@@ -47,9 +55,17 @@ export const Editor: React.FC = () => {
     });
   }, []);
 
-  const onSlateChange = useCallback((newValue: Descendant[]) => {
-    setValue(newValue);
+  useEffect(() => {
+    register("body");
   }, []);
+
+  const onSlateChange = useCallback(
+    (newValue: Descendant[]) => {
+      setValue(newValue);
+      setFormValue("body", newValue);
+    },
+    [setFormValue]
+  );
 
   const hotkeys = useMemo(
     () => [
@@ -97,12 +113,12 @@ export const Editor: React.FC = () => {
             modifier="/"
             commands={[
               {
-                key: ElementType.Heading,
-                description: "Basic heading",
-              },
-              {
                 key: ElementType.Paragraph,
                 description: "Basic text",
+              },
+              {
+                key: ElementType.Heading,
+                description: "Basic heading",
               },
               {
                 key: ElementType.Blockquote,
@@ -126,7 +142,7 @@ export const Editor: React.FC = () => {
           renderLeaf={EditorLeaf}
           placeholder={
             (
-              <Text as="span" color="gray.600">
+              <Text as="span" color="gray.700">
                 Type here or press <Kbd>/</Kbd> for commands
               </Text>
             ) as any

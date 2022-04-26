@@ -7,13 +7,18 @@ import {
   Tooltip,
 } from "@chakra-ui/react";
 import { IconPlayerPlay, IconSettings, IconUserPlus } from "@tabler/icons";
+import { doc, updateDoc } from "firebase/firestore";
 import { NextPage } from "next";
 import { useRouter } from "next/router";
+import { FormProvider, useForm } from "react-hook-form";
 import { useQuery } from "react-query";
 import { AccountDropdown } from "../../../../components/AccountDropdown";
+import AutoSave from "../../../../components/ReactAutoSave";
 import { TitleInput } from "../../../../components/TitleInput";
 import { Editor } from "../../../../editor/Editor";
+import { ElementType } from "../../../../editor/types/slate";
 import { CourseLayout } from "../../../../layouts/CourseLayout";
+import { db } from "../../../../lib/firebase-client";
 import { Lesson } from "../../../../types";
 
 const CoursePage: NextPage = () => {
@@ -21,6 +26,27 @@ const CoursePage: NextPage = () => {
     query: { id: courseId, lessonId },
   } = useRouter();
   const { data: lesson } = useQuery<Lesson>(`/api/lessons/${lessonId}`);
+  const methods = useForm();
+
+  const onSubmit = (data: any) => {
+    if (lesson) {
+      Object.keys(data).forEach((key) => {
+        if (!data[key])
+          data[key] = {
+            name: "Untitled",
+            body: {
+              type: ElementType.Paragraph,
+              children: [
+                {
+                  text: "",
+                },
+              ],
+            },
+          }[key];
+      });
+      updateDoc(doc(db, "lessons", lesson?.id), data);
+    }
+  };
 
   return (
     <CourseLayout courseId={courseId?.toString()} currentLessonId={lesson?.id}>
@@ -49,10 +75,13 @@ const CoursePage: NextPage = () => {
           </Tooltip>
           <AccountDropdown />
         </HStack>
-        <Container h="full" px={20} maxW="4xl" py={16}>
-          <TitleInput lesson={lesson} />
-          <Editor />
-        </Container>
+        <FormProvider {...methods}>
+          <Container h="full" px={20} maxW="4xl" py={16} as="form">
+            <TitleInput lesson={lesson} />
+            <Editor />
+            <AutoSave onSubmit={onSubmit} />
+          </Container>
+        </FormProvider>
       </Flex>
     </CourseLayout>
   );

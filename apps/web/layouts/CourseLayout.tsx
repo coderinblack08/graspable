@@ -1,6 +1,8 @@
 import {
+  Avatar,
   Box,
   Button,
+  Divider,
   Flex,
   Heading,
   Icon,
@@ -9,14 +11,16 @@ import {
   InputGroup,
   InputLeftElement,
   Link,
-  Spinner,
+  StackDivider,
   Text,
+  Tooltip,
+  useToken,
   VStack,
 } from "@chakra-ui/react";
 import {
   IconBook,
   IconDots,
-  IconMessage,
+  IconFolder,
   IconPlus,
   IconSearch,
   IconUserPlus,
@@ -32,6 +36,7 @@ import {
 import NextLink from "next/link";
 import { useRouter } from "next/router";
 import React from "react";
+import { MdFolder, MdOutlineFolder } from "react-icons/md";
 import { useQuery, useQueryClient } from "react-query";
 import { auth, db } from "../lib/firebase-client";
 import { Course, Lesson } from "../types";
@@ -55,12 +60,34 @@ export const CourseLayout: React.FC<CourseLayoutProps> = ({
 
   return (
     <Flex w="100vw" h="100vh">
+      <VStack p={2} h="full">
+        <Avatar boxSize={10} rounded="lg" name="John Doe" />
+        <Box as="hr" w="full" />
+        <Tooltip label="Organization" placement="right">
+          <Avatar
+            as="button"
+            bg="white"
+            border="1px solid"
+            sx={{ borderColor: `${useToken("colors", "gray.200")} !important` }}
+            color="gray.400"
+            boxSize={10}
+            rounded="lg"
+            name="Organization"
+          />
+        </Tooltip>
+        <IconButton
+          variant="outline"
+          icon={<Icon as={IconPlus} boxSize={5} color="gray.400" />}
+          aria-label="New Organization"
+        />
+      </VStack>
       <Flex
+        display={{ base: "none", lg: "flex" }}
         flexDir="column"
         as="aside"
         w="19rem"
         flexShrink={0}
-        borderRight="1px solid"
+        borderX="1px solid"
         borderColor="gray.200"
       >
         <Flex flexDir="column" h="full" overflowY="auto">
@@ -116,7 +143,7 @@ export const CourseLayout: React.FC<CourseLayoutProps> = ({
                   w="full"
                   justifyContent="start"
                 >
-                  {lesson.name}
+                  <Text minW={0}>{lesson.name}</Text>
                 </Button>
               </NextLink>
             ))}
@@ -124,7 +151,6 @@ export const CourseLayout: React.FC<CourseLayoutProps> = ({
               variant="ghost"
               color="gray.500"
               w="full"
-              _hover={{ bg: "gray.50" }}
               fontWeight="medium"
               justifyContent="start"
               iconSpacing={2.5}
@@ -151,15 +177,9 @@ export const CourseLayout: React.FC<CourseLayoutProps> = ({
             </Button>
           </VStack>
         </Flex>
-        <VStack
-          spacing={1}
-          mx={2}
-          py={4}
-          borderTop="1px solid"
-          borderColor="gray.200"
-        >
+        <VStack spacing={1} p={2} borderTop="1px solid" borderColor="gray.200">
           <Button
-            leftIcon={<Icon color="gray.400" as={IconUserPlus} boxSize={5} />}
+            leftIcon={<Icon color="gray.400" as={IconUserPlus} boxSize={6} />}
             variant="ghost"
             justifyContent="left"
             color="gray.500"
@@ -167,18 +187,6 @@ export const CourseLayout: React.FC<CourseLayoutProps> = ({
             w="full"
           >
             Invite People
-          </Button>
-          <Button
-            justifyContent="left"
-            color="gray.500"
-            fontWeight="medium"
-            leftIcon={
-              <Icon color="gray.400" w="full" as={IconMessage} boxSize={5} />
-            }
-            variant="ghost"
-            w="full"
-          >
-            Help Center
           </Button>
         </VStack>
       </Flex>

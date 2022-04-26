@@ -22,9 +22,6 @@ const CoursePage: NextPage = () => {
   return (
     <CourseLayout courseId={id?.toString()}>
       <Flex pos="relative" align="center" justify="center" w="full">
-        <Box pos="absolute" top={0} right={0} px={8} py={4}>
-          <AccountDropdown />
-        </Box>
         <Container maxW="3xl">
           <VStack spacing={6}>
             <Image
@@ -40,7 +37,7 @@ const CoursePage: NextPage = () => {
             <HStack color="gray.400">
               <Icon as={IconPlus} boxSize={6} />
               <Text textAlign="center" fontSize="lg">
-                Get started by clicking "New Lesson"
+                Get started by clicking &quot;New Lesson&quot;
               </Text>
             </HStack>
           </VStack>
