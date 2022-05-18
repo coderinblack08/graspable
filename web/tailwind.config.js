@@ -6,7 +6,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        gray: require("tailwindcss/colors").neutral,
+        gray: require("tailwindcss/colors").zinc,
       },
       fontFamily: {
         sans: [

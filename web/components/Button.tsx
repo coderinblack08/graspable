@@ -3,6 +3,7 @@ import React, { forwardRef } from "react";
 interface ButtonProps extends React.HTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "outline";
   size?: "sm" | "md" | "lg";
+  type?: "button" | "submit" | "reset";
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
@@ -20,6 +21,7 @@ export const Button = forwardRef<HTMLButtonElement | null, ButtonProps>(
       rightIcon,
       size,
       isLoading,
+      type,
       as,
       className,
       onClick,
@@ -29,7 +31,7 @@ export const Button = forwardRef<HTMLButtonElement | null, ButtonProps>(
     ref
   ) => {
     const classes = [
-      "flex justify-center items-center focus:ring focus:outline-none transition text-white font-medium",
+      "flex select-none justify-center items-center focus:ring focus:outline-none transition text-white font-medium",
       size === "lg"
         ? "px-6 py-3 rounded-xl"
         : size === "md"
@@ -38,7 +40,7 @@ export const Button = forwardRef<HTMLButtonElement | null, ButtonProps>(
       variant === "primary"
         ? "bg-purple-500 focus:ring-purple-400"
         : variant === "secondary"
-        ? "bg-gray-700 focus:ring-gray-600"
+        ? "bg-gray-800 focus:ring-gray-600"
         : "", // add outline styles
       className,
     ];
@@ -57,6 +59,7 @@ export const Button = forwardRef<HTMLButtonElement | null, ButtonProps>(
         <button
           {...props}
           ref={ref}
+          type={type}
           className={classes.join(" ")}
           onClick={onClick}
         >

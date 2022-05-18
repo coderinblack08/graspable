@@ -1,0 +1,4 @@
+fragment Error on FieldErrorObject {
+  field
+  message
+}

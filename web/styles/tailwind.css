@@ -5,7 +5,7 @@
 @layer base {
   :root {
     font-size: 14px;
-    @apply antialiased;
+    @apply font-medium text-gray-100 antialiased;
   }
 
   html,

@@ -1,0 +1,10 @@
+mutation Register($options: EmailPasswordInput!) {
+  register(options: $options) {
+    user {
+      ...User
+    }
+    errors {
+      ...Error
+    }
+  }
+}
