@@ -1,18 +1,18 @@
-import { config } from "dotenv";
-config();
-
-import "reflect-metadata";
+import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
 import { ApolloServer } from "apollo-server-express";
-import express from "express";
+import connectRedis from "connect-redis";
 import cors from "cors";
+import { config } from "dotenv";
+import express from "express";
 import session from "express-session";
 import Redis from "ioredis";
-import connectRedis from "connect-redis";
+import "reflect-metadata";
 import { buildSchema } from "type-graphql";
-import { HelloResolver } from "./resolvers/HelloResolver";
-import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
 import { AppDataSource } from "./data-source";
+import { HelloResolver } from "./resolvers/HelloResolver";
 import { UserResolver } from "./resolvers/UserResolver";
+import { WorkspaceResolver } from "./resolvers/WorkspaceResolver";
+config();
 
 export const COOKIE_NAME = "qid";
 export const PROD = process.env.NODE_ENV === "production";
@@ -54,7 +54,7 @@ export const PROD = process.env.NODE_ENV === "production";
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [HelloResolver, UserResolver],
+      resolvers: [HelloResolver, UserResolver, WorkspaceResolver],
       validate: false,
     }),
     context: ({ req, res }) => ({ req, res }),

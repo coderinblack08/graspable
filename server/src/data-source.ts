@@ -1,5 +1,8 @@
 import { DataSource } from "typeorm";
+import { Member } from "./entities/Member";
+import { Organization } from "./entities/Organization";
 import { User } from "./entities/User";
+import { Workspace } from "./entities/Workspace";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -10,7 +13,7 @@ export const AppDataSource = new DataSource({
   database: "graspable",
   synchronize: true,
   logging: true,
-  entities: [User],
+  entities: [User, Workspace, Organization, Member],
   subscribers: [],
   migrations: [],
 });
