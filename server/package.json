@@ -9,6 +9,8 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@prisma/client": "^3.14.0",
+    "@types/graphql-fields": "^1.3.4",
     "apollo-server-express": "^3.7.0",
     "argon2": "^0.28.5",
     "class-validator": "^0.13.2",
@@ -17,9 +19,13 @@
     "express": "^4.18.1",
     "express-session": "^1.17.3",
     "graphql": "^15.3.0",
+    "graphql-fields": "^2.0.3",
+    "graphql-scalars": "^1.17.0",
     "ioredis": "^5.0.4",
     "pg": "^8.7.3",
+    "prisma": "^3.14.0",
     "reflect-metadata": "^0.1.13",
+    "tslib": "^2.4.0",
     "type-graphql": "^1.1.1",
     "typeorm": "^0.3.6"
   },
@@ -31,6 +37,7 @@
     "@types/node": "^17.0.33",
     "concurrently": "^7.2.0",
     "nodemon": "^2.0.16",
+    "typegraphql-prisma": "^0.20.3",
     "typescript": "^4.6.4"
   }
 }

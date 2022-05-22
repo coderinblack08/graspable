@@ -1,6 +1,6 @@
-import { User } from "../entities/User";
 import { ObjectType, Field } from "type-graphql";
 import { FieldErrorObject } from "./FieldErrorObject";
+import { User } from "../../prisma/generated/type-graphql";
 
 @ObjectType()
 export class UserObject {

@@ -1,6 +1,6 @@
+import { MemberRole, Prisma } from "@prisma/client";
 import argon2 from "argon2";
-import { Member, MemberRole } from "../entities/Member";
-import { Organization } from "../entities/Organization";
+import { prisma } from "../prisma";
 import {
   Arg,
   Ctx,
@@ -10,9 +10,9 @@ import {
   Query,
   Resolver,
 } from "type-graphql";
-import { User } from "../entities/User";
 import { UserObject } from "../objects/UserObject";
 import { MyContext } from "../types";
+import { User } from "../../prisma/generated/type-graphql";
 
 @InputType()
 class EmailPasswordInput {
@@ -35,36 +35,39 @@ export class UserResolver {
   ) {
     const hashedPassword = await argon2.hash(options.password);
     try {
-      const user = new User();
-      user.name = options.name;
-      user.email = options.email;
-      user.password = hashedPassword;
-      await user.save();
-
-      const organization = await Organization.create({
-        name: "My Organization",
-        ownerId: user.id,
-      }).save();
-
-      await Member.create({
-        userId: user.id,
-        role: MemberRole.OWNER,
-        organizationId: organization.id,
-      }).save();
-
+      const user = await prisma.user.create({
+        data: {
+          name: options.name,
+          email: options.email,
+          password: hashedPassword,
+          organizations: { create: [{ name: "My Organization" }] },
+        },
+        include: {
+          organizations: true,
+        },
+      });
+      await prisma.member.create({
+        data: {
+          userId: user.id,
+          role: MemberRole.owner,
+          organizationId: user.organizations[0].id,
+        },
+      });
       req.session.userId = user.id;
       return { user };
     } catch (error) {
       // duplicate email error
-      if (error.code === "23505") {
-        return {
-          errors: [
-            {
-              field: "email",
-              message: "email already in use",
-            },
-          ],
-        };
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2002") {
+          return {
+            errors: [
+              {
+                field: "email",
+                message: "email already in use",
+              },
+            ],
+          };
+        }
       }
     }
   }
@@ -75,7 +78,7 @@ export class UserResolver {
     @Arg("password") password: string,
     @Ctx() { req }: MyContext
   ): Promise<UserObject> {
-    const user = await User.findOneBy({ email });
+    const user = await prisma.user.findFirst({ where: { email } });
     if (!user) {
       return {
         errors: [
@@ -110,7 +113,7 @@ export class UserResolver {
     if (!req.session.userId) {
       return null;
     }
-    return User.findOneBy({ id: req.session.userId });
+    return prisma.user.findFirst({ where: { id: req.session.userId } });
   }
 
   @Mutation(() => Boolean)

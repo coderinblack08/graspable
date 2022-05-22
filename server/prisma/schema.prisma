@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator typegraphql {
+  provider           = "typegraphql-prisma"
+  output             = "../prisma/generated/type-graphql"
+  emitTranspiledCode = "true"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MemberRole {
+  owner
+  admin
+  editor
+  viewer
+}
+
+model Member {
+  userId         Int
+  organizationId Int
+  role           MemberRole
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_8122e5920a29af5ef76e2e2ff62")
+  user           User         @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_08897b166dee565859b7fb2fcc8")
+
+  @@id([userId, organizationId], map: "PK_ed80222c2054acf13d7e59bd0cc")
+}
+
+model Organization {
+  id         Int         @id(map: "PK_472c1f99a32def1b0abb219cd67") @default(autoincrement())
+  name       String      @db.VarChar
+  updatedAt  DateTime    @default(now()) @db.Timestamp(6)
+  createdAt  DateTime    @default(now()) @db.Timestamp(6)
+  ownerId    Int
+  user       User        @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_67c515257c7a4bc221bb1857a39")
+  members    Member[]
+  projects   Project[]
+  workspaces Workspace[]
+}
+
+model Project {
+  id             Int           @id(map: "PK_4d68b1358bb5b766d3e78f32f57") @default(autoincrement())
+  name           String        @db.VarChar
+  updatedAt      DateTime      @default(now()) @db.Timestamp(6)
+  createdAt      DateTime      @default(now()) @db.Timestamp(6)
+  organizationId Int?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_0028dfadf312a1d7f51656c4a9a")
+}
+
+model User {
+  id            Int            @id(map: "PK_cace4a159ff9f2512dd42373760") @default(autoincrement())
+  name          String         @db.VarChar
+  email         String         @unique(map: "UQ_e12875dfb3b1d92d7d7c5377e22") @db.VarChar
+  password      String         @db.VarChar
+  createdAt     DateTime       @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime       @default(now()) @db.Timestamp(6)
+  memberships   Member[]
+  organizations Organization[]
+}
+
+model Workspace {
+  id             Int           @id(map: "PK_ca86b6f9b3be5fe26d307d09b49") @default(autoincrement())
+  name           String        @db.VarChar
+  updatedAt      DateTime      @default(now()) @db.Timestamp(6)
+  createdAt      DateTime      @default(now()) @db.Timestamp(6)
+  organizationId Int?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a700527eb11f812d79f55907d33")
+}

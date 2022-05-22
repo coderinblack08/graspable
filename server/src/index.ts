@@ -8,8 +8,8 @@ import session from "express-session";
 import Redis from "ioredis";
 import "reflect-metadata";
 import { buildSchema } from "type-graphql";
-import { AppDataSource } from "./data-source";
 import { HelloResolver } from "./resolvers/HelloResolver";
+import { OrganizationResolver } from "./resolvers/OrganizationResolver";
 import { UserResolver } from "./resolvers/UserResolver";
 import { WorkspaceResolver } from "./resolvers/WorkspaceResolver";
 config();
@@ -18,7 +18,7 @@ export const COOKIE_NAME = "qid";
 export const PROD = process.env.NODE_ENV === "production";
 
 (async function () {
-  AppDataSource.initialize().catch(console.error);
+  // AppDataSource.initialize().catch(console.error);
 
   const app = express();
 
@@ -54,7 +54,12 @@ export const PROD = process.env.NODE_ENV === "production";
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [HelloResolver, UserResolver, WorkspaceResolver],
+      resolvers: [
+        HelloResolver,
+        UserResolver,
+        WorkspaceResolver,
+        OrganizationResolver,
+      ],
       validate: false,
     }),
     context: ({ req, res }) => ({ req, res }),
