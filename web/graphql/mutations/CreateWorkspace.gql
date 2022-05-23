@@ -1,0 +1,5 @@
+mutation CreateWorkspace($args: CreateWorkspaceArgs!) {
+  createWorkspace(args: $args) {
+    ...Workspace
+  }
+}

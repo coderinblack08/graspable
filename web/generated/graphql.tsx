@@ -17,10 +17,37 @@ export type Scalars = {
   DateTime: any;
 };
 
+export type CreateOrganizationArgs = {
+  name: Scalars['String'];
+};
+
+export type CreateWorkspaceArgs = {
+  name: Scalars['String'];
+  organizationId: Scalars['Float'];
+};
+
+export type DateTimeFilter = {
+  equals?: InputMaybe<Scalars['DateTime']>;
+  gt?: InputMaybe<Scalars['DateTime']>;
+  gte?: InputMaybe<Scalars['DateTime']>;
+  in?: InputMaybe<Array<Scalars['DateTime']>>;
+  lt?: InputMaybe<Scalars['DateTime']>;
+  lte?: InputMaybe<Scalars['DateTime']>;
+  not?: InputMaybe<NestedDateTimeFilter>;
+  notIn?: InputMaybe<Array<Scalars['DateTime']>>;
+};
+
 export type EmailPasswordInput = {
   email: Scalars['String'];
   name: Scalars['String'];
   password: Scalars['String'];
+};
+
+export type EnumMemberRoleFilter = {
+  equals?: InputMaybe<MemberRole>;
+  in?: InputMaybe<Array<MemberRole>>;
+  not?: InputMaybe<NestedEnumMemberRoleFilter>;
+  notIn?: InputMaybe<Array<MemberRole>>;
 };
 
 export type FieldErrorObject = {
@@ -29,11 +56,103 @@ export type FieldErrorObject = {
   message: Scalars['String'];
 };
 
+export type IntFilter = {
+  equals?: InputMaybe<Scalars['Int']>;
+  gt?: InputMaybe<Scalars['Int']>;
+  gte?: InputMaybe<Scalars['Int']>;
+  in?: InputMaybe<Array<Scalars['Int']>>;
+  lt?: InputMaybe<Scalars['Int']>;
+  lte?: InputMaybe<Scalars['Int']>;
+  not?: InputMaybe<NestedIntFilter>;
+  notIn?: InputMaybe<Array<Scalars['Int']>>;
+};
+
+export type IntNullableFilter = {
+  equals?: InputMaybe<Scalars['Int']>;
+  gt?: InputMaybe<Scalars['Int']>;
+  gte?: InputMaybe<Scalars['Int']>;
+  in?: InputMaybe<Array<Scalars['Int']>>;
+  lt?: InputMaybe<Scalars['Int']>;
+  lte?: InputMaybe<Scalars['Int']>;
+  not?: InputMaybe<NestedIntNullableFilter>;
+  notIn?: InputMaybe<Array<Scalars['Int']>>;
+};
+
+export type Member = {
+  __typename?: 'Member';
+  organizationId: Scalars['Int'];
+  role: MemberRole;
+  userId: Scalars['Int'];
+};
+
+export type MemberListRelationFilter = {
+  every?: InputMaybe<MemberWhereInput>;
+  none?: InputMaybe<MemberWhereInput>;
+  some?: InputMaybe<MemberWhereInput>;
+};
+
+export type MemberOrderByRelationAggregateInput = {
+  _count?: InputMaybe<SortOrder>;
+};
+
+export type MemberOrderByWithRelationInput = {
+  organization?: InputMaybe<OrganizationOrderByWithRelationInput>;
+  organizationId?: InputMaybe<SortOrder>;
+  role?: InputMaybe<SortOrder>;
+  user?: InputMaybe<UserOrderByWithRelationInput>;
+  userId?: InputMaybe<SortOrder>;
+};
+
+export enum MemberRole {
+  Admin = 'admin',
+  Editor = 'editor',
+  Owner = 'owner',
+  Viewer = 'viewer'
+}
+
+export enum MemberScalarFieldEnum {
+  OrganizationId = 'organizationId',
+  Role = 'role',
+  UserId = 'userId'
+}
+
+export type MemberUserIdOrganizationIdCompoundUniqueInput = {
+  organizationId: Scalars['Int'];
+  userId: Scalars['Int'];
+};
+
+export type MemberWhereInput = {
+  AND?: InputMaybe<Array<MemberWhereInput>>;
+  NOT?: InputMaybe<Array<MemberWhereInput>>;
+  OR?: InputMaybe<Array<MemberWhereInput>>;
+  organization?: InputMaybe<OrganizationRelationFilter>;
+  organizationId?: InputMaybe<IntFilter>;
+  role?: InputMaybe<EnumMemberRoleFilter>;
+  user?: InputMaybe<UserRelationFilter>;
+  userId?: InputMaybe<IntFilter>;
+};
+
+export type MemberWhereUniqueInput = {
+  userId_organizationId?: InputMaybe<MemberUserIdOrganizationIdCompoundUniqueInput>;
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
+  createOrganization: Organization;
+  createWorkspace?: Maybe<Workspace>;
   login: UserObject;
   logout: Scalars['Boolean'];
   register: UserObject;
+};
+
+
+export type MutationCreateOrganizationArgs = {
+  args: CreateOrganizationArgs;
+};
+
+
+export type MutationCreateWorkspaceArgs = {
+  args: CreateWorkspaceArgs;
 };
 
 
@@ -47,13 +166,137 @@ export type MutationRegisterArgs = {
   options: EmailPasswordInput;
 };
 
+export type NestedDateTimeFilter = {
+  equals?: InputMaybe<Scalars['DateTime']>;
+  gt?: InputMaybe<Scalars['DateTime']>;
+  gte?: InputMaybe<Scalars['DateTime']>;
+  in?: InputMaybe<Array<Scalars['DateTime']>>;
+  lt?: InputMaybe<Scalars['DateTime']>;
+  lte?: InputMaybe<Scalars['DateTime']>;
+  not?: InputMaybe<NestedDateTimeFilter>;
+  notIn?: InputMaybe<Array<Scalars['DateTime']>>;
+};
+
+export type NestedEnumMemberRoleFilter = {
+  equals?: InputMaybe<MemberRole>;
+  in?: InputMaybe<Array<MemberRole>>;
+  not?: InputMaybe<NestedEnumMemberRoleFilter>;
+  notIn?: InputMaybe<Array<MemberRole>>;
+};
+
+export type NestedIntFilter = {
+  equals?: InputMaybe<Scalars['Int']>;
+  gt?: InputMaybe<Scalars['Int']>;
+  gte?: InputMaybe<Scalars['Int']>;
+  in?: InputMaybe<Array<Scalars['Int']>>;
+  lt?: InputMaybe<Scalars['Int']>;
+  lte?: InputMaybe<Scalars['Int']>;
+  not?: InputMaybe<NestedIntFilter>;
+  notIn?: InputMaybe<Array<Scalars['Int']>>;
+};
+
+export type NestedIntNullableFilter = {
+  equals?: InputMaybe<Scalars['Int']>;
+  gt?: InputMaybe<Scalars['Int']>;
+  gte?: InputMaybe<Scalars['Int']>;
+  in?: InputMaybe<Array<Scalars['Int']>>;
+  lt?: InputMaybe<Scalars['Int']>;
+  lte?: InputMaybe<Scalars['Int']>;
+  not?: InputMaybe<NestedIntNullableFilter>;
+  notIn?: InputMaybe<Array<Scalars['Int']>>;
+};
+
+export type NestedStringFilter = {
+  contains?: InputMaybe<Scalars['String']>;
+  endsWith?: InputMaybe<Scalars['String']>;
+  equals?: InputMaybe<Scalars['String']>;
+  gt?: InputMaybe<Scalars['String']>;
+  gte?: InputMaybe<Scalars['String']>;
+  in?: InputMaybe<Array<Scalars['String']>>;
+  lt?: InputMaybe<Scalars['String']>;
+  lte?: InputMaybe<Scalars['String']>;
+  not?: InputMaybe<NestedStringFilter>;
+  notIn?: InputMaybe<Array<Scalars['String']>>;
+  startsWith?: InputMaybe<Scalars['String']>;
+};
+
 export type Organization = {
   __typename?: 'Organization';
+  _count?: Maybe<OrganizationCount>;
   createdAt: Scalars['DateTime'];
-  id: Scalars['Float'];
+  id: Scalars['Int'];
+  members: Array<Member>;
   name: Scalars['String'];
-  ownerId: Scalars['Float'];
+  ownerId: Scalars['Int'];
   updatedAt: Scalars['DateTime'];
+  user: User;
+  workspaces: Array<Workspace>;
+};
+
+
+export type OrganizationMembersArgs = {
+  cursor?: InputMaybe<MemberWhereUniqueInput>;
+  distinct?: InputMaybe<Array<MemberScalarFieldEnum>>;
+  orderBy?: InputMaybe<Array<MemberOrderByWithRelationInput>>;
+  skip?: InputMaybe<Scalars['Int']>;
+  take?: InputMaybe<Scalars['Int']>;
+  where?: InputMaybe<MemberWhereInput>;
+};
+
+
+export type OrganizationWorkspacesArgs = {
+  cursor?: InputMaybe<WorkspaceWhereUniqueInput>;
+  distinct?: InputMaybe<Array<WorkspaceScalarFieldEnum>>;
+  orderBy?: InputMaybe<Array<WorkspaceOrderByWithRelationInput>>;
+  skip?: InputMaybe<Scalars['Int']>;
+  take?: InputMaybe<Scalars['Int']>;
+  where?: InputMaybe<WorkspaceWhereInput>;
+};
+
+export type OrganizationCount = {
+  __typename?: 'OrganizationCount';
+  members: Scalars['Int'];
+  workspaces: Scalars['Int'];
+};
+
+export type OrganizationListRelationFilter = {
+  every?: InputMaybe<OrganizationWhereInput>;
+  none?: InputMaybe<OrganizationWhereInput>;
+  some?: InputMaybe<OrganizationWhereInput>;
+};
+
+export type OrganizationOrderByRelationAggregateInput = {
+  _count?: InputMaybe<SortOrder>;
+};
+
+export type OrganizationOrderByWithRelationInput = {
+  createdAt?: InputMaybe<SortOrder>;
+  id?: InputMaybe<SortOrder>;
+  members?: InputMaybe<MemberOrderByRelationAggregateInput>;
+  name?: InputMaybe<SortOrder>;
+  ownerId?: InputMaybe<SortOrder>;
+  updatedAt?: InputMaybe<SortOrder>;
+  user?: InputMaybe<UserOrderByWithRelationInput>;
+  workspaces?: InputMaybe<WorkspaceOrderByRelationAggregateInput>;
+};
+
+export type OrganizationRelationFilter = {
+  is?: InputMaybe<OrganizationWhereInput>;
+  isNot?: InputMaybe<OrganizationWhereInput>;
+};
+
+export type OrganizationWhereInput = {
+  AND?: InputMaybe<Array<OrganizationWhereInput>>;
+  NOT?: InputMaybe<Array<OrganizationWhereInput>>;
+  OR?: InputMaybe<Array<OrganizationWhereInput>>;
+  createdAt?: InputMaybe<DateTimeFilter>;
+  id?: InputMaybe<IntFilter>;
+  members?: InputMaybe<MemberListRelationFilter>;
+  name?: InputMaybe<StringFilter>;
+  ownerId?: InputMaybe<IntFilter>;
+  updatedAt?: InputMaybe<DateTimeFilter>;
+  user?: InputMaybe<UserRelationFilter>;
+  workspaces?: InputMaybe<WorkspaceListRelationFilter>;
 };
 
 export type Query = {
@@ -63,13 +306,46 @@ export type Query = {
   organizations: Array<Organization>;
 };
 
+export enum QueryMode {
+  Default = 'default',
+  Insensitive = 'insensitive'
+}
+
+export enum SortOrder {
+  Asc = 'asc',
+  Desc = 'desc'
+}
+
+export type StringFilter = {
+  contains?: InputMaybe<Scalars['String']>;
+  endsWith?: InputMaybe<Scalars['String']>;
+  equals?: InputMaybe<Scalars['String']>;
+  gt?: InputMaybe<Scalars['String']>;
+  gte?: InputMaybe<Scalars['String']>;
+  in?: InputMaybe<Array<Scalars['String']>>;
+  lt?: InputMaybe<Scalars['String']>;
+  lte?: InputMaybe<Scalars['String']>;
+  mode?: InputMaybe<QueryMode>;
+  not?: InputMaybe<NestedStringFilter>;
+  notIn?: InputMaybe<Array<Scalars['String']>>;
+  startsWith?: InputMaybe<Scalars['String']>;
+};
+
 export type User = {
   __typename?: 'User';
-  createdAt: Scalars['String'];
+  _count?: Maybe<UserCount>;
+  createdAt: Scalars['DateTime'];
   email: Scalars['String'];
-  id: Scalars['Float'];
+  id: Scalars['Int'];
   name: Scalars['String'];
-  updatedAt: Scalars['String'];
+  password: Scalars['String'];
+  updatedAt: Scalars['DateTime'];
+};
+
+export type UserCount = {
+  __typename?: 'UserCount';
+  memberships: Scalars['Int'];
+  organizations: Scalars['Int'];
 };
 
 export type UserObject = {
@@ -78,11 +354,109 @@ export type UserObject = {
   user?: Maybe<User>;
 };
 
+export type UserOrderByWithRelationInput = {
+  createdAt?: InputMaybe<SortOrder>;
+  email?: InputMaybe<SortOrder>;
+  id?: InputMaybe<SortOrder>;
+  memberships?: InputMaybe<MemberOrderByRelationAggregateInput>;
+  name?: InputMaybe<SortOrder>;
+  organizations?: InputMaybe<OrganizationOrderByRelationAggregateInput>;
+  password?: InputMaybe<SortOrder>;
+  updatedAt?: InputMaybe<SortOrder>;
+};
+
+export type UserRelationFilter = {
+  is?: InputMaybe<UserWhereInput>;
+  isNot?: InputMaybe<UserWhereInput>;
+};
+
+export type UserWhereInput = {
+  AND?: InputMaybe<Array<UserWhereInput>>;
+  NOT?: InputMaybe<Array<UserWhereInput>>;
+  OR?: InputMaybe<Array<UserWhereInput>>;
+  createdAt?: InputMaybe<DateTimeFilter>;
+  email?: InputMaybe<StringFilter>;
+  id?: InputMaybe<IntFilter>;
+  memberships?: InputMaybe<MemberListRelationFilter>;
+  name?: InputMaybe<StringFilter>;
+  organizations?: InputMaybe<OrganizationListRelationFilter>;
+  password?: InputMaybe<StringFilter>;
+  updatedAt?: InputMaybe<DateTimeFilter>;
+};
+
+export type Workspace = {
+  __typename?: 'Workspace';
+  createdAt: Scalars['DateTime'];
+  id: Scalars['Int'];
+  name: Scalars['String'];
+  organizationId?: Maybe<Scalars['Int']>;
+  updatedAt: Scalars['DateTime'];
+};
+
+export type WorkspaceListRelationFilter = {
+  every?: InputMaybe<WorkspaceWhereInput>;
+  none?: InputMaybe<WorkspaceWhereInput>;
+  some?: InputMaybe<WorkspaceWhereInput>;
+};
+
+export type WorkspaceOrderByRelationAggregateInput = {
+  _count?: InputMaybe<SortOrder>;
+};
+
+export type WorkspaceOrderByWithRelationInput = {
+  createdAt?: InputMaybe<SortOrder>;
+  id?: InputMaybe<SortOrder>;
+  name?: InputMaybe<SortOrder>;
+  organization?: InputMaybe<OrganizationOrderByWithRelationInput>;
+  organizationId?: InputMaybe<SortOrder>;
+  updatedAt?: InputMaybe<SortOrder>;
+};
+
+export enum WorkspaceScalarFieldEnum {
+  CreatedAt = 'createdAt',
+  Id = 'id',
+  Name = 'name',
+  OrganizationId = 'organizationId',
+  UpdatedAt = 'updatedAt'
+}
+
+export type WorkspaceWhereInput = {
+  AND?: InputMaybe<Array<WorkspaceWhereInput>>;
+  NOT?: InputMaybe<Array<WorkspaceWhereInput>>;
+  OR?: InputMaybe<Array<WorkspaceWhereInput>>;
+  createdAt?: InputMaybe<DateTimeFilter>;
+  id?: InputMaybe<IntFilter>;
+  name?: InputMaybe<StringFilter>;
+  organization?: InputMaybe<OrganizationRelationFilter>;
+  organizationId?: InputMaybe<IntNullableFilter>;
+  updatedAt?: InputMaybe<DateTimeFilter>;
+};
+
+export type WorkspaceWhereUniqueInput = {
+  id?: InputMaybe<Scalars['Int']>;
+};
+
 export type ErrorFragment = { __typename?: 'FieldErrorObject', field: string, message: string };
 
 export type OrganizationFragment = { __typename?: 'Organization', id: number, name: string, ownerId: number };
 
-export type UserFragment = { __typename?: 'User', id: number, email: string, name: string, createdAt: string };
+export type UserFragment = { __typename?: 'User', id: number, email: string, name: string, createdAt: any };
+
+export type WorkspaceFragment = { __typename?: 'Workspace', id: number, name: string, organizationId?: number | null };
+
+export type CreateOrganizationMutationVariables = Exact<{
+  args: CreateOrganizationArgs;
+}>;
+
+
+export type CreateOrganizationMutation = { __typename?: 'Mutation', createOrganization: { __typename?: 'Organization', id: number, name: string, ownerId: number } };
+
+export type CreateWorkspaceMutationVariables = Exact<{
+  args: CreateWorkspaceArgs;
+}>;
+
+
+export type CreateWorkspaceMutation = { __typename?: 'Mutation', createWorkspace?: { __typename?: 'Workspace', id: number, name: string, organizationId?: number | null } | null };
 
 export type LoginMutationVariables = Exact<{
   email: Scalars['String'];
@@ -90,14 +464,14 @@ export type LoginMutationVariables = Exact<{
 }>;
 
 
-export type LoginMutation = { __typename?: 'Mutation', login: { __typename?: 'UserObject', user?: { __typename?: 'User', id: number, email: string, name: string, createdAt: string } | null, errors?: Array<{ __typename?: 'FieldErrorObject', field: string, message: string }> | null } };
+export type LoginMutation = { __typename?: 'Mutation', login: { __typename?: 'UserObject', user?: { __typename?: 'User', id: number, email: string, name: string, createdAt: any } | null, errors?: Array<{ __typename?: 'FieldErrorObject', field: string, message: string }> | null } };
 
 export type RegisterMutationVariables = Exact<{
   options: EmailPasswordInput;
 }>;
 
 
-export type RegisterMutation = { __typename?: 'Mutation', register: { __typename?: 'UserObject', user?: { __typename?: 'User', id: number, email: string, name: string, createdAt: string } | null, errors?: Array<{ __typename?: 'FieldErrorObject', field: string, message: string }> | null } };
+export type RegisterMutation = { __typename?: 'Mutation', register: { __typename?: 'UserObject', user?: { __typename?: 'User', id: number, email: string, name: string, createdAt: any } | null, errors?: Array<{ __typename?: 'FieldErrorObject', field: string, message: string }> | null } };
 
 export type HelloQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -107,12 +481,12 @@ export type HelloQuery = { __typename?: 'Query', hello: string };
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type MeQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: number, email: string, name: string, createdAt: string } | null };
+export type MeQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: number, email: string, name: string, createdAt: any } | null };
 
 export type OrganizationsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type OrganizationsQuery = { __typename?: 'Query', organizations: Array<{ __typename?: 'Organization', id: number, name: string, ownerId: number }> };
+export type OrganizationsQuery = { __typename?: 'Query', organizations: Array<{ __typename?: 'Organization', id: number, name: string, ownerId: number, workspaces: Array<{ __typename?: 'Workspace', id: number, name: string, organizationId?: number | null }> }> };
 
 export const ErrorFragmentDoc = gql`
     fragment Error on FieldErrorObject {
@@ -135,6 +509,79 @@ export const UserFragmentDoc = gql`
   createdAt
 }
     `;
+export const WorkspaceFragmentDoc = gql`
+    fragment Workspace on Workspace {
+  id
+  name
+  organizationId
+}
+    `;
+export const CreateOrganizationDocument = gql`
+    mutation CreateOrganization($args: CreateOrganizationArgs!) {
+  createOrganization(args: $args) {
+    ...Organization
+  }
+}
+    ${OrganizationFragmentDoc}`;
+export type CreateOrganizationMutationFn = Apollo.MutationFunction<CreateOrganizationMutation, CreateOrganizationMutationVariables>;
+
+/**
+ * __useCreateOrganizationMutation__
+ *
+ * To run a mutation, you first call `useCreateOrganizationMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateOrganizationMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createOrganizationMutation, { data, loading, error }] = useCreateOrganizationMutation({
+ *   variables: {
+ *      args: // value for 'args'
+ *   },
+ * });
+ */
+export function useCreateOrganizationMutation(baseOptions?: Apollo.MutationHookOptions<CreateOrganizationMutation, CreateOrganizationMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateOrganizationMutation, CreateOrganizationMutationVariables>(CreateOrganizationDocument, options);
+      }
+export type CreateOrganizationMutationHookResult = ReturnType<typeof useCreateOrganizationMutation>;
+export type CreateOrganizationMutationResult = Apollo.MutationResult<CreateOrganizationMutation>;
+export type CreateOrganizationMutationOptions = Apollo.BaseMutationOptions<CreateOrganizationMutation, CreateOrganizationMutationVariables>;
+export const CreateWorkspaceDocument = gql`
+    mutation CreateWorkspace($args: CreateWorkspaceArgs!) {
+  createWorkspace(args: $args) {
+    ...Workspace
+  }
+}
+    ${WorkspaceFragmentDoc}`;
+export type CreateWorkspaceMutationFn = Apollo.MutationFunction<CreateWorkspaceMutation, CreateWorkspaceMutationVariables>;
+
+/**
+ * __useCreateWorkspaceMutation__
+ *
+ * To run a mutation, you first call `useCreateWorkspaceMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateWorkspaceMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createWorkspaceMutation, { data, loading, error }] = useCreateWorkspaceMutation({
+ *   variables: {
+ *      args: // value for 'args'
+ *   },
+ * });
+ */
+export function useCreateWorkspaceMutation(baseOptions?: Apollo.MutationHookOptions<CreateWorkspaceMutation, CreateWorkspaceMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateWorkspaceMutation, CreateWorkspaceMutationVariables>(CreateWorkspaceDocument, options);
+      }
+export type CreateWorkspaceMutationHookResult = ReturnType<typeof useCreateWorkspaceMutation>;
+export type CreateWorkspaceMutationResult = Apollo.MutationResult<CreateWorkspaceMutation>;
+export type CreateWorkspaceMutationOptions = Apollo.BaseMutationOptions<CreateWorkspaceMutation, CreateWorkspaceMutationVariables>;
 export const LoginDocument = gql`
     mutation Login($email: String!, $password: String!) {
   login(email: $email, password: $password) {
@@ -284,9 +731,13 @@ export const OrganizationsDocument = gql`
     query Organizations {
   organizations {
     ...Organization
+    workspaces {
+      ...Workspace
+    }
   }
 }
-    ${OrganizationFragmentDoc}`;
+    ${OrganizationFragmentDoc}
+${WorkspaceFragmentDoc}`;
 
 /**
  * __useOrganizationsQuery__

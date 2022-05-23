@@ -1,5 +1,8 @@
 query Organizations {
   organizations {
     ...Organization
+    workspaces {
+      ...Workspace
+    }
   }
 }

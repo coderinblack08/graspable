@@ -1,0 +1,5 @@
+fragment Workspace on Workspace {
+  id
+  name
+  organizationId
+}
