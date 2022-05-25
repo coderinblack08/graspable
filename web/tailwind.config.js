@@ -29,5 +29,8 @@ module.exports = {
   variants: {
     extend: {},
   },
-  plugins: [],
+  plugins: [
+    require("@headlessui/tailwindcss"),
+    require("@tailwindcss/forms")({ strategy: "class" }),
+  ],
 };

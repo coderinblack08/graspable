@@ -19,7 +19,7 @@ export const Button = forwardRef<HTMLButtonElement | null, ButtonProps>(
       variant = "primary",
       leftIcon,
       rightIcon,
-      size,
+      size = "md",
       isLoading,
       type,
       as,
@@ -36,12 +36,12 @@ export const Button = forwardRef<HTMLButtonElement | null, ButtonProps>(
         ? "px-6 py-3 rounded-xl"
         : size === "md"
         ? "px-4 py-2 rounded-lg"
-        : "px-3 py-1.5 rounded-md",
+        : "px-3 py-1 rounded-md",
       variant === "primary"
         ? "bg-purple-500 focus:ring-purple-400"
         : variant === "secondary"
         ? "bg-gray-800 focus:ring-gray-600"
-        : "", // add outline styles
+        : "border-gray-800 border-2 focus:ring-gray-600",
       className,
     ];
 

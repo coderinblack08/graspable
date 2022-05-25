@@ -1,5 +1,6 @@
 import { IconApps, IconDatabase, IconPlus, IconUsers } from "@tabler/icons";
 import type { NextPage } from "next";
+import Link from "next/link";
 import { Button } from "../../components/Button";
 import { Input } from "../../components/Input";
 import Menu from "../../components/Menu";
@@ -19,7 +20,7 @@ const AppPage: NextPage = () => {
   return (
     <div className="flex h-screen bg-gray-900">
       <aside className="h-full w-full max-w-xs flex-shrink-0 border-r border-gray-800 p-4">
-        <Input placeholder="Search" className="mb-4" />
+        <Input size="sm" placeholder="Search" className="mb-4" />
         <button className="flex w-full items-center rounded-md bg-gray-800 p-2">
           <IconDatabase className="mr-2.5 h-5 w-5" />
           All Workspaces
@@ -104,17 +105,20 @@ const AppPage: NextPage = () => {
               <div className="mt-4">
                 <div className="grid grid-cols-1 gap-4">
                   {org.workspaces.map((workspace) => (
-                    <a
+                    <Link
+                      href="/app/workspace/[id]"
+                      as={`/app/workspace/${workspace.id}`}
                       key={workspace.id}
-                      className="rounded-md bg-gray-800 p-2 text-gray-300 transition focus:outline-none focus:ring focus:ring-gray-700"
                     >
-                      <div className="flex items-center space-x-4">
-                        <div className="rounded-lg bg-gray-700 p-2.5">
-                          <IconDatabase className="h-5 w-5" />
+                      <a className="rounded-md bg-gray-800 p-2 text-gray-300 transition focus:outline-none focus:ring focus:ring-gray-700">
+                        <div className="flex items-center space-x-4">
+                          <div className="rounded-lg bg-gray-700 p-2.5">
+                            <IconDatabase className="h-5 w-5" />
+                          </div>
+                          <h2 className="font-semibold">{workspace.name}</h2>
                         </div>
-                        <h2 className="font-semibold">Untitled Project</h2>
-                      </div>
-                    </a>
+                      </a>
+                    </Link>
                   ))}
                 </div>
               </div>

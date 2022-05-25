@@ -8,9 +8,9 @@ interface InputProps
 
 // eslint-disable-next-line react/display-name
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ size, className, ...props }, ref) => {
+  ({ size = "md", className, ...props }, ref) => {
     const classes = [
-      "transition select-none border border-outline bg-transparent font-medium text-gray-300 focus:ring focus:ring-gray-800 focus:outline-none placeholder:text-gray-600 w-full",
+      "transition select-none border-2 border-gray-800 bg-transparent font-medium text-gray-300 focus:ring focus:ring-gray-600 focus:outline-none placeholder:text-gray-600 w-full",
       size === "lg"
         ? "px-6 py-3 rounded-xl"
         : size === "md"
