@@ -1,19 +1,24 @@
 import { Form, Formik } from "formik";
 import type { NextPage } from "next";
+import { useRouter } from "next/router";
 import { Button } from "../components/Button";
 import { InputField } from "../components/Input";
 import { useLoginMutation } from "../generated/graphql";
 
 const HomePage: NextPage = () => {
   const [login, { loading }] = useLoginMutation();
+  const router = useRouter();
 
   return (
     <div className="flex h-screen items-center justify-center bg-gray-900">
       <Formik
         initialValues={{ email: "", password: "" }}
         onSubmit={async ({ email, password }) => {
-          const { data } = await login({ variables: { email, password } });
-          console.log(data);
+          try {
+            const { data } = await login({ variables: { email, password } });
+            console.log(data);
+            router.push("/app");
+          } catch (error) {}
         }}
       >
         <Form className="mx-auto grid w-full max-w-md gap-4 p-4 text-gray-500">

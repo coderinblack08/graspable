@@ -66,7 +66,7 @@ const AppPage: NextPage = () => {
               </Button>
             }
           >
-            <div className="px-4 py-1.5 text-sm text-gray-500">
+            <div className="p-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
               Organizations
             </div>
             {orgs?.organizations.map((org) => (

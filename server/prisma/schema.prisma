@@ -15,9 +15,25 @@ datasource db {
 
 enum MemberRole {
   owner
-  admin
   editor
   viewer
+}
+
+enum ColumnType {
+  text
+  number
+  dropdown
+  tags
+  checkbox
+  file
+  datetime
+}
+
+enum DateTimeType {
+  standard
+  friendly
+  ISO
+  relative
 }
 
 model Member {
@@ -59,4 +75,58 @@ model Workspace {
   createdAt      DateTime      @default(now()) @db.Timestamp(6)
   organizationId Int?
   organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FK_a700527eb11f812d79f55907d33")
+  Table          Table[]
+}
+
+model Table {
+  id          Int       @id() @default(autoincrement())
+  name        String    @db.VarChar
+  workspaceId Int
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+  Column      Column[]
+  Row         Row[]
+}
+
+model Column {
+  id              Int           @id() @default(autoincrement())
+  name            String        @db.VarChar
+  type            ColumnType
+  dropdownOptions String[]
+  fileUploadPath  String?
+  datetimeFormat  DateTimeType?
+  tableId         Int
+  table           Table         @relation(fields: [tableId], references: [id])
+  updatedAt       DateTime      @updatedAt
+  createdAt       DateTime      @default(now()) @db.Timestamp(6)
+  Cell            Cell[]
+}
+
+model Row {
+  id         Int      @id() @default(autoincrement())
+  tableId    Int
+  table      Table    @relation(fields: [tableId], references: [id])
+  previousId Int?     @unique
+  previous   Row?     @relation("Order", fields: [previousId], references: [id])
+  next       Row?     @relation("Order")
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now()) @db.Timestamp(6)
+  Cell       Cell[]
+}
+
+model Cell {
+  value     Json
+  // { "type": "check", "value": false }
+  // { "type": "text", "value": "foo" }
+  // { "type": "paragraph", "value": "foobar" }
+  // { "type": "tags", "value": [""] }
+  rowId     Int
+  row       Row      @relation(fields: [rowId], references: [id])
+  columnId  Int
+  column    Column   @relation(fields: [columnId], references: [id])
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+
+  @@id([rowId, columnId])
 }

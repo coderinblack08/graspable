@@ -43,6 +43,9 @@ const WorkspacePage: NextPage = () => {
       </div>
       <header className="flex items-center justify-between border-b-2 border-gray-800 p-2">
         <div className="flex items-center gap-2">
+          <button className="flex items-center justify-center rounded-lg border-2 border-gray-800 p-1.5">
+            <PlusIcon className="h-5 w-5 text-gray-400" />
+          </button>
           <Button variant="outline" size="sm">
             Table View
           </Button>
@@ -89,40 +92,52 @@ const WorkspacePage: NextPage = () => {
       </header>
       <main>
         <div className="flex h-10 items-center border-b-2 border-gray-800">
-          <div className="flex h-full items-center justify-center border-r-2 border-gray-800 p-4">
+          <div className="flex h-full items-center justify-center p-4">
             <input
               type="checkbox"
               className="form-checkbox rounded-sm border-2 border-outline bg-gray-800 text-purple-500"
             />
           </div>
-          <button className="flex h-full w-48 items-center gap-2 border-r-2 border-gray-800 px-4 font-bold">
+          <div className="h-full w-[2px] bg-gray-800" />
+          <button className="flex h-full w-48 items-center gap-2 px-4 font-bold">
             <IconLetterA className="h-4 w-4" />
             Name
             <IconCaretDown fill="currentColor" className="ml-auto h-4 w-4" />
           </button>
-          <button className="flex h-full w-48 items-center gap-2 border-r-2 border-gray-800 px-4 font-bold">
+          <div className="h-full w-[2px] bg-gray-800" />
+          <button className="flex h-full w-48 items-center gap-2 px-4 font-bold">
             <IconAlignLeft className="h-4 w-4" />
             Notes
             <IconCaretDown fill="currentColor" className="ml-auto h-4 w-4" />
           </button>
-          <button className="h-full border-r-2 border-gray-800 px-4">
+          <div className="h-full w-[2px] bg-gray-800" />
+          <button className="h-full px-4">
             <PlusIcon className="ml-auto h-4 w-4" />
           </button>
+          <div className="h-full w-[2px] bg-gray-800" />
         </div>
-        <div className="flex h-10 items-center text-gray-300">
-          <div className="flex h-full items-center justify-center border-r-2 border-b-2 border-gray-800 p-4 ">
+        <div className="flex h-10 w-auto items-center text-gray-300">
+          <div className="flex h-full items-center justify-center border-b-2 border-gray-800 p-4">
             <input
               type="checkbox"
               className="form-checkbox rounded-sm border-2 border-outline bg-gray-800 text-purple-500"
             />
           </div>
-          <button className="flex h-full w-48 items-center gap-2 border-r-2 border-b-2 border-gray-800 px-4">
+          <div className="h-full w-[2px] bg-gray-800" />
+          <button className="relative z-50 flex h-full w-48 items-center gap-2 border-b-2 border-gray-800 px-4 focus:bg-purple-500/10 focus:ring-2 focus:ring-purple-500">
             Kevin Lu
           </button>
-          <button className="flex h-full w-48 items-center gap-2 border-r-2 border-b-2 border-gray-800 px-4">
+          <div className="h-full w-[2px] bg-gray-800" />
+          <button className="relative z-50 flex h-full w-48 items-center gap-2 border-b-2 border-gray-800 px-4 focus:bg-purple-500/10 focus:ring-2 focus:ring-purple-500">
             Super Smart Coder
           </button>
+          <div className="h-full w-[2px] bg-gray-800" />
         </div>
+        <p className="ml-16 py-3 text-gray-400">
+          <PlusIcon className="mr-1.5 -mt-0.5 inline h-4 w-4" />
+          Add row{" "}
+          <span className="ml-1.5 tracking-widest text-gray-600">⌘-↩</span>
+        </p>
       </main>
     </div>
   );
