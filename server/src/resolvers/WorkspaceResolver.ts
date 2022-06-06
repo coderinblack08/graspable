@@ -1,4 +1,4 @@
-import { ColumnType, MemberRole } from "@prisma/client";
+import { ColumnType, MemberRole, PrismaClient } from "@prisma/client";
 import { ApolloError } from "apollo-server-express";
 import {
   Arg,
@@ -11,7 +11,6 @@ import {
 } from "type-graphql";
 import { Table, Workspace } from "../../prisma/generated/type-graphql";
 import { isAuth } from "../middlewares/isAuth";
-import { prisma } from "../prisma";
 import { MyContext } from "../types";
 
 @InputType()
@@ -30,7 +29,8 @@ export class WorkspaceResolver {
     {
       organizationId,
       workspaceId,
-    }: { organizationId?: number; workspaceId?: number }
+    }: { organizationId?: number; workspaceId?: number },
+    prisma: PrismaClient
   ) {
     if (workspaceId) {
       const workspace = await prisma.workspace.findFirst({
@@ -57,16 +57,20 @@ export class WorkspaceResolver {
     @Ctx() ctx: MyContext
   ) {
     if (
-      !(await WorkspaceResolver.isMember(ctx.req.session.userId, {
-        organizationId: args.organizationId,
-      }))
+      !(await WorkspaceResolver.isMember(
+        ctx.req.session.userId,
+        {
+          organizationId: args.organizationId,
+        },
+        ctx.prisma
+      ))
     ) {
       throw new ApolloError(
         "You are not authorized to create a workspace in this organization"
       );
     }
 
-    const workspace = await prisma.workspace.create({
+    const workspace = await ctx.prisma.workspace.create({
       data: {
         name: args.name,
         organization: {
@@ -85,12 +89,16 @@ export class WorkspaceResolver {
   async createTable(
     @Arg("name") name: string,
     @Arg("workspaceId") workspaceId: number,
-    @Ctx() { req }: MyContext
+    @Ctx() { req, prisma }: MyContext
   ) {
     if (
-      !(await WorkspaceResolver.isMember(req.session.userId, {
-        workspaceId,
-      }))
+      !(await WorkspaceResolver.isMember(
+        req.session.userId,
+        {
+          workspaceId,
+        },
+        prisma
+      ))
     ) {
       throw new ApolloError(
         "You are not authorized to create a workspace in this organization"

@@ -1,6 +1,5 @@
 import { MemberRole, Prisma } from "@prisma/client";
 import argon2 from "argon2";
-import { prisma } from "../prisma";
 import {
   Arg,
   Ctx,
@@ -29,9 +28,10 @@ class EmailPasswordInput {
 @Resolver()
 export class UserResolver {
   @Mutation(() => UserObject)
+  // @ts-ignore
   async register(
     @Arg("options") options: EmailPasswordInput,
-    @Ctx() { req }: MyContext
+    @Ctx() { req, prisma }: MyContext
   ) {
     const hashedPassword = await argon2.hash(options.password);
     try {
@@ -76,7 +76,7 @@ export class UserResolver {
   async login(
     @Arg("email") email: string,
     @Arg("password") password: string,
-    @Ctx() { req }: MyContext
+    @Ctx() { req, prisma }: MyContext
   ): Promise<UserObject> {
     const user = await prisma.user.findFirst({ where: { email } });
     if (!user) {
@@ -109,7 +109,7 @@ export class UserResolver {
   }
 
   @Query(() => User, { nullable: true })
-  me(@Ctx() { req }: MyContext) {
+  me(@Ctx() { req, prisma }: MyContext) {
     if (!req.session.userId) {
       return null;
     }

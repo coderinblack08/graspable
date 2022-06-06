@@ -11,7 +11,6 @@ import {
 } from "type-graphql";
 import { Organization } from "../../prisma/generated/type-graphql";
 import { isAuth } from "../middlewares/isAuth";
-import { prisma } from "../prisma";
 import { MyContext } from "../types";
 
 @InputType()
@@ -24,7 +23,7 @@ class CreateOrganizationArgs {
 export class OrganizationResolver {
   @Query(() => [Organization])
   @UseMiddleware(isAuth)
-  async organizations(@Ctx() { req }: MyContext) {
+  async organizations(@Ctx() { req, prisma }: MyContext) {
     const memberships = await prisma.member.findMany({
       where: { userId: req.session.userId },
       include: { organization: true },
@@ -35,7 +34,7 @@ export class OrganizationResolver {
   @Mutation(() => Organization)
   @UseMiddleware(isAuth)
   async createOrganization(
-    @Ctx() { req }: MyContext,
+    @Ctx() { req, prisma }: MyContext,
     @Arg("args") args: CreateOrganizationArgs
   ) {
     return prisma.organization.create({

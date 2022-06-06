@@ -7,13 +7,8 @@ import express from "express";
 import session from "express-session";
 import Redis from "ioredis";
 import "reflect-metadata";
-import { buildSchema } from "type-graphql";
-import { OrganizationRelationsResolver } from "../prisma/generated/type-graphql";
+import { createSchema } from "./create-schema";
 import { prisma } from "./prisma";
-import { HelloResolver } from "./resolvers/HelloResolver";
-import { OrganizationResolver } from "./resolvers/OrganizationResolver";
-import { UserResolver } from "./resolvers/UserResolver";
-import { WorkspaceResolver } from "./resolvers/WorkspaceResolver";
 config();
 
 export const COOKIE_NAME = "qid";
@@ -55,16 +50,7 @@ export const PROD = process.env.NODE_ENV === "production";
   );
 
   const apolloServer = new ApolloServer({
-    schema: await buildSchema({
-      resolvers: [
-        HelloResolver,
-        UserResolver,
-        WorkspaceResolver,
-        OrganizationResolver,
-        OrganizationRelationsResolver,
-      ],
-      validate: false,
-    }),
+    schema: await createSchema(),
     context: ({ req, res }) => ({ req, res, prisma }),
     plugins: [ApolloServerPluginLandingPageGraphQLPlayground],
   });
