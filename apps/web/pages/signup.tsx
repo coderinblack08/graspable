@@ -1,0 +1,87 @@
+import {
+  Box,
+  Button,
+  Heading,
+  Input,
+  Link,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
+import axios from "axios";
+import {
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  updateProfile,
+} from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { useRouter } from "next/router";
+import { useForm } from "react-hook-form";
+import { BasicLayout } from "../layouts/BasicLayout";
+import { Select } from "../lib/chakra-theme";
+import { auth, db } from "../lib/firebase-client";
+
+const SignupPage = () => {
+  const {
+    register,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm();
+  const router = useRouter();
+
+  return (
+    <BasicLayout>
+      <Box p={5} maxW="2xl" mx="auto" py={{ base: 16, md: 24, lg: 32 }}>
+        <Heading fontSize={{ base: "2xl", md: "3xl" }} as="h1">
+          Create an account
+        </Heading>
+        <VStack
+          mt={4}
+          as="form"
+          onSubmit={handleSubmit(async ({ email, password, role, name }) => {
+            try {
+              const { user } = await createUserWithEmailAndPassword(
+                auth,
+                email,
+                password
+              );
+              await updateProfile(user, { displayName: name });
+              await setDoc(doc(db, "users", user.uid), { email, role, name });
+              await sendEmailVerification(user);
+              await axios.post("/api/auth/login", null, {
+                headers: {
+                  authorization: await user.getIdToken(),
+                },
+                withCredentials: true,
+              });
+              router.push("/dashboard");
+            } catch (error) {
+              console.error(error);
+            }
+          })}
+        >
+          <Select size="lg" defaultValue="teacher" {...register("role")}>
+            <option value="teacher">Teacher</option>
+            <option value="student">Student</option>
+          </Select>
+          <Input size="lg" placeholder="Full Name" {...register("name")} />
+          <Input size="lg" placeholder="Email" {...register("email")} />
+          <Input
+            size="lg"
+            type="password"
+            placeholder="Password"
+            {...register("password")}
+          />
+          <Button isLoading={isSubmitting} size="lg" type="submit" w="full">
+            Register
+          </Button>
+          <Text w="full">
+            By registering, you agree to the{" "}
+            <Link color="blue.500">Terms of Service</Link>
+          </Text>
+        </VStack>
+      </Box>
+    </BasicLayout>
+  );
+};
+
+export default SignupPage;
