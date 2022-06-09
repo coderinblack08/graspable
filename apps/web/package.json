@@ -9,8 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@mantine/core": "^4.2.8",
+    "@mantine/form": "^4.2.8",
+    "@mantine/hooks": "^4.2.8",
+    "@mantine/next": "^4.2.8",
     "@tabler/icons": "^1.65.0",
-    "axios": "^0.26.1",
+    "axios": "^0.27.2",
     "cookie": "^0.5.0",
     "firebase": "^9.6.10",
     "firebase-admin": "^10.0.2",

@@ -1,75 +1,92 @@
 import {
+  AppShell,
   Box,
   Button,
-  Heading,
-  Input,
-  Link,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
+  Group,
+  Header,
+  Navbar,
+  PasswordInput,
+  Stack,
+  TextInput,
+  Title,
+} from "@mantine/core";
+import { useForm } from "@mantine/form";
 import axios from "axios";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import NextLink from "next/link";
+import Link from "next/link";
 import { useRouter } from "next/router";
-import { useForm } from "react-hook-form";
-import { BasicLayout } from "../layouts/BasicLayout";
 import { auth } from "../lib/firebase-client";
 
 const SignupPage = () => {
-  const {
-    register,
-    handleSubmit,
-    formState: { isSubmitting },
-  } = useForm();
   const router = useRouter();
+  const form = useForm({
+    initialValues: {
+      email: "",
+      password: "",
+    },
+    validate: {
+      email: (value: string) =>
+        /^\S+@\S+$/.test(value) ? null : "Invalid email",
+    },
+  });
+
+  const onSubmit = form.onSubmit(async ({ email, password }) => {
+    try {
+      const { user } = await signInWithEmailAndPassword(auth, email, password);
+      await axios.post("/api/auth/login", null, {
+        headers: {
+          authorization: await user.getIdToken(),
+        },
+        withCredentials: true,
+      });
+      router.push("/app");
+    } catch (error) {
+      console.error(error);
+    }
+  });
 
   return (
-    <BasicLayout>
-      <Box maxW="2xl" mx="auto" py={{ base: 16, md: 24, lg: 32 }}>
-        <Heading fontSize={{ base: "2xl", md: "3xl" }} as="h1">
-          Log in to your account
-        </Heading>
-        <Text w="full" mt={2}>
-          Don&apos;t have an account?{" "}
-          <NextLink href="/signup" passHref>
-            <Link color="blue.500">Sign Up</Link>
-          </NextLink>
-        </Text>
-        <VStack
-          mt={4}
-          as="form"
-          onSubmit={handleSubmit(async ({ email, password }) => {
-            try {
-              const { user } = await signInWithEmailAndPassword(
-                auth,
-                email,
-                password
-              );
-              await axios.post("/api/auth/login", null, {
-                headers: {
-                  authorization: await user.getIdToken(),
-                },
-                withCredentials: true,
-              });
-              router.push("/dashboard");
-            } catch (error) {
-              console.error(error);
-            }
-          })}
-        >
-          <Input size="lg" placeholder="Email" {...register("email")} />
-          <Input
-            size="lg"
-            type="password"
-            placeholder="Password"
-            {...register("password")}
-          />
-          <Button isLoading={isSubmitting} size="lg" type="submit" w="full">
-            Sign In
-          </Button>
-        </VStack>
+    <AppShell
+      header={
+        <Header height="auto" p="md">
+          <Group position="apart" align="center">
+            <Title order={5}>Graspable</Title>
+            <Box>
+              <Link href="/signup" passHref>
+                <Button component="a" color="gray" compact variant="subtle">
+                  Sign Up
+                </Button>
+              </Link>
+              <Link href="/login" passHref>
+                <Button component="a" color="gray" compact variant="subtle">
+                  Log In
+                </Button>
+              </Link>
+            </Box>
+          </Group>
+        </Header>
+      }
+    >
+      <Box sx={{ maxWidth: "32rem" }} py="4rem" mx="auto">
+        <form onSubmit={onSubmit}>
+          <Stack spacing="md">
+            <TextInput
+              required
+              label="Email"
+              placeholder="your@email.com"
+              {...form.getInputProps("email")}
+            />
+            <PasswordInput
+              required
+              label="Password"
+              placeholder="Password"
+              {...form.getInputProps("password")}
+            />
+            <Button type="submit">Submit</Button>
+          </Stack>
+        </form>
       </Box>
-    </BasicLayout>
+    </AppShell>
   );
 };
 

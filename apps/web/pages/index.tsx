@@ -1,8 +1,14 @@
+import { Box, Button } from "@mantine/core";
+import Link from "next/link";
 import React from "react";
 
 const HomePage: React.FC = () => {
   return (
-  <div></div>
+    <Box p="1rem">
+      <Link href="/login" passHref>
+        <Button component="a">Redirect me to login</Button>
+      </Link>
+    </Box>
   );
 };
 
