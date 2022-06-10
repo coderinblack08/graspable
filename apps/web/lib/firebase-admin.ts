@@ -1,6 +1,8 @@
+import { auth, firestore } from "firebase-admin";
 import { cert, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
+import { NextApiRequest, NextApiResponse } from "next";
 import { v4 as uuid } from "uuid";
 
 if (process.env.NODE_ENV === "development") {
@@ -30,4 +32,38 @@ export const admin = {
     data.forEach((doc) => result.push({ ...doc.data(), id: doc.id }));
     return result;
   },
+};
+
+type FirebaseHandler = (
+  req: NextApiRequest,
+  res: NextApiResponse,
+  context: FirebaseContext
+) => void;
+type FirebaseContext = { uid: string };
+
+export const withFirebaseAuth = (
+  func: FirebaseHandler,
+  accountType?: "student" | "coach" | "admin"
+) => {
+  return async (req: NextApiRequest, res: NextApiResponse) => {
+    let uid;
+    try {
+      const token = await admin.auth.verifyIdToken(
+        req.headers.authorization ?? ""
+      );
+      uid = token.uid;
+    } catch (e) {
+      return res.status(401).end();
+    }
+
+    if (accountType) {
+      const user = await admin.db.collection("users").doc(uid).get();
+      const userData = user.data();
+      if (!userData || userData.type !== accountType) {
+        return res.status(401).end();
+      }
+    }
+
+    return func(req, res, { uid });
+  };
 };

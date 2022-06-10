@@ -21,9 +21,9 @@
     "next": "12.0.8",
     "react": "17.0.2",
     "react-dom": "17.0.2",
-    "react-firebase-hooks": "^5.0.3",
     "react-icons": "^4.3.1",
     "react-query": "^3.38.0",
+    "reactfire": "^4.2.1",
     "ui": "*",
     "uuid": "^8.3.2"
   },

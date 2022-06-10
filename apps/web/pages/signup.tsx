@@ -19,10 +19,12 @@ import {
 import { doc, setDoc } from "firebase/firestore";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { auth, db } from "../lib/firebase-client";
+import { useAuth, useFirestore } from "reactfire";
 
 const SignupPage = () => {
   const router = useRouter();
+  const auth = useAuth();
+  const firestore = useFirestore();
   const form = useForm({
     initialValues: {
       name: "",
@@ -43,7 +45,7 @@ const SignupPage = () => {
         password
       );
       await updateProfile(user, { displayName: name });
-      await setDoc(doc(db, "users", user.uid), { email, name });
+      await setDoc(doc(firestore, "users", user.uid), { email, name });
       await sendEmailVerification(user);
       await axios.post("/api/auth/login", null, {
         headers: {
@@ -51,7 +53,7 @@ const SignupPage = () => {
         },
         withCredentials: true,
       });
-      router.push("/dashboard");
+      router.push("/app");
     } catch (error) {
       console.error(error);
     }

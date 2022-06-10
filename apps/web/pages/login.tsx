@@ -4,7 +4,6 @@ import {
   Button,
   Group,
   Header,
-  Navbar,
   PasswordInput,
   Stack,
   TextInput,
@@ -15,10 +14,11 @@ import axios from "axios";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { auth } from "../lib/firebase-client";
+import { useAuth } from "reactfire";
 
 const SignupPage = () => {
   const router = useRouter();
+  const auth = useAuth();
   const form = useForm({
     initialValues: {
       email: "",

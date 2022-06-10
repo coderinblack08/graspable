@@ -1,7 +1,10 @@
+import { InputStylesParams, MantineProvider } from "@mantine/core";
 import type { AppProps } from "next/app";
 import { Hydrate, QueryClient, QueryClientProvider } from "react-query";
+import { FirebaseAppProvider } from "reactfire";
+import { FirebaseComponents } from "../components/FirebaseComponents";
+import { app, firebaseConfig } from "../lib/firebase-client";
 import { fetcher } from "../lib/rq-fetcher";
-import { MantineProvider } from "@mantine/core";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,16 +19,28 @@ const queryClient = new QueryClient({
 export default function MyApp({ Component, pageProps }: AppProps) {
   return (
     <QueryClientProvider client={queryClient}>
-      <MantineProvider
-        withGlobalStyles
-        withNormalizeCSS
-        theme={{ colorScheme: "light" }}
-        styles={{ Text: { root: { fontSize: 14 } } }}
-      >
-        <Hydrate state={pageProps.dehydratedState}>
-          <Component {...pageProps} />
-        </Hydrate>
-      </MantineProvider>
+      <FirebaseAppProvider firebaseApp={app}>
+        <FirebaseComponents>
+          <MantineProvider
+            withGlobalStyles
+            withNormalizeCSS
+            theme={{ colorScheme: "light" }}
+            styles={{
+              Text: { root: { fontSize: 14 } },
+              Input: (theme, params: InputStylesParams) => ({
+                input: {
+                  borderRadius: theme.radius.sm,
+                  borderColor: theme.colors.gray[3],
+                },
+              }),
+            }}
+          >
+            <Hydrate state={pageProps.dehydratedState}>
+              <Component {...pageProps} />
+            </Hydrate>
+          </MantineProvider>
+        </FirebaseComponents>
+      </FirebaseAppProvider>
     </QueryClientProvider>
   );
 }

@@ -1,9 +1,13 @@
-import { initializeApp } from "firebase/app";
+// import { initializeApp } from "firebase/app";
+// import { connectAuthEmulator, getAuth } from "firebase/auth";
+// import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
+// import { connectStorageEmulator, getStorage } from "firebase/storage";
+
+import { getApp, getApps, initializeApp } from "firebase/app";
 import { connectAuthEmulator, getAuth } from "firebase/auth";
 import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
-import { connectStorageEmulator, getStorage } from "firebase/storage";
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_PROJECT_ID,
@@ -12,13 +16,36 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_APP_ID,
 };
 
-export const app = initializeApp(firebaseConfig);
+// export const app = initializeApp(firebaseConfig);
 
-export const db = getFirestore();
-connectFirestoreEmulator(db, "localhost", 8080);
+// export const db = getFirestore();
+// process.env["FIRESTORE_EMULATOR_HOST"] = "localhost:8080";
+// connectFirestoreEmulator(db, "localhost", 8080);
 
-export const auth = getAuth();
-connectAuthEmulator(auth, "http://localhost:9099", { disableWarnings: true });
+// export const auth = getAuth();
+// connectAuthEmulator(auth, "http://localhost:9099", { disableWarnings: true });
 
-export const storage = getStorage();
-connectStorageEmulator(storage, "localhost", 9199);
+// export const storage = getStorage();
+// connectStorageEmulator(storage, "localhost", 9199);
+
+if (!getApps().length) {
+  const app = initializeApp(firebaseConfig);
+
+  const auth = getAuth(app),
+    firestore = getFirestore(app);
+
+  if (typeof window != "undefined" && process.env.NODE_ENV !== "production") {
+    console.info("Dev Env Detected: Using Emulators!");
+    if (auth.emulatorConfig?.host !== "localhost")
+      connectAuthEmulator(auth, "http://localhost:9099", {
+        disableWarnings: true,
+      });
+    // @ts-ignore
+    if (!firestore._settings?.host.startsWith("localhost"))
+      connectFirestoreEmulator(firestore, "localhost", 8080);
+  }
+}
+
+export const app = getApp();
+export const auth = getAuth(app);
+export const firestore = getFirestore(app);
