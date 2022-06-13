@@ -1,4 +1,5 @@
 import * as functions from "firebase-functions";
+import { LexoRank } from "lexorank";
 import * as admin from "firebase-admin";
 
 if (process.env.NODE_ENV === "development") {
@@ -70,12 +71,15 @@ export const createWorkspace = functions.https.onCall(async (data, context) => {
   );
 
   const rows = [];
+  let previousRank: LexoRank | undefined;
   for (let i = 0; i < 4; i++) {
     rows.push(tableRef.collection("rows").doc());
+    const rank = previousRank ? previousRank.genNext() : LexoRank.middle();
     batch.set(rows[i], {
-      previousId: i == 0 ? null : rows[i - 1].id,
+      rank: rank.toString(),
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
+    previousRank = rank;
   }
 
   for (const row of rows) {
@@ -88,6 +92,52 @@ export const createWorkspace = functions.https.onCall(async (data, context) => {
       });
     }
   }
+
+  await batch.commit();
+});
+
+export const createNewRow = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "The function must be called " + "while authenticated."
+    );
+  }
+
+  const uid = context.auth?.uid;
+  const { workspaceId, tableId, previousRank } = data;
+
+  const workspaceRef = firestore.collection("workspaces").doc(workspaceId);
+  const tableRef = workspaceRef.collection("tables").doc(tableId);
+  const membershipRef = workspaceRef.collection("members").doc(uid);
+
+  if (!(await membershipRef.get()).exists) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "You are not a member of this workspace."
+    );
+  }
+
+  const rowRef = tableRef.collection("rows").doc();
+  await rowRef.set({
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    rank: previousRank
+      ? LexoRank.parse(previousRank).genNext().toString()
+      : LexoRank.middle().toString(),
+  });
+
+  const columnsRef = tableRef.collection("columns");
+  const columns = await columnsRef.get();
+
+  const cellsRef = tableRef.collection("cells");
+  const batch = firestore.batch();
+  columns.forEach((column) => {
+    batch.set(cellsRef.doc(), {
+      columnId: column.id,
+      rowId: rowRef.id,
+      value: null,
+    });
+  });
 
   await batch.commit();
 });

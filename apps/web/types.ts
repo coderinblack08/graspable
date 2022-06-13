@@ -31,6 +31,6 @@ export interface Column {
 
 export interface Row {
   id: string;
+  rank: string;
   createdAt: FieldValue;
-  previousId: string;
 }
