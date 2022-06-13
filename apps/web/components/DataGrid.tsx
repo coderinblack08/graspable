@@ -1,5 +1,4 @@
 /* eslint-disable react-hooks/rules-of-hooks */
-import { LexoRank } from "lexorank";
 import {
   ActionIcon,
   Box,
@@ -7,15 +6,17 @@ import {
   Checkbox,
   createStyles,
   Group,
+  Modal,
+  MultiSelect,
   ScrollArea,
   Select,
+  Stack,
   TextInput,
   Tooltip,
 } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import { useListState } from "@mantine/hooks";
 import { IconPlus, IconTrash } from "@tabler/icons";
-import { useDebouncedCallback } from "use-debounce";
 import {
   CollectionReference,
   doc,
@@ -23,6 +24,8 @@ import {
   query,
   updateDoc,
 } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
+import { LexoRank } from "lexorank";
 import cloneDeep from "lodash.clonedeep";
 import React, { useRef } from "react";
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
@@ -32,8 +35,8 @@ import {
   useFirestoreCollectionData,
   useFunctions,
 } from "reactfire";
+import { useDebouncedCallback } from "use-debounce";
 import { Cell, Column, Row } from "../types";
-import { httpsCallable } from "firebase/functions";
 import { AsyncLoadingButton } from "./AsyncLoadingButton";
 
 const useStyles = createStyles((theme) => ({
@@ -60,6 +63,10 @@ const useStyles = createStyles((theme) => ({
       theme.colorScheme === "dark"
         ? theme.fn.rgba(theme.colors[theme.primaryColor][7], 0.2)
         : theme.colors[theme.primaryColor][0],
+  },
+  rowUnselected: {
+    backgroundColor:
+      theme.colorScheme === "dark" ? theme.colors.gray[9] : theme.colors.white,
   },
 }));
 
@@ -196,6 +203,66 @@ const EditableCell = (columns?: Column[]) => {
         return null;
     }
   };
+};
+
+const NewColumnPopover: React.FC = () => {
+  const [opened, setOpened] = React.useState(false);
+  const [msData, setMsData] = React.useState<any[]>([]);
+
+  return (
+    <>
+      <ActionIcon onClick={() => setOpened((o) => !o)}>
+        <IconPlus size={16} />
+      </ActionIcon>
+      <Modal
+        opened={opened}
+        onClose={() => setOpened(false)}
+        title="New Column"
+      >
+        <form>
+          <Stack>
+            <TextInput
+              size="xs"
+              label="Name"
+              placeholder="Column name"
+              required
+            />
+            <Select
+              size="xs"
+              label="Type"
+              placeholder="Pick one a column type"
+              data={[
+                { value: "text", label: "Text" },
+                { value: "number", label: "Number" },
+                { value: "dropdown", label: "Dropdown" },
+                { value: "checkbox", label: "Checkbox" },
+                { value: "date", label: "Date" },
+                { value: "email", label: "Email" },
+                { value: "url", label: "URL" },
+                { value: "phone", label: "Phone number" },
+                { value: "formula", label: "Formula", disabled: true },
+              ]}
+              searchable
+              required
+            />
+            <MultiSelect
+              size="xs"
+              label="Dropdown options"
+              data={msData}
+              placeholder="Create dropdown options"
+              searchable
+              creatable
+              getCreateLabel={(query) => `+ Create ${query}`}
+              onCreate={(query) => setMsData((current) => [...current, query])}
+            />
+            <Button size="xs" color="gray">
+              Create column
+            </Button>
+          </Stack>
+        </form>
+      </Modal>
+    </>
+  );
 };
 
 const DataGridUI: React.FC<{
@@ -402,9 +469,7 @@ const DataGridUI: React.FC<{
                       })}
                       className={classes.cell}
                     >
-                      <ActionIcon>
-                        <IconPlus size={16} />
-                      </ActionIcon>
+                      <NewColumnPopover />
                     </Box>
                   </tr>
                 ))
@@ -432,6 +497,9 @@ const DataGridUI: React.FC<{
                             {...row.getRowProps()}
                             className={cx({
                               [classes.rowSelected]: row.id in selectedRowIds,
+                              [classes.rowUnselected]: !(
+                                row.id in selectedRowIds
+                              ),
                             })}
                           >
                             {row.cells.map((cell) => {
@@ -461,6 +529,7 @@ const DataGridUI: React.FC<{
                             <Box
                               component="th"
                               sx={(theme) => ({
+                                width: "38px",
                                 backgroundColor:
                                   row.id in selectedRowIds
                                     ? "transparent"

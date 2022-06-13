@@ -141,3 +141,35 @@ export const createNewRow = functions.https.onCall(async (data, context) => {
 
   await batch.commit();
 });
+
+export const createNewColumn = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "The function must be called " + "while authenticated."
+    );
+  }
+
+  const uid = context.auth?.uid;
+  const { workspaceId, tableId, name, type, dropdownOptions } = data;
+
+  const workspaceRef = firestore.collection("workspaces").doc(workspaceId);
+  const tableRef = workspaceRef.collection("tables").doc(tableId);
+  const membershipRef = workspaceRef.collection("members").doc(uid);
+
+  if (!(await membershipRef.get()).exists) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "You are not a member of this workspace."
+    );
+  }
+
+  const batch = firestore.batch();
+
+  const columnRef = tableRef.collection("rows").doc();
+  batch.set(columnRef, {
+    name,
+    type,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+});
