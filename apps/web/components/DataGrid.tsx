@@ -1,5 +1,4 @@
 /* eslint-disable react-hooks/rules-of-hooks */
-import { DatePicker } from "@mantine/dates";
 import {
   ActionIcon,
   Box,
@@ -12,8 +11,10 @@ import {
   TextInput,
   Tooltip,
 } from "@mantine/core";
+import { DatePicker } from "@mantine/dates";
 import { useListState } from "@mantine/hooks";
 import { IconPlus, IconTrash } from "@tabler/icons";
+import { useDebounce, useDebouncedCallback } from "use-debounce";
 import { CollectionReference, doc, updateDoc } from "firebase/firestore";
 import cloneDeep from "lodash.clonedeep";
 import React, { useRef } from "react";
@@ -110,6 +111,10 @@ const EditableCell = (columns?: Column[]) => {
     updateMyData,
   }: any) => {
     const [value, setValue] = React.useState(initialValue);
+    const debounced = useDebouncedCallback(() => {
+      updateMyData(rowIndex, columnId, value);
+      console.log("INFO: data-grid synched to database");
+    }, 800);
 
     React.useEffect(() => {
       setValue(initialValue);
@@ -129,23 +134,22 @@ const EditableCell = (columns?: Column[]) => {
           <TextInput
             styles={styles}
             value={value || ""}
-            onChange={(e) => setValue(e.target.value)}
-            onBlur={() => {
-              updateMyData(rowIndex, columnId, value);
+            onChange={(e) => {
+              setValue(e.target.value);
+              debounced();
             }}
           />
         );
       case "date":
         if (value && Object.hasOwn(value, "seconds")) {
-          setValue(new Date(value.seconds * 1000));
+          setValue(value.toDate());
         }
         return (
           <>
             <DatePicker
               onChange={(date) => {
                 setValue(date);
-                console.log(date);
-                updateMyData(rowIndex, columnId, date);
+                debounced();
               }}
               styles={styles}
               value={value && new Date(value)}
@@ -160,7 +164,7 @@ const EditableCell = (columns?: Column[]) => {
             value={value}
             onChange={(value) => {
               setValue(value);
-              updateMyData(rowIndex, columnId, value);
+              debounced();
             }}
             data={
               column.dropdownOptions?.map((x) => ({ label: x, value: x })) || []
