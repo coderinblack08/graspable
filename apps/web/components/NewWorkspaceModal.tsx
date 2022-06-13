@@ -8,9 +8,10 @@ interface NewWorkspaceModalProps {}
 
 export const NewWorkspaceModal: React.FC<NewWorkspaceModalProps> = ({}) => {
   const functions = useFunctions();
-  const remoteCalculator = httpsCallable(functions, "createWorkspace");
+  const createWorkspace = httpsCallable(functions, "createWorkspace");
 
   const [opened, setOpened] = useState(false);
+  const [loading, setLoading] = useState(false);
   const form = useForm({
     initialValues: {
       name: "",
@@ -27,7 +28,9 @@ export const NewWorkspaceModal: React.FC<NewWorkspaceModalProps> = ({}) => {
       >
         <form
           onSubmit={form.onSubmit(async ({ name, template }) => {
-            await remoteCalculator({ name });
+            setLoading(true);
+            await createWorkspace({ name });
+            setLoading(false);
             setOpened(false);
           })}
         >
@@ -44,7 +47,7 @@ export const NewWorkspaceModal: React.FC<NewWorkspaceModalProps> = ({}) => {
             ]}
             {...form.getInputProps("template")}
           />
-          <Button type="submit" mt={20} fullWidth>
+          <Button loading={loading} type="submit" mt={20} fullWidth>
             Spin it up!
           </Button>
         </form>

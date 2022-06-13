@@ -37,7 +37,6 @@ if (!getApps().length) {
     functions = getFunctions(app);
 
   if (typeof window != "undefined" && process.env.NODE_ENV !== "production") {
-    console.info("Dev Env Detected: Using Emulators!");
     if (auth.emulatorConfig?.host !== "localhost")
       connectAuthEmulator(auth, "http://localhost:9099", {
         disableWarnings: true,
