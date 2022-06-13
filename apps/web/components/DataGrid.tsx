@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks/rules-of-hooks */
+import { LexoRank } from "lexorank";
 import {
   ActionIcon,
   Box,
@@ -14,14 +15,26 @@ import {
 import { DatePicker } from "@mantine/dates";
 import { useListState } from "@mantine/hooks";
 import { IconPlus, IconTrash } from "@tabler/icons";
-import { useDebounce, useDebouncedCallback } from "use-debounce";
-import { CollectionReference, doc, updateDoc } from "firebase/firestore";
+import { useDebouncedCallback } from "use-debounce";
+import {
+  CollectionReference,
+  doc,
+  orderBy,
+  query,
+  updateDoc,
+} from "firebase/firestore";
 import cloneDeep from "lodash.clonedeep";
 import React, { useRef } from "react";
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import { useRowSelect, useTable } from "react-table";
-import { useFirestore, useFirestoreCollectionData } from "reactfire";
+import {
+  useFirestore,
+  useFirestoreCollectionData,
+  useFunctions,
+} from "reactfire";
 import { Cell, Column, Row } from "../types";
+import { httpsCallable } from "firebase/functions";
+import { AsyncLoadingButton } from "./AsyncLoadingButton";
 
 const useStyles = createStyles((theme) => ({
   table: {
@@ -67,17 +80,25 @@ export const DataGrid: React.FC<DataGridProps> = ({
       idField: "id",
     }
   );
-  const { data: rows } = useFirestoreCollectionData<Row>(rowsRef as any, {
-    idField: "id",
-  });
+  const { data: rows } = useFirestoreCollectionData<Row>(
+    query(rowsRef as any, orderBy("rank", "asc")),
+    {
+      idField: "id",
+    }
+  );
   const { data: cells } = useFirestoreCollectionData<Cell>(cellsRef as any, {
     idField: "id",
   });
 
+  const [_, workspaceId, __, tableId] = cellsRef.path.split("/");
+
   if (rows && cells && columns) {
     return (
       <DataGridUI
+        workspaceId={workspaceId}
+        tableId={tableId}
         cellsRef={cellsRef}
+        rowsRef={rowsRef}
         db_rows={rows}
         db_cells={cells}
         db_columns={columns}
@@ -178,13 +199,27 @@ const EditableCell = (columns?: Column[]) => {
 };
 
 const DataGridUI: React.FC<{
+  workspaceId: string;
+  tableId: string;
   db_rows: Row[];
   db_columns: Column[];
   db_cells: Cell[];
   cellsRef: CollectionReference;
-}> = ({ cellsRef, db_cells, db_columns, db_rows }) => {
+  rowsRef: CollectionReference;
+}> = ({
+  workspaceId,
+  tableId,
+  cellsRef,
+  db_cells,
+  rowsRef,
+  db_columns,
+  db_rows,
+}) => {
   const { cx, classes } = useStyles();
   const [skipPageReset, setSkipPageReset] = React.useState(false);
+
+  const functions = useFunctions();
+  const createNewRow = httpsCallable(functions, "createNewRow");
 
   const RT_COLUMNS = React.useMemo(
     () =>
@@ -300,9 +335,38 @@ const DataGridUI: React.FC<{
     <Box m="sm">
       <ScrollArea>
         <DragDropContext
-          onDragEnd={({ destination, source }) => {
+          onDragEnd={async ({ destination, source }) => {
             if (source && destination) {
               handlers.reorder({ from: source.index, to: destination.index });
+              let above, below;
+              if (destination.index > 0)
+                below = db_rows.find(
+                  (x) => x.id === records[destination.index - 1].id
+                );
+              if (destination.index < records.length - 1)
+                above = db_rows.find(
+                  (x) => x.id === records[destination.index + 1].id
+                );
+              let rank: LexoRank | undefined;
+              if (above && below) {
+                rank = LexoRank.parse(above.rank).between(
+                  LexoRank.parse(below.rank)
+                );
+              }
+              if (above && !below) {
+                rank = LexoRank.parse(above.rank).genPrev();
+              }
+              if (below && !above) {
+                rank = LexoRank.parse(below.rank).genNext();
+              }
+              await updateDoc(
+                doc(
+                  firestore as any,
+                  ...rowsRef.path.split("/"),
+                  records[source.index].id
+                ),
+                { rank: rank?.toString() }
+              );
             }
           }}
         >
@@ -418,15 +482,22 @@ const DataGridUI: React.FC<{
       </ScrollArea>
       <Group spacing="sm">
         <Tooltip withArrow label="shift + enter" position="bottom">
-          <Button
+          <AsyncLoadingButton
             my="sm"
             variant="default"
             color="gray"
             leftIcon={<IconPlus size={16} />}
+            onClick={async () => {
+              await createNewRow({
+                previousRank: records.length ? db_rows.at(-1)!.rank : null,
+                workspaceId,
+                tableId,
+              });
+            }}
             compact
           >
             New Row
-          </Button>
+          </AsyncLoadingButton>
         </Tooltip>
         <Button leftIcon={<IconTrash size={16} />} color="red" compact>
           Delete Table
