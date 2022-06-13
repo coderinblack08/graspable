@@ -1,21 +1,36 @@
-export interface User {
+import { FieldValue } from "firebase/firestore";
+
+export interface Workspace {
   id: string;
-  email: string;
-  role: string;
+  createdAt: FieldValue;
   name: string;
+  ownerId: string;
 }
 
-export interface Course {
+export interface Table {
   id: string;
   name: string;
-  userId: string;
-  subject: string;
-  lessons: Lesson[];
+  createdAt: FieldValue;
 }
 
-export interface Lesson {
+export interface Cell {
   id: string;
-  userId: string;
-  courseId: string;
+  columnId: string;
+  rowId: string;
+  value: string;
+  createdAt: FieldValue;
+}
+
+export interface Column {
+  id: string;
+  createdAt: FieldValue;
+  dropdownOptions?: string[];
   name: string;
+  type: "dropdown" | "text" | "date" | "number";
+}
+
+export interface Row {
+  id: string;
+  createdAt: FieldValue;
+  previousId: string;
 }

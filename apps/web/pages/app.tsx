@@ -2,6 +2,7 @@ import {
   AppShell,
   Avatar,
   Box,
+  Button,
   Card,
   Divider,
   Group,
@@ -33,28 +34,33 @@ import {
   IconUser,
   IconWallet,
 } from "@tabler/icons";
-import { collection, query } from "firebase/firestore";
+import { collection, query, where } from "firebase/firestore";
 import { NextPage } from "next";
 import Link from "next/link";
 import { useAuth, useFirestore, useFirestoreCollectionData } from "reactfire";
 import { NavbarLink } from "../components/NavbarLink";
 import { NewWorkspaceModal } from "../components/NewWorkspaceModal";
+import { UserDropdown } from "../components/UserDropdown";
 import { useUserData } from "../lib/helpers";
+import { Workspace } from "../types";
 
 const AppPage: NextPage = () => {
   const theme = useMantineTheme();
-  const { uid, email, name } = useUserData();
+  const { uid } = useUserData();
 
   const firestore = useFirestore();
   const auth = useAuth();
 
   const workspacesRef = query(
-    collection(firestore, "workspaces")
-    // where("ownerId", "==", uid || null)
+    collection(firestore, "workspaces"),
+    where("ownerId", "==", uid || null)
   );
-  const { data: workspaces } = useFirestoreCollectionData(workspacesRef, {
-    idField: "id",
-  });
+  const { data: workspaces } = useFirestoreCollectionData<Workspace>(
+    workspacesRef as any,
+    {
+      idField: "id",
+    }
+  );
 
   return (
     <AppShell
@@ -107,61 +113,7 @@ const AppPage: NextPage = () => {
                 }`,
               }}
             >
-              <Menu
-                position="right"
-                gutter={12}
-                control={
-                  <UnstyledButton
-                    sx={{
-                      display: "block",
-                      width: "100%",
-                      padding: theme.spacing.xs,
-                      borderRadius: theme.radius.sm,
-                      color:
-                        theme.colorScheme === "dark"
-                          ? theme.colors.dark[0]
-                          : theme.black,
-                      "&:hover": {
-                        backgroundColor:
-                          theme.colorScheme === "dark"
-                            ? theme.colors.dark[6]
-                            : theme.colors.gray[0],
-                      },
-                    }}
-                  >
-                    <Group>
-                      <Avatar color="blue" />
-                      <Box sx={{ flex: 1 }}>
-                        <Text size="sm" weight={500}>
-                          {name}
-                        </Text>
-                        <Text color="dimmed" size="xs">
-                          {email}
-                        </Text>
-                      </Box>
-                      <IconChevronRight
-                        color={theme.colors.gray[6]}
-                        size={18}
-                      />
-                    </Group>
-                  </UnstyledButton>
-                }
-              >
-                <Menu.Label>Application</Menu.Label>
-                <Menu.Item icon={<IconLogout size={14} />}>Logout</Menu.Item>
-                <Menu.Item icon={<IconSettings size={14} />}>
-                  Settings
-                </Menu.Item>
-                <Menu.Item icon={<IconWallet size={14} />}>Upgrade</Menu.Item>
-                <Divider />
-                <Menu.Label>Danger zone</Menu.Label>
-                <Menu.Item icon={<IconArrowsLeftRight size={14} />}>
-                  Transfer my data
-                </Menu.Item>
-                <Menu.Item color="red" icon={<IconTrash size={14} />}>
-                  Delete my account
-                </Menu.Item>
-              </Menu>
+              <UserDropdown />
             </Box>
           </Navbar.Section>
         </Navbar>
@@ -190,9 +142,11 @@ const AppPage: NextPage = () => {
                 <Menu
                   transition="rotate-left"
                   position="bottom"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                  }}
                   placement="end"
-                  trigger="hover"
-                  delay={500}
                 >
                   <Menu.Label>Actions</Menu.Label>
                   <Menu.Item icon={<IconShare size={14} />}>

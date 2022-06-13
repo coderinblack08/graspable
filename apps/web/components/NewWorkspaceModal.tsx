@@ -1,22 +1,16 @@
 import { Button, Modal, Select, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/hooks";
-import {
-  addDoc,
-  collection,
-  doc,
-  serverTimestamp,
-  setDoc,
-} from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
 import React, { useState } from "react";
-import { useFirestore } from "reactfire";
-import { useUserData } from "../lib/helpers";
+import { useFunctions } from "reactfire";
 
 interface NewWorkspaceModalProps {}
 
 export const NewWorkspaceModal: React.FC<NewWorkspaceModalProps> = ({}) => {
+  const functions = useFunctions();
+  const remoteCalculator = httpsCallable(functions, "createWorkspace");
+
   const [opened, setOpened] = useState(false);
-  const { uid } = useUserData();
-  const db = useFirestore();
   const form = useForm({
     initialValues: {
       name: "",
@@ -33,15 +27,7 @@ export const NewWorkspaceModal: React.FC<NewWorkspaceModalProps> = ({}) => {
       >
         <form
           onSubmit={form.onSubmit(async ({ name, template }) => {
-            const { id } = await addDoc(collection(db, "workspaces"), {
-              name,
-              ownerId: uid,
-              createdAt: serverTimestamp(),
-            });
-            await setDoc(doc(db, "workspaces", id, "members", uid!), {
-              role: "owner",
-              joinedAt: serverTimestamp(),
-            });
+            await remoteCalculator({ name });
             setOpened(false);
           })}
         >

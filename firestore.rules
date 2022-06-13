@@ -10,6 +10,19 @@ service cloud.firestore {
       match /members/{memberId} {
         allow write: if request.auth.uid == memberId && (request.resource.data.role == "owner" && request.auth.uid == get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.ownerId) || (request.resource.data.role in ["viewer", "editor"]);
       }
+      match /tables/{tableId} {
+        allow read: if true;
+        match /columns/{columnId} {
+          allow read: if true;
+        }
+        match /rows/{rowId} {
+          allow read: if true;
+        }
+        match /cells/{rowId} {
+          allow read: if true;
+          allow update: if true;
+        }
+      }
     }
   }
 }
