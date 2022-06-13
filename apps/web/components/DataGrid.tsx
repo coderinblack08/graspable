@@ -3,11 +3,13 @@ import {
   ActionIcon,
   Box,
   Button,
+  Center,
   Checkbox,
   createStyles,
   Group,
   Modal,
   MultiSelect,
+  NumberInput,
   ScrollArea,
   Select,
   Stack,
@@ -15,6 +17,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
+import { useForm } from "@mantine/form";
 import { useListState } from "@mantine/hooks";
 import { IconPlus, IconTrash } from "@tabler/icons";
 import {
@@ -134,7 +137,7 @@ const EditableCell = (columns?: Column[]) => {
   // eslint-disable-next-line react/display-name
   return ({
     value: initialValue,
-    row: { index: rowIndex, id: rowId },
+    row: { index: rowIndex, id: _rowId },
     column: { id: columnId },
     updateMyData,
   }: any) => {
@@ -152,6 +155,7 @@ const EditableCell = (columns?: Column[]) => {
     const styles = {
       input: {
         border: "none",
+        height: "100%",
         backgroundColor: "transparent",
         borderRadius: 0,
       },
@@ -184,6 +188,29 @@ const EditableCell = (columns?: Column[]) => {
             />
           </>
         );
+      case "checkbox":
+        return (
+          <Center>
+            <Checkbox
+              checked={!!value}
+              onChange={(event) => {
+                setValue(event.currentTarget.checked);
+                debounced();
+              }}
+            />
+          </Center>
+        );
+      case "number":
+        return (
+          <NumberInput
+            value={value}
+            onChange={(val) => {
+              setValue(val);
+              debounced();
+            }}
+            styles={styles}
+          />
+        );
       case "dropdown":
         return (
           <Select
@@ -205,9 +232,21 @@ const EditableCell = (columns?: Column[]) => {
   };
 };
 
-const NewColumnPopover: React.FC = () => {
+const NewColumnPopover: React.FC<{ workspaceId: string; tableId: string }> = ({
+  workspaceId,
+  tableId,
+}) => {
+  const functions = useFunctions();
+  const createNewColumn = httpsCallable(functions, "createNewColumn");
   const [opened, setOpened] = React.useState(false);
   const [msData, setMsData] = React.useState<any[]>([]);
+  const form = useForm({
+    initialValues: {
+      name: "",
+      type: "",
+      dropdownOptions: [],
+    },
+  });
 
   return (
     <>
@@ -219,13 +258,22 @@ const NewColumnPopover: React.FC = () => {
         onClose={() => setOpened(false)}
         title="New Column"
       >
-        <form>
+        <form
+          onSubmit={form.onSubmit(async (values) => {
+            const data: any = Object.assign({}, values);
+            if (data.type !== "dropdown") delete data.dropdownOptions;
+            await createNewColumn({ ...data, workspaceId, tableId });
+            // console.log(data);
+            setOpened(false);
+          })}
+        >
           <Stack>
             <TextInput
               size="xs"
               label="Name"
               placeholder="Column name"
               required
+              {...form.getInputProps("name")}
             />
             <Select
               size="xs"
@@ -242,20 +290,26 @@ const NewColumnPopover: React.FC = () => {
                 { value: "phone", label: "Phone number" },
                 { value: "formula", label: "Formula", disabled: true },
               ]}
+              {...form.getInputProps("type")}
               searchable
               required
             />
-            <MultiSelect
-              size="xs"
-              label="Dropdown options"
-              data={msData}
-              placeholder="Create dropdown options"
-              searchable
-              creatable
-              getCreateLabel={(query) => `+ Create ${query}`}
-              onCreate={(query) => setMsData((current) => [...current, query])}
-            />
-            <Button size="xs" color="gray">
+            {form.values.type === "dropdown" && (
+              <MultiSelect
+                size="xs"
+                label="Dropdown options"
+                data={msData}
+                placeholder="Create dropdown options"
+                searchable
+                creatable
+                getCreateLabel={(query) => `+ Create ${query}`}
+                onCreate={(query) =>
+                  setMsData((current) => [...current, query])
+                }
+                {...form.getInputProps("dropdownOptions")}
+              />
+            )}
+            <Button type="submit" size="xs" color="gray">
               Create column
             </Button>
           </Stack>
@@ -469,7 +523,10 @@ const DataGridUI: React.FC<{
                       })}
                       className={classes.cell}
                     >
-                      <NewColumnPopover />
+                      <NewColumnPopover
+                        workspaceId={workspaceId}
+                        tableId={tableId}
+                      />
                     </Box>
                   </tr>
                 ))
@@ -568,9 +625,6 @@ const DataGridUI: React.FC<{
             New Row
           </AsyncLoadingButton>
         </Tooltip>
-        <Button leftIcon={<IconTrash size={16} />} color="red" compact>
-          Delete Table
-        </Button>
       </Group>
     </Box>
   );

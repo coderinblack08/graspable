@@ -7,13 +7,21 @@ import {
   Header,
   Menu,
   Tabs,
+  Text,
   Title,
   UnstyledButton,
   useMantineTheme,
 } from "@mantine/core";
-import { IconEdit, IconMenu2, IconShare, IconTrash } from "@tabler/icons";
+import {
+  IconDotsVertical,
+  IconEdit,
+  IconMenu2,
+  IconShare,
+  IconTrash,
+} from "@tabler/icons";
 import { collection, doc } from "firebase/firestore";
 import { GetServerSideProps, InferGetServerSidePropsType } from "next";
+import React from "react";
 import { HiChevronDown } from "react-icons/hi";
 import {
   useFirestore,
@@ -80,7 +88,31 @@ const WorkspacePage: React.FC<
       {tables && (
         <Tabs tabPadding={0}>
           {tables?.map((table) => (
-            <Tabs.Tab label={table.name} key={table.id}>
+            <Tabs.Tab
+              label={
+                <Group spacing={4}>
+                  <Text>{table.name}</Text>
+                  <Menu
+                    control={
+                      <ActionIcon
+                        onClick={(e: any) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                        }}
+                        color="blue"
+                      >
+                        <IconDotsVertical size={16} />
+                      </ActionIcon>
+                    }
+                  >
+                    <Menu.Item>Export CSV</Menu.Item>
+                    <Menu.Item>Rename Table</Menu.Item>
+                    <Menu.Item color="red">Delete Table</Menu.Item>
+                  </Menu>
+                </Group>
+              }
+              key={table.id}
+            >
               <TableTabContent tableId={table.id} workspaceId={id} />
             </Tabs.Tab>
           ))}

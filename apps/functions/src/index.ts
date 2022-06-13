@@ -166,10 +166,25 @@ export const createNewColumn = functions.https.onCall(async (data, context) => {
 
   const batch = firestore.batch();
 
-  const columnRef = tableRef.collection("rows").doc();
+  const columnRef = tableRef.collection("columns").doc();
   batch.set(columnRef, {
     name,
     type,
+    dropdownOptions: dropdownOptions || null,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   });
+
+  const rowsRef = tableRef.collection("rows");
+  const rows = await rowsRef.get();
+
+  const cellsRef = tableRef.collection("cells");
+  rows.forEach((row) => {
+    batch.set(cellsRef.doc(), {
+      columnId: columnRef.id,
+      rowId: row.id,
+      value: null,
+    });
+  });
+
+  await batch.commit();
 });

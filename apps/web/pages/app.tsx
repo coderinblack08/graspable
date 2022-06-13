@@ -125,16 +125,10 @@ const AppPage: NextPage = () => {
           <Link
             href="/workspaces/[id]"
             as={`/workspaces/${workspace.id}`}
+            key={workspace.id}
             passHref
           >
-            <Card
-              component="a"
-              href="#"
-              shadow="xs"
-              p="md"
-              radius="md"
-              key={workspace.id}
-            >
+            <Card component="a" href="#" shadow="xs" p="md" radius="md">
               <Group position="apart">
                 <Text weight={500} size="xl">
                   {workspace.name}
