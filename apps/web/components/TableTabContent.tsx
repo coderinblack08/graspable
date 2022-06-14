@@ -46,9 +46,9 @@ export const TableTabContent: React.FC<TableTabContentProps> = ({
         }}
       >
         <Group spacing={8}>
-          <ActionIcon color="blue" variant="outline" size="sm">
+          {/* <ActionIcon color="blue" variant="outline" size="sm">
             <IconPlus size={16} />
-          </ActionIcon>
+          </ActionIcon> */}
           <Button variant="outline" leftIcon={<IconLayout size={16} />} compact>
             Views
           </Button>

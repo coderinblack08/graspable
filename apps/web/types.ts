@@ -26,7 +26,15 @@ export interface Column {
   createdAt: FieldValue;
   dropdownOptions?: string[];
   name: string;
-  type: "dropdown" | "text" | "date" | "number" | "checkbox";
+  type:
+    | "dropdown"
+    | "text"
+    | "date"
+    | "number"
+    | "checkbox"
+    | "email"
+    | "phone"
+    | "url";
 }
 
 export interface Row {

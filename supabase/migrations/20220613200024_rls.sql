@@ -33,7 +33,6 @@ create policy "users can create their own profiles"
 
 create policy "users can update own profile"
   on public.users for update
-  to authenticated
   using ( auth.uid() = id );
 
 create or replace function get_workspaces_for_authenticated_user(

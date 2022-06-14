@@ -30,7 +30,7 @@ import {
 import { httpsCallable } from "firebase/functions";
 import { LexoRank } from "lexorank";
 import cloneDeep from "lodash.clonedeep";
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import { useRowSelect, useTable } from "react-table";
 import {
@@ -66,10 +66,6 @@ const useStyles = createStyles((theme) => ({
       theme.colorScheme === "dark"
         ? theme.fn.rgba(theme.colors[theme.primaryColor][7], 0.2)
         : theme.colors[theme.primaryColor][0],
-  },
-  rowUnselected: {
-    backgroundColor:
-      theme.colorScheme === "dark" ? theme.colors.gray[9] : theme.colors.white,
   },
 }));
 
@@ -161,17 +157,8 @@ const EditableCell = (columns?: Column[]) => {
       },
     };
     switch (column?.type) {
-      case "text":
-        return (
-          <TextInput
-            styles={styles}
-            value={value || ""}
-            onChange={(e) => {
-              setValue(e.target.value);
-              debounced();
-            }}
-          />
-        );
+      // case "text":
+
       case "date":
         if (value && Object.hasOwn(value, "seconds")) {
           setValue(value.toDate());
@@ -205,10 +192,22 @@ const EditableCell = (columns?: Column[]) => {
           <NumberInput
             value={value}
             onChange={(val) => {
-              setValue(val);
+              setValue(val || null);
               debounced();
             }}
             styles={styles}
+          />
+        );
+      case "url":
+        return (
+          <TextInput
+            type="url"
+            styles={styles}
+            value={value || ""}
+            onChange={(e) => {
+              setValue(e.target.value);
+              debounced();
+            }}
           />
         );
       case "dropdown":
@@ -227,7 +226,16 @@ const EditableCell = (columns?: Column[]) => {
           />
         );
       default:
-        return null;
+        return (
+          <TextInput
+            styles={styles}
+            value={value || ""}
+            onChange={(e) => {
+              setValue(e.target.value);
+              debounced();
+            }}
+          />
+        );
     }
   };
 };
@@ -285,9 +293,7 @@ const NewColumnPopover: React.FC<{ workspaceId: string; tableId: string }> = ({
                 { value: "dropdown", label: "Dropdown" },
                 { value: "checkbox", label: "Checkbox" },
                 { value: "date", label: "Date" },
-                { value: "email", label: "Email" },
                 { value: "url", label: "URL" },
-                { value: "phone", label: "Phone number" },
                 { value: "formula", label: "Formula", disabled: true },
               ]}
               {...form.getInputProps("type")}
@@ -376,7 +382,7 @@ const DataGridUI: React.FC<{
           ?.filter((cell) => cell.rowId === row.id)
           .reduce((acc: Record<string, any>, curr) => {
             if (!acc.id) acc.id = row.id;
-            acc[curr.columnId] = curr.value;
+            acc[curr.columnId] = curr.value || null;
             return acc;
           }, new Object());
       }),
@@ -384,6 +390,10 @@ const DataGridUI: React.FC<{
   );
 
   const [records, handlers] = useListState(cloneDeep(RT_DATA));
+
+  useEffect(() => {
+    handlers.setState(cloneDeep(RT_DATA));
+  }, [RT_DATA]);
 
   const getRowId = React.useCallback((row) => {
     return row.id;
@@ -507,6 +517,8 @@ const DataGridUI: React.FC<{
                           className={classes.cell}
                           sx={{
                             width: column.id === "selection" ? 0 : column.width,
+                            minWidth:
+                              column.id === "selection" ? 0 : column.minWidth,
                           }}
                           {...column.getHeaderProps()}
                         >
@@ -554,9 +566,6 @@ const DataGridUI: React.FC<{
                             {...row.getRowProps()}
                             className={cx({
                               [classes.rowSelected]: row.id in selectedRowIds,
-                              [classes.rowUnselected]: !(
-                                row.id in selectedRowIds
-                              ),
                             })}
                           >
                             {row.cells.map((cell) => {
@@ -576,7 +585,7 @@ const DataGridUI: React.FC<{
                                 <Box
                                   component="th"
                                   className={classes.cell}
-                                  sx={{ padding: 0 }}
+                                  sx={{ padding: 0, width: cell.column.width }}
                                   {...cell.getCellProps()}
                                 >
                                   {cell.render("Cell")}
@@ -606,10 +615,9 @@ const DataGridUI: React.FC<{
           </Box>
         </DragDropContext>
       </ScrollArea>
-      <Group spacing="sm">
+      <Group spacing="sm" my="sm" align="center">
         <Tooltip withArrow label="shift + enter" position="bottom">
           <AsyncLoadingButton
-            my="sm"
             variant="default"
             color="gray"
             leftIcon={<IconPlus size={16} />}
@@ -625,6 +633,9 @@ const DataGridUI: React.FC<{
             New Row
           </AsyncLoadingButton>
         </Tooltip>
+        <Button color="gray" variant="default" compact disabled>
+          Load More
+        </Button>
       </Group>
     </Box>
   );

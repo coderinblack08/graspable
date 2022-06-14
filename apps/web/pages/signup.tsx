@@ -10,21 +10,21 @@ import {
   Title,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import axios from "axios";
-import {
-  createUserWithEmailAndPassword,
-  sendEmailVerification,
-  updateProfile,
-} from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { useClient, useSignUp } from "react-supabase";
 import { useAuth, useFirestore } from "reactfire";
 
 const SignupPage = () => {
   const router = useRouter();
   const auth = useAuth();
   const firestore = useFirestore();
+
+  // const supabase = useClient();
+  // const [{ error, fetching }, signUp] = useSignUp();
+  // const [{}, execute] = useInsert("users");
+
   const form = useForm({
     initialValues: {
       name: "",
@@ -38,24 +38,15 @@ const SignupPage = () => {
   });
 
   const onSubmit = form.onSubmit(async ({ email, name, password }) => {
-    try {
-      const { user } = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      await updateProfile(user, { displayName: name });
-      await setDoc(doc(firestore, "users", user.uid), { email, name });
-      await sendEmailVerification(user);
-      await axios.post("/api/auth/login", null, {
-        headers: {
-          authorization: await user.getIdToken(),
-        },
-        withCredentials: true,
-      });
-      router.push("/app");
-    } catch (error) {
-      console.error(error);
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_PROJECT_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_ANON_KEY!
+    );
+    const { user } = await supabase.auth.signUp({ email, password });
+    if (user) {
+      await supabase
+        .from("users")
+        .insert([{ id: user.id, name, email }], { returning: "minimal" });
     }
   });
 
