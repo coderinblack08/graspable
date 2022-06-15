@@ -1,66 +1,28 @@
 import {
   AppShell,
-  Avatar,
   Box,
-  Button,
-  Card,
-  Divider,
-  Group,
   Input,
   Kbd,
-  Menu,
   Navbar,
   SimpleGrid,
   Stack,
-  Text,
-  ThemeIcon,
   Title,
-  UnstyledButton,
   useMantineTheme,
 } from "@mantine/core";
 import {
-  IconArrowsLeftRight,
-  IconCalendarEvent,
-  IconChevronRight,
   IconDatabase,
-  IconEdit,
   IconLayout,
-  IconLogout,
   IconSearch,
   IconSettings,
-  IconShare,
-  IconTable,
   IconTrash,
-  IconUser,
-  IconWallet,
 } from "@tabler/icons";
-import { collection, query, where } from "firebase/firestore";
 import { NextPage } from "next";
-import Link from "next/link";
-import { useAuth, useFirestore, useFirestoreCollectionData } from "reactfire";
 import { NavbarLink } from "../components/NavbarLink";
 import { NewWorkspaceModal } from "../components/NewWorkspaceModal";
 import { UserDropdown } from "../components/UserDropdown";
-import { useUserData } from "../lib/helpers";
-import { Workspace } from "../types";
 
 const AppPage: NextPage = () => {
   const theme = useMantineTheme();
-  const { uid } = useUserData();
-
-  const firestore = useFirestore();
-  const auth = useAuth();
-
-  const workspacesRef = query(
-    collection(firestore, "workspaces"),
-    where("ownerId", "==", uid || null)
-  );
-  const { data: workspaces } = useFirestoreCollectionData<Workspace>(
-    workspacesRef as any,
-    {
-      idField: "id",
-    }
-  );
 
   return (
     <AppShell
@@ -121,7 +83,7 @@ const AppPage: NextPage = () => {
     >
       <NewWorkspaceModal />
       <SimpleGrid cols={2} my="md">
-        {workspaces?.map((workspace) => (
+        {/* {workspaces?.map((workspace) => (
           <Link
             href="/workspaces/[id]"
             as={`/workspaces/${workspace.id}`}
@@ -180,7 +142,7 @@ const AppPage: NextPage = () => {
               </Group>
             </Card>
           </Link>
-        ))}
+        ))} */}
       </SimpleGrid>
     </AppShell>
   );

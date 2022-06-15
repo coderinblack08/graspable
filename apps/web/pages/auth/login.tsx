@@ -60,11 +60,7 @@ const LoginPage: NextPage<{
       }
     >
       <Stack align="center" sx={{ maxWidth: "32rem" }} py="4rem" mx="auto">
-        <Title mb="xs" order={2}>
-          Log in to Graspable
-        </Title>
-        {JSON.stringify(session, null, 2)}
-        {JSON.stringify(providers, null, 2)}
+        <Title order={2}>Log in to Graspable</Title>
         {providers && (
           <>
             <Button
@@ -83,7 +79,7 @@ const LoginPage: NextPage<{
               variant="default"
               leftIcon={<FaGithub size={16} />}
               size="lg"
-              onClick={() => signIn("github")}
+              onClick={() => signIn("github", { callbackUrl: "/app" })}
               sx={(theme) => ({ fontSize: theme.fontSizes.md })}
               fullWidth
             >
