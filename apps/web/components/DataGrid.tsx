@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/rules-of-hooks */
 import {
   ActionIcon,
   Box,
@@ -19,27 +18,14 @@ import {
 import { DatePicker } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { useListState } from "@mantine/hooks";
-import { IconPlus, IconTrash } from "@tabler/icons";
-import {
-  CollectionReference,
-  doc,
-  orderBy,
-  query,
-  updateDoc,
-} from "firebase/firestore";
-import { httpsCallable } from "firebase/functions";
+import { IconPlus } from "@tabler/icons";
 import { LexoRank } from "lexorank";
 import cloneDeep from "lodash.clonedeep";
 import React, { useEffect, useRef } from "react";
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import { useRowSelect, useTable } from "react-table";
-import {
-  useFirestore,
-  useFirestoreCollectionData,
-  useFunctions,
-} from "reactfire";
 import { useDebouncedCallback } from "use-debounce";
-import { Cell, Column, Row } from "../types";
+import { InferQueryOutput, trpc } from "../lib/trpc";
 import { AsyncLoadingButton } from "./AsyncLoadingButton";
 
 const useStyles = createStyles((theme) => ({
@@ -70,44 +56,23 @@ const useStyles = createStyles((theme) => ({
 }));
 
 interface DataGridProps {
-  columnsRef: CollectionReference;
-  rowsRef: CollectionReference;
-  cellsRef: CollectionReference;
+  workspaceId: string;
+  tableId: string;
 }
 
-export const DataGrid: React.FC<DataGridProps> = ({
-  columnsRef,
-  rowsRef,
-  cellsRef,
-}) => {
-  const { data: columns } = useFirestoreCollectionData<Column>(
-    columnsRef as any,
-    {
-      idField: "id",
-    }
-  );
-  const { data: rows } = useFirestoreCollectionData<Row>(
-    query(rowsRef as any, orderBy("rank", "asc")),
-    {
-      idField: "id",
-    }
-  );
-  const { data: cells } = useFirestoreCollectionData<Cell>(cellsRef as any, {
-    idField: "id",
-  });
-
-  const [_, workspaceId, __, tableId] = cellsRef.path.split("/");
+export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
+  const { data: rows } = trpc.useQuery(["rows.byTableId", { tableId }]);
+  const { data: columns } = trpc.useQuery(["columns.byTableId", { tableId }]);
+  const { data: cells } = trpc.useQuery(["cells.byTableId", { tableId }]);
 
   if (rows && cells && columns) {
     return (
       <DataGridUI
         workspaceId={workspaceId}
         tableId={tableId}
-        cellsRef={cellsRef}
-        rowsRef={rowsRef}
-        db_rows={rows}
-        db_cells={cells}
-        db_columns={columns}
+        dbRows={rows}
+        dbCells={cells}
+        dbColumns={columns}
       />
     );
   }
@@ -126,24 +91,24 @@ const IndeterminateCheckbox = React.forwardRef<HTMLInputElement, any>(
     );
   }
 );
+IndeterminateCheckbox.displayName;
 
-const EditableCell = (columns?: Column[]) => {
+const EditableCell = (columns?: InferQueryOutput<"columns.byTableId">) => {
   // console.log(columns);
 
-  // eslint-disable-next-line react/display-name
-  return ({
+  const Cell: React.FC<any> = ({
     value: initialValue,
     row: { index: rowIndex, id: _rowId },
     column: { id: columnId },
     updateMyData,
-  }: any) => {
+  }) => {
     const [value, setValue] = React.useState(initialValue);
     const debounced = useDebouncedCallback(() => {
       updateMyData(rowIndex, columnId, value);
       console.log("INFO: data-grid synched to database");
     }, 800);
 
-    React.useEffect(() => {
+    useEffect(() => {
       setValue(initialValue);
     }, [initialValue]);
 
@@ -156,9 +121,8 @@ const EditableCell = (columns?: Column[]) => {
         borderRadius: 0,
       },
     };
-    switch (column?.type) {
-      // case "text":
 
+    switch (column?.type) {
       case "date":
         if (value && Object.hasOwn(value, "seconds")) {
           setValue(value.toDate());
@@ -238,14 +202,14 @@ const EditableCell = (columns?: Column[]) => {
         );
     }
   };
+
+  return Cell;
 };
 
 const NewColumnPopover: React.FC<{ workspaceId: string; tableId: string }> = ({
   workspaceId,
   tableId,
 }) => {
-  const functions = useFunctions();
-  const createNewColumn = httpsCallable(functions, "createNewColumn");
   const [opened, setOpened] = React.useState(false);
   const [msData, setMsData] = React.useState<any[]>([]);
   const form = useForm({
@@ -270,8 +234,7 @@ const NewColumnPopover: React.FC<{ workspaceId: string; tableId: string }> = ({
           onSubmit={form.onSubmit(async (values) => {
             const data: any = Object.assign({}, values);
             if (data.type !== "dropdown") delete data.dropdownOptions;
-            await createNewColumn({ ...data, workspaceId, tableId });
-            // console.log(data);
+            // await createNewColumn({ ...data, workspaceId, tableId });
             setOpened(false);
           })}
         >
@@ -328,65 +291,59 @@ const NewColumnPopover: React.FC<{ workspaceId: string; tableId: string }> = ({
 const DataGridUI: React.FC<{
   workspaceId: string;
   tableId: string;
-  db_rows: Row[];
-  db_columns: Column[];
-  db_cells: Cell[];
-  cellsRef: CollectionReference;
-  rowsRef: CollectionReference;
-}> = ({
-  workspaceId,
-  tableId,
-  cellsRef,
-  db_cells,
-  rowsRef,
-  db_columns,
-  db_rows,
-}) => {
+  dbRows: InferQueryOutput<"rows.byTableId">;
+  dbColumns: InferQueryOutput<"columns.byTableId">;
+  dbCells: InferQueryOutput<"cells.byTableId">;
+}> = ({ workspaceId, tableId, dbCells, dbColumns, dbRows }) => {
   const { cx, classes } = useStyles();
   const [skipPageReset, setSkipPageReset] = React.useState(false);
 
-  const functions = useFunctions();
-  const createNewRow = httpsCallable(functions, "createNewRow");
-
   const RT_COLUMNS = React.useMemo(
     () =>
-      db_columns?.map((db_column) => ({
+      dbColumns?.map((db_column) => ({
         Header: db_column.name,
         accessor: db_column.id,
       })),
-    [db_columns]
+    [dbColumns]
   );
 
   const cell_ids = React.useMemo(() => {
     const result: Record<string, Record<string, string>> = {};
-    for (let i = 0; i < db_rows.length; i++) {
-      for (let j = 0; j < db_columns.length; j++) {
-        const cell = db_cells.find(
-          (x) => x.rowId === db_rows[i].id && x.columnId === db_columns[j].id
+    for (let i = 0; i < dbRows.length; i++) {
+      for (let j = 0; j < dbColumns.length; j++) {
+        const cell = dbCells.find(
+          (x) => x.rowId === dbRows[i].id && x.columnId === dbColumns[j].id
         );
         if (cell) {
-          if (!result.hasOwnProperty(db_rows[i].id)) {
-            result[db_rows[i].id] = {};
+          if (!result.hasOwnProperty(dbRows[i].id)) {
+            result[dbRows[i].id] = {};
           }
-          result[db_rows[i].id][db_columns[j].id] = cell.id;
+          result[dbRows[i].id][dbColumns[j].id] = cell.id;
         }
       }
     }
     return result;
-  }, [db_cells, db_columns, db_rows]);
+  }, [dbCells, dbColumns, dbRows]);
 
   const RT_DATA = React.useMemo(
     () =>
-      db_rows?.map((row) => {
-        return db_cells
+      dbRows?.map((row) => {
+        const defaultObj = dbColumns.reduce(
+          (acc: Record<string, any>, col) => {
+            acc[col.id] = null;
+            return acc;
+          },
+          { id: row.id }
+        );
+        return dbCells
           ?.filter((cell) => cell.rowId === row.id)
           .reduce((acc: Record<string, any>, curr) => {
             if (!acc.id) acc.id = row.id;
             acc[curr.columnId] = curr.value || null;
             return acc;
-          }, new Object());
+          }, defaultObj);
       }),
-    [db_rows, db_cells]
+    [dbRows, dbColumns, dbCells]
   );
 
   const [records, handlers] = useListState(cloneDeep(RT_DATA));
@@ -399,17 +356,15 @@ const DataGridUI: React.FC<{
     return row.id;
   }, []);
 
-  const firestore = useFirestore();
-
   const updateMyData = (rowIndex: number, columnId: string, value: any) => {
     setSkipPageReset(true);
     handlers.apply((row, index) => {
+      // const docRef = doc(
+      //   firestore as any,
+      //   ...cellsRef.path.split("/").concat(cell_ids[row.id][columnId])
+      // );
+      // updateDoc(docRef, { value });
       if (index === rowIndex) {
-        const docRef = doc(
-          firestore as any,
-          ...cellsRef.path.split("/").concat(cell_ids[row.id][columnId])
-        );
-        updateDoc(docRef, { value });
         return {
           ...row,
           [columnId]: value,
@@ -427,7 +382,7 @@ const DataGridUI: React.FC<{
     {
       columns: RT_COLUMNS,
       data: records,
-      defaultColumn: { Cell: EditableCell(db_columns) },
+      defaultColumn: { Cell: EditableCell(dbColumns) },
       autoResetPage: !skipPageReset,
       updateMyData,
       getRowId,
@@ -471,11 +426,11 @@ const DataGridUI: React.FC<{
               handlers.reorder({ from: source.index, to: destination.index });
               let above, below;
               if (destination.index > 0)
-                below = db_rows.find(
+                below = dbRows.find(
                   (x) => x.id === records[destination.index - 1].id
                 );
               if (destination.index < records.length - 1)
-                above = db_rows.find(
+                above = dbRows.find(
                   (x) => x.id === records[destination.index + 1].id
                 );
               let rank: LexoRank | undefined;
@@ -490,14 +445,14 @@ const DataGridUI: React.FC<{
               if (below && !above) {
                 rank = LexoRank.parse(below.rank).genNext();
               }
-              await updateDoc(
-                doc(
-                  firestore as any,
-                  ...rowsRef.path.split("/"),
-                  records[source.index].id
-                ),
-                { rank: rank?.toString() }
-              );
+              // await updateDoc(
+              //   doc(
+              //     firestore as any,
+              //     ...rowsRef.path.split("/"),
+              //     records[source.index].id
+              //   ),
+              //   { rank: rank?.toString() }
+              // );
             }
           }}
         >
@@ -622,11 +577,11 @@ const DataGridUI: React.FC<{
             color="gray"
             leftIcon={<IconPlus size={16} />}
             onClick={async () => {
-              await createNewRow({
-                previousRank: records.length ? db_rows.at(-1)!.rank : null,
-                workspaceId,
-                tableId,
-              });
+              // await createNewRow({
+              //   previousRank: records.length ? dbRows.at(-1)!.rank : null,
+              //   workspaceId,
+              //   tableId,
+              // });
             }}
             compact
           >

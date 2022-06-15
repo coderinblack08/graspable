@@ -4,15 +4,11 @@ import {
   IconFrame,
   IconLayout,
   IconList,
-  IconPlus,
   IconRobot,
   IconSearch,
   IconSortAscending,
 } from "@tabler/icons";
-import { collection, doc } from "firebase/firestore";
 import React from "react";
-import { useFirestore, useFirestoreCollectionData } from "reactfire";
-import { Cell, Row } from "../types";
 import { DataGrid } from "./DataGrid";
 
 interface TableTabContentProps {
@@ -25,15 +21,6 @@ export const TableTabContent: React.FC<TableTabContentProps> = ({
   tableId,
 }) => {
   const theme = useMantineTheme();
-  const firestore = useFirestore();
-
-  const tablePath = ["workspaces", workspaceId, "tables", tableId];
-  // @ts-ignore
-  const columnsRef = collection(firestore, ...tablePath, "columns");
-  // @ts-ignore
-  const rowsRef = collection(firestore, ...tablePath, "rows");
-  // @ts-ignore
-  const cellsRef = collection(firestore, ...tablePath, "cells");
 
   return (
     <Box>
@@ -74,7 +61,7 @@ export const TableTabContent: React.FC<TableTabContentProps> = ({
           </ActionIcon>
         </Group>
       </Group>
-      <DataGrid columnsRef={columnsRef} rowsRef={rowsRef} cellsRef={cellsRef} />
+      <DataGrid workspaceId={workspaceId} tableId={tableId} />
     </Box>
   );
 };

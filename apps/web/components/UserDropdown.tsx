@@ -35,7 +35,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({ compact }) => {
         control={
           compact ? (
             <UnstyledButton>
-              <Avatar color="gray" size="sm" />
+              <Avatar src={session.user.image} color="gray" size="sm" />
             </UnstyledButton>
           ) : (
             <UnstyledButton
@@ -57,7 +57,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({ compact }) => {
               }}
             >
               <Group>
-                <Avatar color="gray" />
+                <Avatar src={session.user.image} color="gray" />
                 <Box sx={{ flex: 1 }}>
                   <Text size="sm" weight={500}>
                     {session.user.name}

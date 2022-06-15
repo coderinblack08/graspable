@@ -27,6 +27,16 @@ export const workspaceRouter = createRouter()
       ).filter((w) => !w.deleted);
     },
   })
+  .query("byId", {
+    input: z.object({
+      id: z.string(),
+    }),
+    async resolve({ ctx, input }) {
+      return ctx.prisma.workspace.findFirst({
+        where: input,
+      });
+    },
+  })
   .mutation("add", {
     input: z.object({ name: z.string() }),
     async resolve({ ctx, input }) {

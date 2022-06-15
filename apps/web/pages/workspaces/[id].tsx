@@ -2,7 +2,6 @@ import {
   ActionIcon,
   AppShell,
   Button,
-  Divider,
   Group,
   Header,
   Menu,
@@ -10,7 +9,6 @@ import {
   Text,
   Title,
   UnstyledButton,
-  useMantineTheme,
 } from "@mantine/core";
 import {
   IconDotsVertical,
@@ -19,29 +17,20 @@ import {
   IconShare,
   IconTrash,
 } from "@tabler/icons";
-import { collection, doc } from "firebase/firestore";
 import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import React from "react";
 import { HiChevronDown } from "react-icons/hi";
-import {
-  useFirestore,
-  useFirestoreCollectionData,
-  useFirestoreDocDataOnce,
-} from "reactfire";
 import { TableTabContent } from "../../components/TableTabContent";
-import { UserDropdown } from "../../components/UserDropdown";
+import { trpc } from "../../lib/trpc";
 
 const WorkspacePage: React.FC<
   InferGetServerSidePropsType<typeof getServerSideProps>
 > = ({ id }) => {
-  const theme = useMantineTheme();
-  const firestore = useFirestore();
-  const workspaceRef = doc(firestore, "workspaces", id);
-  const tablesRef = collection(firestore, "workspaces", id, "tables");
-  const { data: workspace } = useFirestoreDocDataOnce(workspaceRef);
-  const { data: tables } = useFirestoreCollectionData(tablesRef, {
-    idField: "id",
-  });
+  const { data: workspace } = trpc.useQuery(["workspace.byId", { id }]);
+  const { data: tables } = trpc.useQuery([
+    "tables.byWorkspaceId",
+    { workspaceId: id },
+  ]);
 
   return (
     <AppShell
@@ -76,25 +65,24 @@ const WorkspacePage: React.FC<
                 Delete workspace
               </Menu.Item>
             </Menu>
-            <Divider sx={{ height: "26px" }} mx={4} orientation="vertical" />
             <Button color="gray" variant="default" compact>
               New Table
             </Button>
-            <UserDropdown compact />
           </Group>
         </Header>
       }
     >
       {tables && (
-        <Tabs tabPadding={0}>
+        <Tabs tabPadding={0} mt="xs">
           {tables?.map((table) => (
             <Tabs.Tab
               label={
-                <Group spacing={4}>
-                  <Text>{table.name}</Text>
+                <Group spacing={8}>
+                  <Text weight={600}>{table.name}</Text>
                   <Menu
                     control={
                       <ActionIcon
+                        component="div"
                         onClick={(e: any) => {
                           e.stopPropagation();
                           e.preventDefault();
