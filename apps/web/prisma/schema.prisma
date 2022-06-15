@@ -118,6 +118,7 @@ model Workspace {
   ownerId   String
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now()) @db.Timestamp(6)
+  deleted   Boolean  @default(false)
   User      User     @relation(fields: [ownerId], references: [id])
   Member    Member[]
   Table     Table[]

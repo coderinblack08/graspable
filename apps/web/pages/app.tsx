@@ -35,6 +35,8 @@ import { trpc } from "../lib/trpc";
 
 const AppPage: NextPage = () => {
   const theme = useMantineTheme();
+  const utils = trpc.useContext();
+  const deleteWorkspace = trpc.useMutation(["workspace.delete"]);
   const { data: workspaces } = trpc.useQuery(["workspace.all"]);
 
   return (
@@ -124,7 +126,20 @@ const AppPage: NextPage = () => {
                   <Menu.Item icon={<IconEdit size={14} />}>
                     Rename workspace
                   </Menu.Item>
-                  <Menu.Item color="red" icon={<IconTrash size={14} />}>
+                  <Menu.Item
+                    color="red"
+                    icon={<IconTrash size={14} />}
+                    onClick={() =>
+                      deleteWorkspace.mutate(
+                        { id: workspace.id },
+                        {
+                          onSuccess: () => {
+                            utils.invalidateQueries(["workspace.all"]);
+                          },
+                        }
+                      )
+                    }
+                  >
                     Delete workspace
                   </Menu.Item>
                 </Menu>

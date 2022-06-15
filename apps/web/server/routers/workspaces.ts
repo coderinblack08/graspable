@@ -18,9 +18,13 @@ export const workspaceRouter = createRouter()
           userId: ctx.session!.user.id,
         },
       });
-      return ctx.prisma.workspace.findMany({
-        where: { id: { in: members.map((m) => m.workspaceId) } },
-      });
+      return (
+        await ctx.prisma.workspace.findMany({
+          where: {
+            id: { in: members.map((m) => m.workspaceId) },
+          },
+        })
+      ).filter((w) => !w.deleted);
     },
   })
   .mutation("add", {
@@ -91,5 +95,14 @@ export const workspaceRouter = createRouter()
         ],
       });
       return { ...workspace, columns, rows };
+    },
+  })
+  .mutation("delete", {
+    input: z.object({ id: z.string() }),
+    async resolve({ ctx, input }) {
+      return ctx.prisma.workspace.update({
+        where: { id: input.id },
+        data: { deleted: true },
+      });
     },
   });
