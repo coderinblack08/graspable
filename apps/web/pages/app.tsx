@@ -1,28 +1,41 @@
 import {
   AppShell,
   Box,
+  Card,
+  Group,
   Input,
   Kbd,
+  Menu,
   Navbar,
   SimpleGrid,
   Stack,
+  Text,
+  ThemeIcon,
   Title,
   useMantineTheme,
 } from "@mantine/core";
 import {
+  IconCalendarEvent,
   IconDatabase,
+  IconEdit,
   IconLayout,
   IconSearch,
   IconSettings,
+  IconShare,
+  IconTable,
   IconTrash,
+  IconUser,
 } from "@tabler/icons";
 import { NextPage } from "next";
+import Link from "next/link";
 import { NavbarLink } from "../components/NavbarLink";
 import { NewWorkspaceModal } from "../components/NewWorkspaceModal";
 import { UserDropdown } from "../components/UserDropdown";
+import { trpc } from "../lib/trpc";
 
 const AppPage: NextPage = () => {
   const theme = useMantineTheme();
+  const { data: workspaces } = trpc.useQuery(["workspace.all"]);
 
   return (
     <AppShell
@@ -83,7 +96,7 @@ const AppPage: NextPage = () => {
     >
       <NewWorkspaceModal />
       <SimpleGrid cols={2} my="md">
-        {/* {workspaces?.map((workspace) => (
+        {workspaces?.map((workspace) => (
           <Link
             href="/workspaces/[id]"
             as={`/workspaces/${workspace.id}`}
@@ -142,7 +155,7 @@ const AppPage: NextPage = () => {
               </Group>
             </Card>
           </Link>
-        ))} */}
+        ))}
       </SimpleGrid>
     </AppShell>
   );

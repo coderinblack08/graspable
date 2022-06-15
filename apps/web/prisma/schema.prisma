@@ -59,7 +59,7 @@ model Cell {
   value     Json
   rowId     String
   columnId  String
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   createdAt DateTime @default(now()) @db.Timestamp(6)
   Column    Column   @relation(fields: [columnId], references: [id])
   Row       Row      @relation(fields: [rowId], references: [id])
@@ -75,7 +75,7 @@ model Column {
   fileUploadPath  String?
   rank            String
   tableId         String
-  updatedAt       DateTime
+  updatedAt       DateTime   @updatedAt
   createdAt       DateTime   @default(now()) @db.Timestamp(6)
   Table           Table      @relation(fields: [tableId], references: [id])
   Cell            Cell[]
@@ -95,7 +95,7 @@ model Row {
   id        String   @id @default(cuid())
   tableId   String
   rank      String
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   createdAt DateTime @default(now()) @db.Timestamp(6)
   Table     Table    @relation(fields: [tableId], references: [id])
   Cell      Cell[]
@@ -105,7 +105,7 @@ model Table {
   id          String    @id @default(cuid())
   name        String    @db.VarChar
   workspaceId String
-  updatedAt   DateTime
+  updatedAt   DateTime  @updatedAt
   createdAt   DateTime  @default(now()) @db.Timestamp(6)
   Workspace   Workspace @relation(fields: [workspaceId], references: [id])
   Column      Column[]
@@ -116,7 +116,7 @@ model Workspace {
   id        String   @id @default(cuid())
   name      String   @db.VarChar
   ownerId   String
-  updatedAt DateTime
+  updatedAt DateTime @updatedAt
   createdAt DateTime @default(now()) @db.Timestamp(6)
   User      User     @relation(fields: [ownerId], references: [id])
   Member    Member[]

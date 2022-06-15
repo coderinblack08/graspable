@@ -6,7 +6,7 @@ import type { AppProps } from "next/app";
 import { FirebaseAppProvider } from "reactfire";
 import { FirebaseComponents } from "../components/FirebaseComponents";
 import { app } from "../lib/firebase-client";
-import { AppRouter } from "../server/routers";
+import { AppRouter } from "../server/routers/_app";
 
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   return (
@@ -36,7 +36,7 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
 }
 
 export default withTRPC<AppRouter>({
-  config({ ctx }) {
+  config() {
     /**
      * If you want to use SSR, you need to use the server's full URL
      * @link https://trpc.io/docs/ssr
@@ -57,5 +57,5 @@ export default withTRPC<AppRouter>({
   /**
    * @link https://trpc.io/docs/ssr
    */
-  ssr: true,
+  ssr: false,
 })(MyApp);

@@ -1,17 +1,15 @@
 import { Button, Modal, Select, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/hooks";
-import { httpsCallable } from "firebase/functions";
 import React, { useState } from "react";
-import { useFunctions } from "reactfire";
+import { trpc } from "../lib/trpc";
 
 interface NewWorkspaceModalProps {}
 
 export const NewWorkspaceModal: React.FC<NewWorkspaceModalProps> = ({}) => {
-  const functions = useFunctions();
-  const createWorkspace = httpsCallable(functions, "createWorkspace");
+  const mutation = trpc.useMutation(["workspace.add"]);
+  const utils = trpc.useContext();
 
   const [opened, setOpened] = useState(false);
-  const [loading, setLoading] = useState(false);
   const form = useForm({
     initialValues: {
       name: "",
@@ -28,14 +26,20 @@ export const NewWorkspaceModal: React.FC<NewWorkspaceModalProps> = ({}) => {
       >
         <form
           onSubmit={form.onSubmit(async ({ name, template }) => {
-            setLoading(true);
-            await createWorkspace({ name });
-            setLoading(false);
+            await mutation.mutateAsync(
+              { name },
+              {
+                onSuccess: () => {
+                  utils.invalidateQueries(["workspace.all"]);
+                },
+              }
+            );
             setOpened(false);
           })}
         >
           <TextInput label="Name" required {...form.getInputProps("name")} />
           <Select
+            mt={12}
             required
             label="Template"
             data={[
@@ -47,7 +51,7 @@ export const NewWorkspaceModal: React.FC<NewWorkspaceModalProps> = ({}) => {
             ]}
             {...form.getInputProps("template")}
           />
-          <Button loading={loading} type="submit" mt={20} fullWidth>
+          <Button loading={mutation.isLoading} type="submit" mt={20} fullWidth>
             Spin it up!
           </Button>
         </form>
