@@ -1,79 +1,61 @@
+import superjson from "superjson";
 import { InputStylesParams, MantineProvider } from "@mantine/core";
-import { AuthChangeEvent, createClient, Session } from "@supabase/supabase-js";
+import { withTRPC } from "@trpc/next";
+import { SessionProvider } from "next-auth/react";
 import type { AppProps } from "next/app";
-import { useEffect } from "react";
-import { Hydrate, QueryClient, QueryClientProvider } from "react-query";
-import { Provider } from "react-supabase";
 import { FirebaseAppProvider } from "reactfire";
 import { FirebaseComponents } from "../components/FirebaseComponents";
 import { app } from "../lib/firebase-client";
-import { fetcher } from "../lib/rq-fetcher";
+import { AppRouter } from "../server/routers";
 
-const client = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_PROJECT_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_ANON_KEY!
-);
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      queryFn: async ({ queryKey }) => {
-        return fetcher(`${queryKey[0]}`);
-      },
-    },
-  },
-});
-
-export default function MyApp({ Component, pageProps }: AppProps) {
-  useEffect(() => {
-    const { data: authListener } = client.auth.onAuthStateChange(
-      (event, session) => {
-        handleAuthChange(event, session);
-      }
-    );
-    return () => {
-      authListener?.unsubscribe();
-    };
-  }, []);
-
-  async function handleAuthChange(
-    event: AuthChangeEvent,
-    session: Session | null
-  ) {
-    await fetch("/api/auth", {
-      method: "POST",
-      headers: new Headers({ "Content-Type": "application/json" }),
-      credentials: "same-origin",
-      body: JSON.stringify({ event, session }),
-    });
-  }
-
+function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   return (
-    <Provider value={client}>
-      <QueryClientProvider client={queryClient}>
-        <FirebaseAppProvider firebaseApp={app}>
-          <FirebaseComponents>
-            <MantineProvider
-              withGlobalStyles
-              withNormalizeCSS
-              theme={{ colorScheme: "light" }}
-              styles={{
-                Text: { root: { fontSize: 14 } },
-                Input: (theme, _params: InputStylesParams) => ({
-                  input: {
-                    borderRadius: theme.radius.sm,
-                    borderColor: theme.colors.gray[3],
-                  },
-                }),
-              }}
-            >
-              <Hydrate state={pageProps.dehydratedState}>
-                <Component {...pageProps} />
-              </Hydrate>
-            </MantineProvider>
-          </FirebaseComponents>
-        </FirebaseAppProvider>
-      </QueryClientProvider>
-    </Provider>
+    <SessionProvider session={session}>
+      <FirebaseAppProvider firebaseApp={app}>
+        <FirebaseComponents>
+          <MantineProvider
+            withGlobalStyles
+            withNormalizeCSS
+            theme={{ colorScheme: "light" }}
+            styles={{
+              Text: { root: { fontSize: 14 } },
+              Input: (theme, _params: InputStylesParams) => ({
+                input: {
+                  borderRadius: theme.radius.sm,
+                  borderColor: theme.colors.gray[3],
+                },
+              }),
+            }}
+          >
+            <Component {...pageProps} />
+          </MantineProvider>
+        </FirebaseComponents>
+      </FirebaseAppProvider>
+    </SessionProvider>
   );
 }
+
+export default withTRPC<AppRouter>({
+  config({ ctx }) {
+    /**
+     * If you want to use SSR, you need to use the server's full URL
+     * @link https://trpc.io/docs/ssr
+     */
+    const url = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}/api/trpc`
+      : "http://localhost:3000/api/trpc";
+
+    return {
+      url,
+      transformer: superjson,
+      /**
+       * @link https://react-query.tanstack.com/reference/QueryClient
+       */
+      // queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
+    };
+  },
+  /**
+   * @link https://trpc.io/docs/ssr
+   */
+  ssr: true,
+})(MyApp);

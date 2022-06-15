@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+  oauth_token_secret String?
+  oauth_token        String?
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String      @id @default(cuid())
+  name          String?
+  email         String?     @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  Member        Member[]
+  Workspace     Workspace[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Cell {
+  value     Json
+  rowId     String
+  columnId  String
+  updatedAt DateTime
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  Column    Column   @relation(fields: [columnId], references: [id])
+  Row       Row      @relation(fields: [rowId], references: [id])
+
+  @@id([rowId, columnId])
+}
+
+model Column {
+  id              String     @id @default(cuid())
+  name            String     @db.VarChar
+  type            ColumnType
+  dropdownOptions String[]
+  fileUploadPath  String?
+  rank            String
+  tableId         String
+  updatedAt       DateTime
+  createdAt       DateTime   @default(now()) @db.Timestamp(6)
+  Table           Table      @relation(fields: [tableId], references: [id])
+  Cell            Cell[]
+}
+
+model Member {
+  role        MemberRole
+  userId      String
+  workspaceId String
+  User        User       @relation(fields: [userId], references: [id])
+  Workspace   Workspace  @relation(fields: [workspaceId], references: [id])
+
+  @@id([userId, workspaceId])
+}
+
+model Row {
+  id        String   @id @default(cuid())
+  tableId   String
+  rank      String
+  updatedAt DateTime
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  Table     Table    @relation(fields: [tableId], references: [id])
+  Cell      Cell[]
+}
+
+model Table {
+  id          String    @id @default(cuid())
+  name        String    @db.VarChar
+  workspaceId String
+  updatedAt   DateTime
+  createdAt   DateTime  @default(now()) @db.Timestamp(6)
+  Workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  Column      Column[]
+  Row         Row[]
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String   @db.VarChar
+  ownerId   String
+  updatedAt DateTime
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  User      User     @relation(fields: [ownerId], references: [id])
+  Member    Member[]
+  Table     Table[]
+}
+
+enum ColumnType {
+  text
+  url
+  number
+  dropdown
+  tags
+  checkbox
+  date
+  file
+}
+
+enum MemberRole {
+  owner
+  editor
+  viewer
+}
