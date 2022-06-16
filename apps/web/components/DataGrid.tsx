@@ -17,7 +17,7 @@ import {
 } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import { useForm } from "@mantine/form";
-import { useListState } from "@mantine/hooks";
+import { useHotkeys, useListState } from "@mantine/hooks";
 import { IconPlus } from "@tabler/icons";
 import { LexoRank } from "lexorank";
 import cloneDeep from "lodash.clonedeep";
@@ -26,7 +26,6 @@ import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import { useRowSelect, useTable } from "react-table";
 import { useDebouncedCallback } from "use-debounce";
 import { InferQueryOutput, trpc } from "../lib/trpc";
-import { AsyncLoadingButton } from "./AsyncLoadingButton";
 
 const useStyles = createStyles((theme) => ({
   table: {
@@ -80,7 +79,6 @@ export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
   return null;
 };
 
-// eslint-disable-next-line react/display-name
 const IndeterminateCheckbox = React.forwardRef<HTMLInputElement, any>(
   ({ indeterminate, ...rest }, ref) => {
     const defaultRef = useRef<HTMLInputElement>();
@@ -91,11 +89,8 @@ const IndeterminateCheckbox = React.forwardRef<HTMLInputElement, any>(
     );
   }
 );
-IndeterminateCheckbox.displayName;
 
 const EditableCell = (columns?: InferQueryOutput<"columns.byTableId">) => {
-  // console.log(columns);
-
   const Cell: React.FC<any> = ({
     value: initialValue,
     row: { index: rowIndex, id: _rowId },
@@ -131,7 +126,7 @@ const EditableCell = (columns?: InferQueryOutput<"columns.byTableId">) => {
           <>
             <DatePicker
               onChange={(date) => {
-                setValue(date);
+                setValue(date?.toDateString());
                 debounced();
               }}
               styles={styles}
@@ -210,13 +205,22 @@ const NewColumnPopover: React.FC<{ workspaceId: string; tableId: string }> = ({
   workspaceId,
   tableId,
 }) => {
+  const addColumn = trpc.useMutation(["columns.add"]);
   const [opened, setOpened] = React.useState(false);
   const [msData, setMsData] = React.useState<any[]>([]);
   const form = useForm({
     initialValues: {
       name: "",
-      type: "",
-      dropdownOptions: [],
+      type: "" as
+        | "number"
+        | "text"
+        | "url"
+        | "dropdown"
+        | "tags"
+        | "checkbox"
+        | "date"
+        | "file",
+      dropdownOptions: [] as string[],
     },
   });
 
@@ -232,9 +236,14 @@ const NewColumnPopover: React.FC<{ workspaceId: string; tableId: string }> = ({
       >
         <form
           onSubmit={form.onSubmit(async (values) => {
-            const data: any = Object.assign({}, values);
+            const data: Partial<typeof values> = Object.assign({}, values);
             if (data.type !== "dropdown") delete data.dropdownOptions;
-            // await createNewColumn({ ...data, workspaceId, tableId });
+            await addColumn.mutateAsync({
+              name: data.name!,
+              type: data.type!,
+              dropdownOptions: data.dropdownOptions,
+              tableId,
+            });
             setOpened(false);
           })}
         >
@@ -307,44 +316,25 @@ const DataGridUI: React.FC<{
     [dbColumns]
   );
 
-  const cell_ids = React.useMemo(() => {
-    const result: Record<string, Record<string, string>> = {};
-    for (let i = 0; i < dbRows.length; i++) {
-      for (let j = 0; j < dbColumns.length; j++) {
-        const cell = dbCells.find(
-          (x) => x.rowId === dbRows[i].id && x.columnId === dbColumns[j].id
-        );
-        if (cell) {
-          if (!result.hasOwnProperty(dbRows[i].id)) {
-            result[dbRows[i].id] = {};
-          }
-          result[dbRows[i].id][dbColumns[j].id] = cell.id;
-        }
-      }
-    }
-    return result;
-  }, [dbCells, dbColumns, dbRows]);
-
-  const RT_DATA = React.useMemo(
-    () =>
-      dbRows?.map((row) => {
-        const defaultObj = dbColumns.reduce(
-          (acc: Record<string, any>, col) => {
-            acc[col.id] = null;
-            return acc;
-          },
-          { id: row.id }
-        );
-        return dbCells
-          ?.filter((cell) => cell.rowId === row.id)
-          .reduce((acc: Record<string, any>, curr) => {
-            if (!acc.id) acc.id = row.id;
-            acc[curr.columnId] = curr.value || null;
-            return acc;
-          }, defaultObj);
-      }),
-    [dbRows, dbColumns, dbCells]
-  );
+  const RT_DATA = React.useMemo(() => {
+    // console.log(dbRows);
+    return dbRows?.map((row) => {
+      const defaultObj = dbColumns.reduce(
+        (acc: Record<string, any>, col) => {
+          acc[col.id] = null;
+          return acc;
+        },
+        { id: row.id, rank: row.rank }
+      );
+      return dbCells
+        ?.filter((cell) => cell.rowId === row.id)
+        .reduce((acc: Record<string, any>, curr) => {
+          if (!acc.id) acc.id = row.id;
+          acc[curr.columnId] = curr.value || null;
+          return acc;
+        }, defaultObj);
+    });
+  }, [dbRows, dbColumns, dbCells]);
 
   const [records, handlers] = useListState(cloneDeep(RT_DATA));
 
@@ -356,14 +346,13 @@ const DataGridUI: React.FC<{
     return row.id;
   }, []);
 
+  const createCell = trpc.useMutation(["cells.upsert"]);
+
   const updateMyData = (rowIndex: number, columnId: string, value: any) => {
     setSkipPageReset(true);
     handlers.apply((row, index) => {
-      // const docRef = doc(
-      //   firestore as any,
-      //   ...cellsRef.path.split("/").concat(cell_ids[row.id][columnId])
-      // );
-      // updateDoc(docRef, { value });
+      const rowId = records[rowIndex].id;
+      createCell.mutate({ tableId, rowId, columnId, value });
       if (index === rowIndex) {
         return {
           ...row,
@@ -408,6 +397,27 @@ const DataGridUI: React.FC<{
     }
   );
 
+  const updateRowRank = trpc.useMutation(["rows.updateRank"]);
+  const addRow = trpc.useMutation(["rows.add"]);
+  const utils = trpc.useContext();
+
+  const createNewRow = async () => {
+    const rank = LexoRank.parse(dbRows.at(-1)?.rank!).genNext().toString();
+    await addRow.mutateAsync(
+      { tableId, rank },
+      {
+        onSuccess: (row) => {
+          utils.setQueryData(["rows.byTableId", { tableId }], (old) => [
+            ...(old || []),
+            row,
+          ]);
+        },
+      }
+    );
+  };
+
+  useHotkeys([["shift+enter", createNewRow]]);
+
   const {
     getTableProps,
     getTableBodyProps,
@@ -422,38 +432,63 @@ const DataGridUI: React.FC<{
       <ScrollArea>
         <DragDropContext
           onDragEnd={async ({ destination, source }) => {
-            if (source && destination) {
-              handlers.reorder({ from: source.index, to: destination.index });
-              let above, below;
-              if (destination.index > 0)
-                below = dbRows.find(
-                  (x) => x.id === records[destination.index - 1].id
-                );
-              if (destination.index < records.length - 1)
-                above = dbRows.find(
-                  (x) => x.id === records[destination.index + 1].id
-                );
-              let rank: LexoRank | undefined;
-              if (above && below) {
-                rank = LexoRank.parse(above.rank).between(
-                  LexoRank.parse(below.rank)
-                );
-              }
-              if (above && !below) {
-                rank = LexoRank.parse(above.rank).genPrev();
-              }
-              if (below && !above) {
-                rank = LexoRank.parse(below.rank).genNext();
-              }
-              // await updateDoc(
-              //   doc(
-              //     firestore as any,
-              //     ...rowsRef.path.split("/"),
-              //     records[source.index].id
-              //   ),
-              //   { rank: rank?.toString() }
-              // );
+            if (source && destination && source.index !== destination.index) {
+              const recordsCopy = cloneDeep(records);
+              handlers.reorder({
+                from: source.index,
+                to: destination.index,
+              });
+              const id = recordsCopy[source.index].id;
+
+              const getNewRank = (oldIndex: number, newIndex: number) => {
+                if (recordsCopy.length === 0) {
+                  return LexoRank.middle();
+                } else if (newIndex === 0) {
+                  const firstItem = recordsCopy[0].rank;
+                  let rank = LexoRank.parse(firstItem).genPrev();
+                  return rank;
+                } else if (newIndex === recordsCopy.length - 1) {
+                  const lastItem = recordsCopy[recordsCopy.length - 1];
+                  let rank = LexoRank.parse(lastItem.rank).genNext();
+                  return rank;
+                } else {
+                  const over = LexoRank.parse(recordsCopy[newIndex].rank);
+                  const second = LexoRank.parse(
+                    recordsCopy[newIndex + (newIndex < oldIndex ? -1 : 0)].rank
+                  );
+                  return over.between(second);
+                }
+              };
+
+              const rank = getNewRank(
+                source.index,
+                destination.index
+              ).toString();
+              await updateRowRank.mutateAsync(
+                { id, rank },
+                {
+                  onSuccess: () => {
+                    // utils.refetchQueries(["rows.byTableId", { tableId }]);
+                    utils.setQueryData(
+                      ["rows.byTableId", { tableId }],
+                      (old) => {
+                        if (!old) return [];
+                        const cloned = [...old];
+                        const item = old[source.index];
+
+                        cloned.splice(source.index, 1);
+                        cloned.splice(destination.index, 0, item);
+
+                        return cloned.map((row) =>
+                          row.id === id ? { ...row, rank } : row
+                        );
+                      }
+                    );
+                  },
+                }
+              );
             }
+            console.log("INFO: Reordering stored");
           }}
         >
           <Box className={classes.table} component="table" {...getTableProps()}>
@@ -532,6 +567,8 @@ const DataGridUI: React.FC<{
                                     {...cell.getCellProps()}
                                     {...provided.dragHandleProps}
                                   >
+                                    {row.id} <br />
+                                    {records[index].rank}
                                     {cell.render("Cell")}
                                   </Box>
                                 );
@@ -572,21 +609,16 @@ const DataGridUI: React.FC<{
       </ScrollArea>
       <Group spacing="sm" my="sm" align="center">
         <Tooltip withArrow label="shift + enter" position="bottom">
-          <AsyncLoadingButton
+          <Button
+            loading={addRow.isLoading}
             variant="default"
             color="gray"
             leftIcon={<IconPlus size={16} />}
-            onClick={async () => {
-              // await createNewRow({
-              //   previousRank: records.length ? dbRows.at(-1)!.rank : null,
-              //   workspaceId,
-              //   tableId,
-              // });
-            }}
+            onClick={createNewRow}
             compact
           >
             New Row
-          </AsyncLoadingButton>
+          </Button>
         </Tooltip>
         <Button color="gray" variant="default" compact disabled>
           Load More

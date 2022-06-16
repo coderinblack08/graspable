@@ -57,15 +57,15 @@ model VerificationToken {
 
 model Cell {
   id        String   @id @default(cuid())
-  value     Json
+  value     String?
   rowId     String
   columnId  String
   tableId   String
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now()) @db.Timestamp(6)
-  Column    Column   @relation(fields: [columnId], references: [id])
-  Row       Row      @relation(fields: [rowId], references: [id])
-  Table     Table    @relation(fields: [tableId], references: [id])
+  Column    Column   @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  Row       Row      @relation(fields: [rowId], references: [id], onDelete: Cascade)
+  Table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
 
   @@unique([rowId, columnId])
 }
@@ -80,7 +80,7 @@ model Column {
   tableId         String
   updatedAt       DateTime   @updatedAt
   createdAt       DateTime   @default(now()) @db.Timestamp(6)
-  Table           Table      @relation(fields: [tableId], references: [id])
+  Table           Table      @relation(fields: [tableId], references: [id], onDelete: Cascade)
   Cell            Cell[]
 }
 
@@ -88,8 +88,8 @@ model Member {
   role        MemberRole
   userId      String
   workspaceId String
-  User        User       @relation(fields: [userId], references: [id])
-  Workspace   Workspace  @relation(fields: [workspaceId], references: [id])
+  User        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@id([userId, workspaceId])
 }
@@ -100,7 +100,7 @@ model Row {
   rank      String
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now()) @db.Timestamp(6)
-  Table     Table    @relation(fields: [tableId], references: [id])
+  Table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
   Cell      Cell[]
 }
 
@@ -110,7 +110,7 @@ model Table {
   workspaceId String
   updatedAt   DateTime  @updatedAt
   createdAt   DateTime  @default(now()) @db.Timestamp(6)
-  Workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  Workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   Column      Column[]
   Row         Row[]
   Cell        Cell[]

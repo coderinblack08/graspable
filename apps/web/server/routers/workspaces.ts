@@ -63,7 +63,10 @@ export const workspaceRouter = createRouter()
       });
       const { id: tableId } = workspace.Table[0];
       let firstRank = LexoRank.middle();
-      const generateNextRank = () => (firstRank = firstRank.genNext());
+      const generateNextRank = () => {
+        firstRank = firstRank.genNext();
+        return firstRank;
+      };
       const columns = await ctx.prisma.column.createMany({
         data: [
           {
