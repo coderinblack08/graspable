@@ -26,4 +26,13 @@ export const columnsRouter = createRouter()
     async resolve({ ctx, input }) {
       return ctx.prisma.column.create({ data: input });
     },
+  })
+  .mutation("update", {
+    input: z.object({
+      id: z.string(),
+      width: z.number().min(100).optional(),
+    }),
+    async resolve({ ctx, input }) {
+      return ctx.prisma.column.update({ where: { id: input.id }, data: input });
+    },
   });

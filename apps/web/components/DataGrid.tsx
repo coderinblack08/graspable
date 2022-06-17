@@ -14,26 +14,47 @@ import {
   Stack,
   TextInput,
   Tooltip,
+  useMantineTheme,
 } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { useHotkeys, useListState } from "@mantine/hooks";
-import { IconPlus } from "@tabler/icons";
+import {
+  IconEyeOff,
+  IconFilter,
+  IconFrame,
+  IconLayout,
+  IconList,
+  IconPlus,
+  IconRobot,
+  IconSearch,
+  IconSortAscending,
+  IconTrash,
+} from "@tabler/icons";
 import { LexoRank } from "lexorank";
 import cloneDeep from "lodash.clonedeep";
 import React, { useEffect, useRef } from "react";
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
-import { useRowSelect, useTable } from "react-table";
+import {
+  useBlockLayout,
+  useFlexLayout,
+  useResizeColumns,
+  useRowSelect,
+  useTable,
+} from "react-table";
 import { useDebouncedCallback } from "use-debounce";
 import { InferQueryOutput, trpc } from "../lib/trpc";
+import { useResizeObserver } from "../lib/use-resize-observer";
 
 const useStyles = createStyles((theme) => ({
   table: {
+    display: "inline-block",
     borderSpacing: 0,
     border: `1px solid ${theme.colors.gray[2]}`,
     borderCollapse: "separate",
   },
   cell: {
+    position: "relative",
     margin: 0,
     textAlign: "left",
     padding: "8px",
@@ -51,6 +72,30 @@ const useStyles = createStyles((theme) => ({
       theme.colorScheme === "dark"
         ? theme.fn.rgba(theme.colors[theme.primaryColor][7], 0.2)
         : theme.colors[theme.primaryColor][0],
+  },
+  rowUnselected: {
+    backgroundColor: "white",
+  },
+  resizer: {
+    display: "inline-block",
+    background: theme.colors.gray[2],
+    width: 2,
+    height: "100%",
+    position: "absolute",
+    right: 0,
+    top: 0,
+    transform: "translateX(2px)",
+    zIndex: 1,
+    touchAction: "none",
+    "&:hover": {
+      width: 4,
+      transform: "translateX(3px)",
+    },
+    "&.isResizing": {
+      background: theme.colors.gray[4],
+      transform: "translateX(3px)",
+      width: 4,
+    },
   },
 }));
 
@@ -136,7 +181,7 @@ const EditableCell = (columns?: InferQueryOutput<"columns.byTableId">) => {
         );
       case "checkbox":
         return (
-          <Center>
+          <Center style={{ height: "100%" }}>
             <Checkbox
               checked={!!value}
               onChange={(event) => {
@@ -202,10 +247,10 @@ const EditableCell = (columns?: InferQueryOutput<"columns.byTableId">) => {
 };
 
 const NewColumnPopover: React.FC<{ workspaceId: string; tableId: string }> = ({
-  workspaceId,
   tableId,
 }) => {
   const addColumn = trpc.useMutation(["columns.add"]);
+  const utils = trpc.useContext();
   const [opened, setOpened] = React.useState(false);
   const [msData, setMsData] = React.useState<any[]>([]);
   const form = useForm({
@@ -226,7 +271,7 @@ const NewColumnPopover: React.FC<{ workspaceId: string; tableId: string }> = ({
 
   return (
     <>
-      <ActionIcon onClick={() => setOpened((o) => !o)}>
+      <ActionIcon onClick={() => setOpened((o) => !o)} size="sm">
         <IconPlus size={16} />
       </ActionIcon>
       <Modal
@@ -238,12 +283,22 @@ const NewColumnPopover: React.FC<{ workspaceId: string; tableId: string }> = ({
           onSubmit={form.onSubmit(async (values) => {
             const data: Partial<typeof values> = Object.assign({}, values);
             if (data.type !== "dropdown") delete data.dropdownOptions;
-            await addColumn.mutateAsync({
-              name: data.name!,
-              type: data.type!,
-              dropdownOptions: data.dropdownOptions,
-              tableId,
-            });
+            await addColumn.mutateAsync(
+              {
+                name: data.name!,
+                type: data.type!,
+                dropdownOptions: data.dropdownOptions,
+                tableId,
+              },
+              {
+                onSuccess: (data) => {
+                  utils.setQueryData(
+                    ["columns.byTableId", { tableId }],
+                    (old) => [...(old || []), data]
+                  );
+                },
+              }
+            );
             setOpened(false);
           })}
         >
@@ -305,6 +360,7 @@ const DataGridUI: React.FC<{
   dbCells: InferQueryOutput<"cells.byTableId">;
 }> = ({ workspaceId, tableId, dbCells, dbColumns, dbRows }) => {
   const { cx, classes } = useStyles();
+  const theme = useMantineTheme();
   const [skipPageReset, setSkipPageReset] = React.useState(false);
 
   const RT_COLUMNS = React.useMemo(
@@ -312,6 +368,9 @@ const DataGridUI: React.FC<{
       dbColumns?.map((db_column) => ({
         Header: db_column.name,
         accessor: db_column.id,
+        minWidth: 100,
+        width: db_column.width || 150,
+        maxWidth: 400,
       })),
     [dbColumns]
   );
@@ -352,8 +411,8 @@ const DataGridUI: React.FC<{
     setSkipPageReset(true);
     handlers.apply((row, index) => {
       const rowId = records[rowIndex].id;
-      createCell.mutate({ tableId, rowId, columnId, value });
       if (index === rowIndex) {
+        createCell.mutate({ tableId, rowId, columnId, value });
         return {
           ...row,
           [columnId]: value,
@@ -377,10 +436,15 @@ const DataGridUI: React.FC<{
       getRowId,
     },
     useRowSelect,
+    useBlockLayout,
+    // useFlexLayout,
+    useResizeColumns,
     (hooks) => {
       hooks.visibleColumns.push((columns) => [
         {
           id: "selection",
+          width: "auto",
+          disableResizing: true,
           Header: ({ getToggleAllRowsSelectedProps }) => (
             <div>
               <IndeterminateCheckbox {...getToggleAllRowsSelectedProps()} />
@@ -393,16 +457,31 @@ const DataGridUI: React.FC<{
           ),
         },
         ...columns,
+        {
+          id: "new-column",
+          width: 40,
+          disableResizing: true,
+          Header: () => (
+            <div>
+              <NewColumnPopover workspaceId={workspaceId} tableId={tableId} />
+            </div>
+          ),
+          Cell: () => <div></div>,
+        },
       ]);
     }
   );
 
   const updateRowRank = trpc.useMutation(["rows.updateRank"]);
+  const updateColumn = trpc.useMutation(["columns.update"]);
   const addRow = trpc.useMutation(["rows.add"]);
+  const removeRows = trpc.useMutation(["rows.delete"]);
   const utils = trpc.useContext();
 
   const createNewRow = async () => {
-    const rank = LexoRank.parse(dbRows.at(-1)?.rank!).genNext().toString();
+    const rank = dbRows.length
+      ? LexoRank.parse(dbRows.at(-1)?.rank!).genNext().toString()
+      : LexoRank.middle().toString();
     await addRow.mutateAsync(
       { tableId, rank },
       {
@@ -424,206 +503,274 @@ const DataGridUI: React.FC<{
     headerGroups,
     rows,
     prepareRow,
-    state: { selectedRowIds },
+    state,
   } = tableInstance;
 
+  useResizeObserver(state, async (columnId, columnSize) => {
+    await updateColumn.mutateAsync({ id: columnId, width: columnSize });
+  });
+
   return (
-    <Box m="sm">
-      <ScrollArea>
-        <DragDropContext
-          onDragEnd={async ({ destination, source }) => {
-            if (source && destination && source.index !== destination.index) {
-              const recordsCopy = cloneDeep(records);
-              handlers.reorder({
-                from: source.index,
-                to: destination.index,
-              });
-              const id = recordsCopy[source.index].id;
-
-              const getNewRank = (oldIndex: number, newIndex: number) => {
-                if (recordsCopy.length === 0) {
-                  return LexoRank.middle();
-                } else if (newIndex === 0) {
-                  const firstItem = recordsCopy[0].rank;
-                  let rank = LexoRank.parse(firstItem).genPrev();
-                  return rank;
-                } else if (newIndex === recordsCopy.length - 1) {
-                  const lastItem = recordsCopy[recordsCopy.length - 1];
-                  let rank = LexoRank.parse(lastItem.rank).genNext();
-                  return rank;
-                } else {
-                  const over = LexoRank.parse(recordsCopy[newIndex].rank);
-                  const second = LexoRank.parse(
-                    recordsCopy[newIndex + (newIndex < oldIndex ? -1 : 0)].rank
-                  );
-                  return over.between(second);
-                }
-              };
-
-              const rank = getNewRank(
-                source.index,
-                destination.index
-              ).toString();
-              await updateRowRank.mutateAsync(
-                { id, rank },
-                {
-                  onSuccess: () => {
-                    // utils.refetchQueries(["rows.byTableId", { tableId }]);
-                    utils.setQueryData(
-                      ["rows.byTableId", { tableId }],
-                      (old) => {
-                        if (!old) return [];
-                        const cloned = [...old];
-                        const item = old[source.index];
-
-                        cloned.splice(source.index, 1);
-                        cloned.splice(destination.index, 0, item);
-
-                        return cloned.map((row) =>
-                          row.id === id ? { ...row, rank } : row
-                        );
-                      }
-                    );
-                  },
-                }
-              );
-            }
-            console.log("INFO: Reordering stored");
-          }}
-        >
-          <Box className={classes.table} component="table" {...getTableProps()}>
-            <thead>
-              {
-                // Loop over the header rows
-                headerGroups.map((headerGroup) => (
-                  // Apply the header row props
-                  <tr {...headerGroup.getHeaderGroupProps()}>
-                    {
-                      // Loop over the headers in each row
-                      headerGroup.headers.map((column) => (
-                        // Apply the header cell props
-                        <Box
-                          component="th"
-                          className={classes.cell}
-                          sx={{
-                            width: column.id === "selection" ? 0 : column.width,
-                            minWidth:
-                              column.id === "selection" ? 0 : column.minWidth,
-                          }}
-                          {...column.getHeaderProps()}
-                        >
-                          {column.render("Header")}
-                        </Box>
-                      ))
-                    }
-                    <Box
-                      component="th"
-                      sx={(theme) => ({
-                        backgroundColor: theme.colors.gray[0],
-                        width: 0,
-                        padding: "4px",
-                      })}
-                      className={classes.cell}
-                    >
-                      <NewColumnPopover
-                        workspaceId={workspaceId}
-                        tableId={tableId}
-                      />
-                    </Box>
-                  </tr>
-                ))
-              }
-            </thead>
-            <Droppable droppableId="dnd-list" direction="vertical">
-              {(provided) => (
-                <tbody
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                  {...getTableBodyProps()}
-                >
-                  {rows.map((row, index) => {
-                    prepareRow(row);
-                    return (
-                      <Draggable
-                        key={row.id}
-                        index={index}
-                        draggableId={row.id}
-                      >
-                        {(provided) => (
-                          <tr
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...row.getRowProps()}
-                            className={cx({
-                              [classes.rowSelected]: row.id in selectedRowIds,
-                            })}
-                          >
-                            {row.cells.map((cell) => {
-                              if (cell.column.id === "selection") {
-                                return (
-                                  <Box
-                                    component="th"
-                                    className={classes.cell}
-                                    {...cell.getCellProps()}
-                                    {...provided.dragHandleProps}
-                                  >
-                                    {row.id} <br />
-                                    {records[index].rank}
-                                    {cell.render("Cell")}
-                                  </Box>
-                                );
-                              }
-                              return (
-                                <Box
-                                  component="th"
-                                  className={classes.cell}
-                                  sx={{ padding: 0, width: cell.column.width }}
-                                  {...cell.getCellProps()}
-                                >
-                                  {cell.render("Cell")}
-                                </Box>
-                              );
-                            })}
-                            <Box
-                              component="th"
-                              sx={(theme) => ({
-                                width: "38px",
-                                backgroundColor:
-                                  row.id in selectedRowIds
-                                    ? "transparent"
-                                    : theme.colors.gray[0],
-                              })}
-                              className={classes.cell}
-                            />
-                          </tr>
-                        )}
-                      </Draggable>
-                    );
-                  })}
-                  {provided.placeholder}
-                </tbody>
-              )}
-            </Droppable>
-          </Box>
-        </DragDropContext>
-      </ScrollArea>
-      <Group spacing="sm" my="sm" align="center">
-        <Tooltip withArrow label="shift + enter" position="bottom">
-          <Button
-            loading={addRow.isLoading}
-            variant="default"
-            color="gray"
-            leftIcon={<IconPlus size={16} />}
-            onClick={createNewRow}
-            compact
-          >
-            New Row
+    <Box>
+      <Group
+        position="apart"
+        p={8}
+        sx={{
+          borderBottom: "2px solid",
+          borderColor: theme.colors.gray[2],
+        }}
+      >
+        <Group spacing={8}>
+          {/* <ActionIcon color="blue" variant="outline" size="sm">
+            <IconPlus size={16} />
+          </ActionIcon> */}
+          <Button variant="outline" leftIcon={<IconLayout size={16} />} compact>
+            Views
           </Button>
-        </Tooltip>
-        <Button color="gray" variant="default" compact disabled>
-          Load More
-        </Button>
+          {Object.keys(state.selectedRowIds).length > 0 ? (
+            <>
+              <Button
+                loading={removeRows.isLoading}
+                leftIcon={<IconTrash size={16} />}
+                color="red"
+                compact
+                onClick={() =>
+                  removeRows.mutate(
+                    { ids: Object.keys(state.selectedRowIds) },
+                    {
+                      onSuccess: () => {
+                        utils.setQueryData(
+                          ["rows.byTableId", { tableId }],
+                          (old) =>
+                            (old || [])?.filter(
+                              (row) => !state.selectedRowIds[row.id]
+                            )
+                        );
+                      },
+                    }
+                  )
+                }
+              >
+                Delete
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button leftIcon={<IconFilter size={16} />} compact>
+                Filter
+              </Button>
+              <Button leftIcon={<IconFrame size={16} />} compact>
+                Group
+              </Button>
+              <Button leftIcon={<IconSortAscending size={16} />} compact>
+                Sort
+              </Button>
+              <Button leftIcon={<IconEyeOff size={16} />} compact>
+                Hide Columns
+              </Button>
+            </>
+          )}
+        </Group>
+        <Group spacing={8}>
+          <Button leftIcon={<IconList size={16} />} variant="outline" compact>
+            Form
+          </Button>
+          <Button leftIcon={<IconRobot size={16} />} variant="outline" compact>
+            Automation
+          </Button>
+          <ActionIcon color="blue" variant="transparent" size="sm">
+            <IconSearch size={16} />
+          </ActionIcon>
+        </Group>
       </Group>
+      <Box m="sm">
+        <ScrollArea>
+          <DragDropContext
+            onDragEnd={async ({ destination, source }) => {
+              if (source && destination && source.index !== destination.index) {
+                const recordsCopy = cloneDeep(records);
+                handlers.reorder({
+                  from: source.index,
+                  to: destination.index,
+                });
+                const id = recordsCopy[source.index].id;
+
+                const getNewRank = (oldIndex: number, newIndex: number) => {
+                  if (recordsCopy.length === 0) {
+                    return LexoRank.middle();
+                  } else if (newIndex === 0) {
+                    const firstItem = recordsCopy[0].rank;
+                    let rank = LexoRank.parse(firstItem).genPrev();
+                    return rank;
+                  } else if (newIndex === recordsCopy.length - 1) {
+                    const lastItem = recordsCopy[recordsCopy.length - 1];
+                    let rank = LexoRank.parse(lastItem.rank).genNext();
+                    return rank;
+                  } else {
+                    const over = LexoRank.parse(recordsCopy[newIndex].rank);
+                    const second = LexoRank.parse(
+                      recordsCopy[newIndex + (newIndex < oldIndex ? -1 : 1)]
+                        .rank
+                    );
+                    return over.between(second);
+                  }
+                };
+
+                const rank = getNewRank(
+                  source.index,
+                  destination.index
+                ).toString();
+                await updateRowRank.mutateAsync(
+                  { id, rank },
+                  {
+                    onSuccess: () => {
+                      // utils.refetchQueries(["rows.byTableId", { tableId }]);
+                      utils.setQueryData(
+                        ["rows.byTableId", { tableId }],
+                        (old) => {
+                          if (!old) return [];
+                          const cloned = [...old];
+                          const item = old[source.index];
+
+                          cloned.splice(source.index, 1);
+                          cloned.splice(destination.index, 0, item);
+
+                          return cloned.map((row) =>
+                            row.id === id ? { ...row, rank } : row
+                          );
+                        }
+                      );
+                    },
+                  }
+                );
+              }
+              console.log("INFO: Reordering stored");
+            }}
+          >
+            <Box
+              // component="table"
+              className={classes.table}
+              {...getTableProps()}
+            >
+              <Box>
+                {headerGroups.map((headerGroup) => (
+                  <Box {...headerGroup.getHeaderGroupProps()}>
+                    {headerGroup.headers.map((column) => (
+                      <Box
+                        // component="th"
+                        className={classes.cell}
+                        sx={{ fontWeight: 700 }}
+                        {...column.getHeaderProps()}
+                      >
+                        {column.render("Header")}
+                        {column?.canResize && (
+                          <div
+                            {...column.getResizerProps()}
+                            className={`${classes.resizer} ${
+                              column.isResizing ? "isResizing" : ""
+                            }`}
+                          />
+                        )}
+                      </Box>
+                    ))}
+                  </Box>
+                ))}
+              </Box>
+              <Droppable droppableId="dnd-list" direction="vertical">
+                {(provided) => (
+                  <Box
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    {...getTableBodyProps()}
+                  >
+                    {rows.map((row, index) => {
+                      prepareRow(row);
+                      return (
+                        <Draggable
+                          key={row.id}
+                          index={index}
+                          draggableId={row.id}
+                        >
+                          {(provided) => (
+                            <Box
+                              // component="tr"
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                            >
+                              <Box
+                                {...row.getRowProps()}
+                                className={cx(classes.rowUnselected, {
+                                  [classes.rowSelected]:
+                                    row.id in state.selectedRowIds,
+                                })}
+                              >
+                                {row.cells.map((cell) => {
+                                  if (cell.column.id === "selection") {
+                                    return (
+                                      <Box
+                                        // component="td"
+                                        className={classes.cell}
+                                        {...cell.getCellProps()}
+                                        {...provided.dragHandleProps}
+                                      >
+                                        {cell.render("Cell")}
+                                      </Box>
+                                    );
+                                  }
+                                  return (
+                                    <Box
+                                      className={classes.cell}
+                                      sx={{
+                                        padding: 0,
+                                        width: cell.column.width,
+                                      }}
+                                      {...cell.getCellProps()}
+                                    >
+                                      {cell.render("Cell")}
+                                    </Box>
+                                  );
+                                })}
+                                {/* <Box
+                                sx={(theme) => ({
+                                  width: "38px",
+                                  backgroundColor:
+                                    row.id in state.selectedRowIds
+                                      ? "transparent"
+                                      : theme.colors.gray[0],
+                                })}
+                                className={classes.cell}
+                              /> */}
+                              </Box>
+                            </Box>
+                          )}
+                        </Draggable>
+                      );
+                    })}
+                    {provided.placeholder}
+                  </Box>
+                )}
+              </Droppable>
+            </Box>
+          </DragDropContext>
+        </ScrollArea>
+        <Group spacing="sm" my="sm" align="center">
+          <Tooltip withArrow label="shift + enter" position="bottom">
+            <Button
+              loading={addRow.isLoading}
+              variant="default"
+              color="gray"
+              leftIcon={<IconPlus size={16} />}
+              onClick={createNewRow}
+              compact
+            >
+              New Row
+            </Button>
+          </Tooltip>
+          <Button color="gray" variant="default" compact disabled>
+            Load More
+          </Button>
+        </Group>
+      </Box>
     </Box>
   );
 };

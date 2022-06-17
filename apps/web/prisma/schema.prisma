@@ -72,6 +72,7 @@ model Cell {
 
 model Column {
   id              String     @id @default(cuid())
+  width           Int        @default(150)
   name            String     @db.VarChar
   type            ColumnType
   dropdownOptions String[]

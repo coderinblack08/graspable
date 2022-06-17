@@ -40,9 +40,9 @@ export const rowRouter = createRouter()
   })
   .mutation("delete", {
     input: z.object({
-      id: z.string(),
+      ids: z.array(z.string()),
     }),
     async resolve({ ctx, input }) {
-      return ctx.prisma.row.delete({ where: { id: input.id } });
+      return ctx.prisma.row.deleteMany({ where: { id: { in: input.ids } } });
     },
   });

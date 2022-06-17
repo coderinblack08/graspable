@@ -144,7 +144,7 @@ const AppPage: NextPage = () => {
                   </Menu.Item>
                 </Menu>
               </Group>
-              <Group spacing="xs">
+              {/* <Group spacing="xs">
                 <ThemeIcon variant="light" size="xs">
                   <IconUser />
                 </ThemeIcon>
@@ -167,7 +167,7 @@ const AppPage: NextPage = () => {
                 <Text size="sm" style={{ lineHeight: 1.5 }} color="dimmed">
                   1 Table
                 </Text>
-              </Group>
+              </Group> */}
             </Card>
           </Link>
         ))}
