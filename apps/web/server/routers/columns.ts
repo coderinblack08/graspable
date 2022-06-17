@@ -30,7 +30,7 @@ export const columnsRouter = createRouter()
   .mutation("update", {
     input: z.object({
       id: z.string(),
-      width: z.number().min(100).optional(),
+      width: z.number().min(100).max(400).optional(),
     }),
     async resolve({ ctx, input }) {
       return ctx.prisma.column.update({ where: { id: input.id }, data: input });

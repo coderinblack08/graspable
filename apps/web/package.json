@@ -44,6 +44,7 @@
     "react-query": "^3.39.1",
     "react-supabase": "^0.2.0",
     "react-table": "^7.8.0",
+    "react-use": "^17.4.0",
     "reactfire": "^4.2.1",
     "superjson": "^1.9.1",
     "ts-node": "^10.8.1",

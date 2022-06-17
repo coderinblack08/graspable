@@ -18,7 +18,7 @@ import {
 } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import { useForm } from "@mantine/form";
-import { useHotkeys, useListState } from "@mantine/hooks";
+import { useBooleanToggle, useHotkeys, useListState } from "@mantine/hooks";
 import {
   IconEyeOff,
   IconFilter,
@@ -36,15 +36,14 @@ import cloneDeep from "lodash.clonedeep";
 import React, { useEffect, useRef } from "react";
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import {
+  HeaderGroup,
   useBlockLayout,
-  useFlexLayout,
   useResizeColumns,
   useRowSelect,
   useTable,
 } from "react-table";
 import { useDebouncedCallback } from "use-debounce";
 import { InferQueryOutput, trpc } from "../lib/trpc";
-import { useResizeObserver } from "../lib/use-resize-observer";
 
 const useStyles = createStyles((theme) => ({
   table: {
@@ -352,6 +351,52 @@ const NewColumnPopover: React.FC<{ workspaceId: string; tableId: string }> = ({
   );
 };
 
+type HeaderCellProps = {
+  column: HeaderGroup<Record<string, any>>;
+};
+
+export const HeaderCell: React.FC<HeaderCellProps> = ({ column }) => {
+  const { id: columnId } = column;
+  const { classes } = useStyles();
+
+  const updateColumn = trpc.useMutation(["columns.update"]);
+  const cellRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (
+      column.isResizing === false &&
+      column.width &&
+      column.id !== "selection" &&
+      column.id !== "new-column" &&
+      cellRef.current
+    ) {
+      updateColumn.mutate({
+        id: columnId,
+        width: cellRef.current.clientWidth + 2,
+      });
+    }
+  }, [column.id, column.isResizing, column.width, columnId]);
+
+  return (
+    <Box
+      ref={cellRef}
+      className={classes.cell}
+      sx={{ fontWeight: 700, userSelect: "none" }}
+      {...column.getHeaderProps()}
+    >
+      {column.render("Header")}
+      {column?.canResize && (
+        <div
+          {...column.getResizerProps()}
+          className={`${classes.resizer} ${
+            column.isResizing ? "isResizing" : ""
+          }`}
+        />
+      )}
+    </Box>
+  );
+};
+
 const DataGridUI: React.FC<{
   workspaceId: string;
   tableId: string;
@@ -368,9 +413,7 @@ const DataGridUI: React.FC<{
       dbColumns?.map((db_column) => ({
         Header: db_column.name,
         accessor: db_column.id,
-        minWidth: 100,
         width: db_column.width || 150,
-        maxWidth: 400,
       })),
     [dbColumns]
   );
@@ -430,14 +473,17 @@ const DataGridUI: React.FC<{
     {
       columns: RT_COLUMNS,
       data: records,
-      defaultColumn: { Cell: EditableCell(dbColumns) },
+      defaultColumn: {
+        Cell: EditableCell(dbColumns),
+        minWidth: 100,
+        maxWidth: 400,
+      },
       autoResetPage: !skipPageReset,
       updateMyData,
       getRowId,
     },
     useRowSelect,
     useBlockLayout,
-    // useFlexLayout,
     useResizeColumns,
     (hooks) => {
       hooks.visibleColumns.push((columns) => [
@@ -473,7 +519,6 @@ const DataGridUI: React.FC<{
   );
 
   const updateRowRank = trpc.useMutation(["rows.updateRank"]);
-  const updateColumn = trpc.useMutation(["columns.update"]);
   const addRow = trpc.useMutation(["rows.add"]);
   const removeRows = trpc.useMutation(["rows.delete"]);
   const utils = trpc.useContext();
@@ -505,10 +550,6 @@ const DataGridUI: React.FC<{
     prepareRow,
     state,
   } = tableInstance;
-
-  useResizeObserver(state, async (columnId, columnSize) => {
-    await updateColumn.mutateAsync({ id: columnId, width: columnSize });
-  });
 
   return (
     <Box>
@@ -656,22 +697,7 @@ const DataGridUI: React.FC<{
                 {headerGroups.map((headerGroup) => (
                   <Box {...headerGroup.getHeaderGroupProps()}>
                     {headerGroup.headers.map((column) => (
-                      <Box
-                        // component="th"
-                        className={classes.cell}
-                        sx={{ fontWeight: 700 }}
-                        {...column.getHeaderProps()}
-                      >
-                        {column.render("Header")}
-                        {column?.canResize && (
-                          <div
-                            {...column.getResizerProps()}
-                            className={`${classes.resizer} ${
-                              column.isResizing ? "isResizing" : ""
-                            }`}
-                          />
-                        )}
-                      </Box>
+                      <HeaderCell key={column.id} column={column} />
                     ))}
                   </Box>
                 ))}
