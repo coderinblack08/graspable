@@ -21,16 +21,18 @@ export const columnsRouter = createRouter()
       name: z.string(),
       type: z.nativeEnum(ColumnType),
       dropdownOptions: z.array(z.string()).optional(),
-      rank: z.string().default(LexoRank.middle().toString()),
+      rank: z.string().optional(),
     }),
     async resolve({ ctx, input }) {
-      return ctx.prisma.column.create({ data: input });
+      if (!input.rank) input.rank = LexoRank.middle().toString();
+      return ctx.prisma.column.create({ data: { ...input, rank: input.rank } });
     },
   })
   .mutation("update", {
     input: z.object({
       id: z.string(),
       width: z.number().min(100).max(400).optional(),
+      rank: z.string().optional(),
     }),
     async resolve({ ctx, input }) {
       return ctx.prisma.column.update({ where: { id: input.id }, data: input });

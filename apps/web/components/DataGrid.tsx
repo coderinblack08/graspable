@@ -18,7 +18,7 @@ import {
 } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import { useForm } from "@mantine/form";
-import { useBooleanToggle, useHotkeys, useListState } from "@mantine/hooks";
+import { useHotkeys, useListState } from "@mantine/hooks";
 import {
   IconEyeOff,
   IconFilter,
@@ -38,6 +38,7 @@ import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import {
   HeaderGroup,
   useBlockLayout,
+  useColumnOrder,
   useResizeColumns,
   useRowSelect,
   useTable,
@@ -245,9 +246,11 @@ const EditableCell = (columns?: InferQueryOutput<"columns.byTableId">) => {
   return Cell;
 };
 
-const NewColumnPopover: React.FC<{ workspaceId: string; tableId: string }> = ({
-  tableId,
-}) => {
+const NewColumnPopover: React.FC<{
+  lastRank?: string;
+  workspaceId: string;
+  tableId: string;
+}> = ({ tableId, lastRank }) => {
   const addColumn = trpc.useMutation(["columns.add"]);
   const utils = trpc.useContext();
   const [opened, setOpened] = React.useState(false);
@@ -287,6 +290,9 @@ const NewColumnPopover: React.FC<{ workspaceId: string; tableId: string }> = ({
                 name: data.name!,
                 type: data.type!,
                 dropdownOptions: data.dropdownOptions,
+                rank: lastRank
+                  ? LexoRank.parse(lastRank).genNext().toString()
+                  : undefined,
                 tableId,
               },
               {
@@ -353,14 +359,15 @@ const NewColumnPopover: React.FC<{ workspaceId: string; tableId: string }> = ({
 
 type HeaderCellProps = {
   column: HeaderGroup<Record<string, any>>;
+  index: number;
 };
 
-export const HeaderCell: React.FC<HeaderCellProps> = ({ column }) => {
+export const HeaderCell: React.FC<HeaderCellProps> = ({ index, column }) => {
   const { id: columnId } = column;
   const { classes } = useStyles();
 
   const updateColumn = trpc.useMutation(["columns.update"]);
-  const cellRef = React.useRef<HTMLDivElement>(null);
+  const cellRef = React.useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (
@@ -378,22 +385,57 @@ export const HeaderCell: React.FC<HeaderCellProps> = ({ column }) => {
   }, [column.id, column.isResizing, column.width, columnId]);
 
   return (
-    <Box
-      ref={cellRef}
-      className={classes.cell}
-      sx={{ fontWeight: 700, userSelect: "none" }}
-      {...column.getHeaderProps()}
+    <Draggable
+      isDragDisabled={column.id === "selection" || column.id === "new-column"}
+      key={column.id}
+      index={index}
+      draggableId={column.id}
     >
-      {column.render("Header")}
-      {column?.canResize && (
-        <div
-          {...column.getResizerProps()}
-          className={`${classes.resizer} ${
-            column.isResizing ? "isResizing" : ""
-          }`}
-        />
-      )}
-    </Box>
+      {(provided, snapshot) => {
+        // let transform = provided.draggableProps.style?.transform;
+
+        // if (snapshot.isDragging && transform) {
+        //   // transform = transform.replace(/\(.+\,/, "(0,");
+        //   transform = transform.replace(/\,.+\)/, ",0)");
+        // }
+
+        // const style = {
+        //   ...provided.draggableProps.style,
+        //   transform,
+        // };
+
+        return (
+          <Box
+            ref={provided.innerRef}
+            {...provided.draggableProps}
+            {...provided.dragHandleProps}
+            // style={style}
+          >
+            <Box
+              ref={cellRef}
+              className={classes.cell}
+              sx={{
+                backgroundColor: "white",
+                fontWeight: 700,
+                userSelect: "none",
+                height: "100%",
+              }}
+              {...column.getHeaderProps()}
+            >
+              {column.render("Header")}
+              {column?.canResize && (
+                <div
+                  {...column.getResizerProps()}
+                  className={`${classes.resizer} ${
+                    column.isResizing ? "isResizing" : ""
+                  }`}
+                />
+              )}
+            </Box>
+          </Box>
+        );
+      }}
+    </Draggable>
   );
 };
 
@@ -469,6 +511,8 @@ const DataGridUI: React.FC<{
     setSkipPageReset(false);
   }, [records]);
 
+  const currentColOrder = React.useRef<any[]>();
+
   const tableInstance = useTable(
     {
       columns: RT_COLUMNS,
@@ -485,6 +529,7 @@ const DataGridUI: React.FC<{
     useRowSelect,
     useBlockLayout,
     useResizeColumns,
+    useColumnOrder,
     (hooks) => {
       hooks.visibleColumns.push((columns) => [
         {
@@ -506,10 +551,15 @@ const DataGridUI: React.FC<{
         {
           id: "new-column",
           width: 40,
+          minWidth: 40,
           disableResizing: true,
           Header: () => (
             <div>
-              <NewColumnPopover workspaceId={workspaceId} tableId={tableId} />
+              <NewColumnPopover
+                lastRank={dbColumns.at(-1)?.rank}
+                workspaceId={workspaceId}
+                tableId={tableId}
+              />
             </div>
           ),
           Cell: () => <div></div>,
@@ -519,6 +569,7 @@ const DataGridUI: React.FC<{
   );
 
   const updateRowRank = trpc.useMutation(["rows.updateRank"]);
+  const updateColumn = trpc.useMutation(["columns.update"]);
   const addRow = trpc.useMutation(["rows.add"]);
   const removeRows = trpc.useMutation(["rows.delete"]);
   const utils = trpc.useContext();
@@ -540,13 +591,40 @@ const DataGridUI: React.FC<{
     );
   };
 
+  const getNewRank = (
+    values: any[],
+    oldIndex: number,
+    newIndex: number,
+    oneIndexed = false
+  ) => {
+    if (values.length === (oneIndexed ? 2 : 0)) {
+      return LexoRank.middle();
+    } else if (newIndex === (oneIndexed ? 1 : 0)) {
+      const firstItem = values[oneIndexed ? 1 : 0].rank;
+      let rank = LexoRank.parse(firstItem).genPrev();
+      return rank;
+    } else if (newIndex === values.length - (oneIndexed ? 2 : 1)) {
+      const lastItem = values[values.length - (oneIndexed ? 2 : 1)];
+      let rank = LexoRank.parse(lastItem.rank).genNext();
+      return rank;
+    } else {
+      const over = LexoRank.parse(values[newIndex].rank);
+      const second = LexoRank.parse(
+        values[newIndex + (newIndex < oldIndex ? -1 : 1)].rank
+      );
+      return over.between(second);
+    }
+  };
+
   useHotkeys([["shift+enter", createNewRow]]);
 
   const {
+    setColumnOrder,
     getTableProps,
     getTableBodyProps,
     headerGroups,
     rows,
+    flatHeaders,
     prepareRow,
     state,
   } = tableInstance;
@@ -626,83 +704,151 @@ const DataGridUI: React.FC<{
       </Group>
       <Box m="sm">
         <ScrollArea>
-          <DragDropContext
-            onDragEnd={async ({ destination, source }) => {
-              if (source && destination && source.index !== destination.index) {
-                const recordsCopy = cloneDeep(records);
-                handlers.reorder({
-                  from: source.index,
-                  to: destination.index,
-                });
-                const id = recordsCopy[source.index].id;
-
-                const getNewRank = (oldIndex: number, newIndex: number) => {
-                  if (recordsCopy.length === 0) {
-                    return LexoRank.middle();
-                  } else if (newIndex === 0) {
-                    const firstItem = recordsCopy[0].rank;
-                    let rank = LexoRank.parse(firstItem).genPrev();
-                    return rank;
-                  } else if (newIndex === recordsCopy.length - 1) {
-                    const lastItem = recordsCopy[recordsCopy.length - 1];
-                    let rank = LexoRank.parse(lastItem.rank).genNext();
-                    return rank;
-                  } else {
-                    const over = LexoRank.parse(recordsCopy[newIndex].rank);
-                    const second = LexoRank.parse(
-                      recordsCopy[newIndex + (newIndex < oldIndex ? -1 : 1)]
-                        .rank
-                    );
-                    return over.between(second);
-                  }
-                };
-
-                const rank = getNewRank(
-                  source.index,
-                  destination.index
-                ).toString();
-                await updateRowRank.mutateAsync(
-                  { id, rank },
-                  {
-                    onSuccess: () => {
-                      // utils.refetchQueries(["rows.byTableId", { tableId }]);
-                      utils.setQueryData(
-                        ["rows.byTableId", { tableId }],
-                        (old) => {
-                          if (!old) return [];
-                          const cloned = [...old];
-                          const item = old[source.index];
-
-                          cloned.splice(source.index, 1);
-                          cloned.splice(destination.index, 0, item);
-
-                          return cloned.map((row) =>
-                            row.id === id ? { ...row, rank } : row
-                          );
-                        }
-                      );
-                    },
-                  }
-                );
-              }
-              console.log("INFO: Reordering stored");
-            }}
+          <Box
+            // component="table"
+            className={classes.table}
+            {...getTableProps()}
           >
-            <Box
-              // component="table"
-              className={classes.table}
-              {...getTableProps()}
+            <DragDropContext
+              onDragStart={() => {
+                currentColOrder.current = flatHeaders.map((o) => o.id);
+              }}
+              onDragUpdate={({ source, destination, draggableId }, b) => {
+                const colOrder = [...(currentColOrder.current || [])];
+                const sIndex = source.index;
+                const dIndex = destination && destination.index;
+                if (
+                  typeof sIndex === "number" &&
+                  typeof dIndex === "number" &&
+                  sIndex !== dIndex
+                ) {
+                  colOrder.splice(sIndex, 1);
+                  colOrder.splice(dIndex, 0, draggableId);
+                  setColumnOrder(colOrder);
+                }
+              }}
+              onDragEnd={({ source, destination }) => {
+                if (
+                  source &&
+                  destination &&
+                  source.index !== destination.index
+                ) {
+                  const colOrder = [...(currentColOrder.current || [])];
+                  const sIndex = source.index;
+                  const dIndex = destination.index;
+                  if (dIndex === 0 || dIndex === colOrder.length - 1) return;
+                  const rank = getNewRank(
+                    colOrder.map((col) => ({
+                      rank: dbColumns?.find((c) => c.id === col)?.rank,
+                    })),
+                    sIndex,
+                    dIndex,
+                    true
+                  );
+                  updateColumn.mutate(
+                    {
+                      id: colOrder[sIndex],
+                      rank: rank.toString(),
+                    },
+                    {
+                      onSuccess: () => {
+                        utils.setQueryData(
+                          ["columns.byTableId", { tableId }],
+                          (old) => {
+                            if (!old) return [];
+                            const cloned = cloneDeep(old).filter(Boolean);
+                            const item = old[sIndex - 1];
+
+                            cloned.splice(sIndex - 1, 1);
+                            cloned.splice(dIndex - 1, 0, item);
+
+                            const returnValue = cloned.map((column) =>
+                              column.id === colOrder[sIndex]
+                                ? { ...column, rank: rank.toString() }
+                                : column
+                            );
+
+                            console.log({ returnValue });
+
+                            return returnValue;
+                          }
+                        );
+                      },
+                    }
+                  );
+                }
+              }}
             >
-              <Box>
-                {headerGroups.map((headerGroup) => (
-                  <Box {...headerGroup.getHeaderGroupProps()}>
-                    {headerGroup.headers.map((column) => (
-                      <HeaderCell key={column.id} column={column} />
-                    ))}
-                  </Box>
-                ))}
-              </Box>
-              <Droppable droppableId="dnd-list" direction="vertical">
+              <Droppable droppableId="column-list" direction="horizontal">
+                {(provided) => (
+                  <>
+                    <Box {...provided.droppableProps} ref={provided.innerRef}>
+                      {headerGroups.map((headerGroup) => (
+                        <Box
+                          {...headerGroup.getHeaderGroupProps()}
+                          sx={{ backgroundColor: theme.colors.gray[0] }}
+                        >
+                          {headerGroup.headers.map((column, index) => (
+                            <HeaderCell
+                              index={index}
+                              key={column.id}
+                              column={column}
+                            />
+                          ))}
+                          {provided.placeholder}
+                        </Box>
+                      ))}
+                    </Box>
+                  </>
+                )}
+              </Droppable>
+            </DragDropContext>
+            <DragDropContext
+              onDragEnd={async ({ destination, source }) => {
+                if (
+                  source &&
+                  destination &&
+                  source.index !== destination.index
+                ) {
+                  const recordsCopy = cloneDeep(records);
+                  handlers.reorder({
+                    from: source.index,
+                    to: destination.index,
+                  });
+                  const id = recordsCopy[source.index].id;
+                  const rank = getNewRank(
+                    recordsCopy,
+                    source.index,
+                    destination.index
+                  ).toString();
+                  await updateRowRank.mutateAsync(
+                    { id, rank },
+                    {
+                      onSuccess: () => {
+                        // utils.refetchQueries(["rows.byTableId", { tableId }]);
+                        utils.setQueryData(
+                          ["rows.byTableId", { tableId }],
+                          (old) => {
+                            if (!old) return [];
+                            const cloned = [...old];
+                            const item = old[source.index];
+
+                            cloned.splice(source.index, 1);
+                            cloned.splice(destination.index, 0, item);
+
+                            return cloned.map((row) =>
+                              row.id === id ? { ...row, rank } : row
+                            );
+                          }
+                        );
+                      },
+                    }
+                  );
+                }
+                console.log("INFO: Reordering stored");
+              }}
+            >
+              <Droppable droppableId="row-list" direction="vertical">
                 {(provided) => (
                   <Box
                     {...provided.droppableProps}
@@ -717,58 +863,48 @@ const DataGridUI: React.FC<{
                           index={index}
                           draggableId={row.id}
                         >
-                          {(provided) => (
-                            <Box
-                              // component="tr"
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                            >
+                          {(provided) => {
+                            return (
                               <Box
-                                {...row.getRowProps()}
-                                className={cx(classes.rowUnselected, {
-                                  [classes.rowSelected]:
-                                    row.id in state.selectedRowIds,
-                                })}
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
                               >
-                                {row.cells.map((cell) => {
-                                  if (cell.column.id === "selection") {
+                                <Box
+                                  {...row.getRowProps()}
+                                  className={cx(classes.rowUnselected, {
+                                    [classes.rowSelected]:
+                                      row.id in state.selectedRowIds,
+                                  })}
+                                >
+                                  {row.cells.map((cell) => {
+                                    if (cell.column.id === "selection") {
+                                      return (
+                                        <Box
+                                          className={classes.cell}
+                                          {...cell.getCellProps()}
+                                          {...provided.dragHandleProps}
+                                        >
+                                          {cell.render("Cell")}
+                                        </Box>
+                                      );
+                                    }
                                     return (
                                       <Box
-                                        // component="td"
                                         className={classes.cell}
+                                        sx={{
+                                          padding: 0,
+                                          width: cell.column.width,
+                                        }}
                                         {...cell.getCellProps()}
-                                        {...provided.dragHandleProps}
                                       >
                                         {cell.render("Cell")}
                                       </Box>
                                     );
-                                  }
-                                  return (
-                                    <Box
-                                      className={classes.cell}
-                                      sx={{
-                                        padding: 0,
-                                        width: cell.column.width,
-                                      }}
-                                      {...cell.getCellProps()}
-                                    >
-                                      {cell.render("Cell")}
-                                    </Box>
-                                  );
-                                })}
-                                {/* <Box
-                                sx={(theme) => ({
-                                  width: "38px",
-                                  backgroundColor:
-                                    row.id in state.selectedRowIds
-                                      ? "transparent"
-                                      : theme.colors.gray[0],
-                                })}
-                                className={classes.cell}
-                              /> */}
+                                  })}
+                                </Box>
                               </Box>
-                            </Box>
-                          )}
+                            );
+                          }}
                         </Draggable>
                       );
                     })}
@@ -776,8 +912,8 @@ const DataGridUI: React.FC<{
                   </Box>
                 )}
               </Droppable>
-            </Box>
-          </DragDropContext>
+            </DragDropContext>
+          </Box>
         </ScrollArea>
         <Group spacing="sm" my="sm" align="center">
           <Tooltip withArrow label="shift + enter" position="bottom">
