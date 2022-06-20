@@ -12,7 +12,7 @@ import { IconPlus, IconSortAscending } from "@tabler/icons";
 import React from "react";
 import shallow from "zustand/shallow";
 import { InferQueryOutput } from "../lib/trpc";
-import { useTableStore } from "./DataGrid";
+import { useTableStore } from "./useTableStore";
 
 export interface Sort {
   direction: "asc" | "desc";

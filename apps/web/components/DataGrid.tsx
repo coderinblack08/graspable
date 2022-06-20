@@ -1,25 +1,13 @@
-import create from "zustand";
-import { combine } from "zustand/middleware";
 import {
   ActionIcon,
   Box,
   Button,
-  Center,
-  Checkbox,
   createStyles,
   Group,
-  Modal,
-  MultiSelect,
-  NumberInput,
   ScrollArea,
-  Select,
-  Stack,
-  TextInput,
   Tooltip,
   useMantineTheme,
 } from "@mantine/core";
-import { DatePicker } from "@mantine/dates";
-import { useForm } from "@mantine/form";
 import { useHotkeys, useListState } from "@mantine/hooks";
 import {
   IconEyeOff,
@@ -34,22 +22,25 @@ import {
 } from "@tabler/icons";
 import { LexoRank } from "lexorank";
 import cloneDeep from "lodash.clonedeep";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import {
-  HeaderGroup,
   useBlockLayout,
   useColumnOrder,
   useResizeColumns,
   useRowSelect,
   useTable,
 } from "react-table";
-import { useDebouncedCallback } from "use-debounce";
-import { InferQueryOutput, trpc } from "../lib/trpc";
-import { Sort, SortPopover } from "./SortPopover";
+import { InferQueryInput, InferQueryOutput, trpc } from "../lib/trpc";
+import { SortPopover } from "./SortPopover";
 import shallow from "zustand/shallow";
+import { HeaderCell } from "./HeaderCell";
+import { EditableCell } from "./EditableCell";
+import { NewColumnPopover } from "./NewColumnPopover";
+import { IndeterminateCheckbox } from "./IndeterminateCheckbox";
+import { useTableStore } from "./useTableStore";
 
-const useStyles = createStyles((theme) => ({
+export const useStyles = createStyles((theme) => ({
   table: {
     display: "inline-block",
     borderSpacing: 0,
@@ -103,25 +94,6 @@ const useStyles = createStyles((theme) => ({
   },
 }));
 
-interface Filter {}
-interface Hide {
-  columnId: string | null;
-}
-
-export const useTableStore = create(
-  combine(
-    {
-      filters: [] as Filter[],
-      sorts: [] as Sort[],
-      hides: [] as Hide[],
-    },
-    (set) => ({
-      clearAll: () => set(() => ({ filters: [], sorts: [], hides: [] })),
-      setSort: (sorts: Sort[]) => set((state) => ({ sorts })),
-    })
-  )
-);
-
 interface DataGridProps {
   workspaceId: string;
   tableId: string;
@@ -153,325 +125,6 @@ export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
   }
 
   return null;
-};
-
-const IndeterminateCheckbox = React.forwardRef<HTMLInputElement, any>(
-  ({ indeterminate, ...rest }, ref) => {
-    const defaultRef = useRef<HTMLInputElement>();
-    const resolvedRef = ref || defaultRef;
-
-    return (
-      <Checkbox indeterminate={indeterminate} ref={resolvedRef} {...rest} />
-    );
-  }
-);
-
-const EditableCell = (columns?: InferQueryOutput<"columns.byTableId">) => {
-  const Cell: React.FC<any> = ({
-    value: initialValue,
-    row: { index: rowIndex, id: _rowId },
-    column: { id: columnId },
-    updateMyData,
-  }) => {
-    const [value, setValue] = React.useState(initialValue);
-    const debounced = useDebouncedCallback(() => {
-      updateMyData(rowIndex, columnId, value);
-      console.log("INFO: data-grid synched to database");
-    }, 800);
-
-    useEffect(() => {
-      setValue(initialValue);
-    }, [initialValue]);
-
-    const column = columns?.find((x) => x.id === columnId);
-    const styles = {
-      input: {
-        border: "none",
-        height: "100%",
-        backgroundColor: "transparent",
-        borderRadius: 0,
-      },
-    };
-
-    switch (column?.type) {
-      case "date":
-        if (value && Object.hasOwn(value, "seconds")) {
-          setValue(value.toDate());
-        }
-        return (
-          <>
-            <DatePicker
-              onChange={(date) => {
-                setValue(date?.toDateString());
-                debounced();
-              }}
-              styles={styles}
-              value={value && new Date(value)}
-            />
-          </>
-        );
-      case "checkbox":
-        return (
-          <Center style={{ height: "100%" }}>
-            <Checkbox
-              checked={!!value}
-              onChange={(event) => {
-                setValue(event.currentTarget.checked);
-                debounced();
-              }}
-            />
-          </Center>
-        );
-      case "number":
-        return (
-          <NumberInput
-            value={value}
-            onChange={(val) => {
-              setValue(val || null);
-              debounced();
-            }}
-            styles={styles}
-          />
-        );
-      case "url":
-        return (
-          <TextInput
-            type="url"
-            styles={styles}
-            value={value || ""}
-            onChange={(e) => {
-              setValue(e.target.value);
-              debounced();
-            }}
-          />
-        );
-      case "dropdown":
-        return (
-          <Select
-            color="blue"
-            styles={styles}
-            value={value}
-            onChange={(value) => {
-              setValue(value);
-              debounced();
-            }}
-            data={
-              column.dropdownOptions?.map((x) => ({ label: x, value: x })) || []
-            }
-          />
-        );
-      default:
-        return (
-          <TextInput
-            styles={styles}
-            value={value || ""}
-            onChange={(e) => {
-              setValue(e.target.value);
-              debounced();
-            }}
-          />
-        );
-    }
-  };
-
-  return Cell;
-};
-
-const NewColumnPopover: React.FC<{
-  lastRank?: string;
-  workspaceId: string;
-  tableId: string;
-}> = ({ tableId, lastRank }) => {
-  const addColumn = trpc.useMutation(["columns.add"]);
-  const utils = trpc.useContext();
-  const [opened, setOpened] = React.useState(false);
-  const [msData, setMsData] = React.useState<any[]>([]);
-  const form = useForm({
-    initialValues: {
-      name: "",
-      type: "" as
-        | "number"
-        | "text"
-        | "url"
-        | "dropdown"
-        | "tags"
-        | "checkbox"
-        | "date"
-        | "file",
-      dropdownOptions: [] as string[],
-    },
-  });
-
-  return (
-    <>
-      <ActionIcon onClick={() => setOpened((o) => !o)} size="sm">
-        <IconPlus size={16} />
-      </ActionIcon>
-      <Modal
-        opened={opened}
-        onClose={() => setOpened(false)}
-        title="New Column"
-      >
-        <form
-          onSubmit={form.onSubmit(async (values) => {
-            const data: Partial<typeof values> = Object.assign({}, values);
-            if (data.type !== "dropdown") delete data.dropdownOptions;
-            await addColumn.mutateAsync(
-              {
-                name: data.name!,
-                type: data.type!,
-                dropdownOptions: data.dropdownOptions,
-                rank: lastRank
-                  ? LexoRank.parse(lastRank).genNext().toString()
-                  : undefined,
-                tableId,
-              },
-              {
-                onSuccess: (data) => {
-                  utils.setQueryData(
-                    ["columns.byTableId", { tableId }],
-                    (old) => [...(old || []), data]
-                  );
-                },
-              }
-            );
-            setOpened(false);
-          })}
-        >
-          <Stack>
-            <TextInput
-              size="xs"
-              label="Name"
-              placeholder="Column name"
-              required
-              {...form.getInputProps("name")}
-            />
-            <Select
-              size="xs"
-              label="Type"
-              placeholder="Pick one a column type"
-              data={[
-                { value: "text", label: "Text" },
-                { value: "number", label: "Number" },
-                { value: "dropdown", label: "Dropdown" },
-                { value: "checkbox", label: "Checkbox" },
-                { value: "date", label: "Date" },
-                { value: "url", label: "URL" },
-                { value: "formula", label: "Formula", disabled: true },
-              ]}
-              {...form.getInputProps("type")}
-              searchable
-              required
-            />
-            {form.values.type === "dropdown" && (
-              <MultiSelect
-                size="xs"
-                label="Dropdown options"
-                data={msData}
-                placeholder="Create dropdown options"
-                searchable
-                creatable
-                getCreateLabel={(query) => `+ Create ${query}`}
-                onCreate={(query) =>
-                  setMsData((current) => [...current, query])
-                }
-                {...form.getInputProps("dropdownOptions")}
-              />
-            )}
-            <Button type="submit" size="xs" color="gray">
-              Create column
-            </Button>
-          </Stack>
-        </form>
-      </Modal>
-    </>
-  );
-};
-
-type HeaderCellProps = {
-  column: HeaderGroup<Record<string, any>>;
-  index: number;
-};
-
-export const HeaderCell: React.FC<HeaderCellProps> = ({ index, column }) => {
-  const { id: columnId } = column;
-  const { classes } = useStyles();
-
-  const updateColumn = trpc.useMutation(["columns.update"]);
-  const [previousWidth, setPreviousWidth] = React.useState(column.width);
-  const cellRef = React.useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (
-      column.width !== previousWidth &&
-      column.isResizing === false &&
-      column.width &&
-      column.id !== "selection" &&
-      column.id !== "new-column" &&
-      cellRef.current
-    ) {
-      const newWidth = cellRef.current.clientWidth + 2;
-      updateColumn.mutate({ id: columnId, width: newWidth });
-      setPreviousWidth(column.width);
-    }
-  }, [column.id, column.isResizing, column.width, columnId, previousWidth]);
-
-  return (
-    <Draggable
-      isDragDisabled={
-        column.id === "selection" ||
-        column.id === "new-column" ||
-        column.isResizing
-      }
-      key={column.id}
-      index={index}
-      draggableId={column.id}
-    >
-      {(provided, snapshot) => {
-        // let transform = provided.draggableProps.style?.transform;
-
-        // if (snapshot.isDragging && transform) {
-        //   // transform = transform.replace(/\(.+\,/, "(0,");
-        //   transform = transform.replace(/\,.+\)/, ",0)");
-        // }
-
-        // const style = {
-        //   ...provided.draggableProps.style,
-        //   transform,
-        // };
-
-        return (
-          <Box
-            ref={provided.innerRef}
-            {...provided.draggableProps}
-            // style={style}
-          >
-            <Box
-              ref={cellRef}
-              className={classes.cell}
-              sx={{
-                backgroundColor: "white",
-                fontWeight: 700,
-                userSelect: "none",
-                height: "100%",
-              }}
-              {...column.getHeaderProps()}
-            >
-              <div {...provided.dragHandleProps}>{column.render("Header")}</div>
-              {column?.canResize && (
-                <div
-                  {...column.getResizerProps()}
-                  className={`${classes.resizer} ${
-                    column.isResizing ? "isResizing" : ""
-                  }`}
-                />
-              )}
-            </Box>
-          </Box>
-        );
-      }}
-    </Draggable>
-  );
 };
 
 const DataGridUI: React.FC<{
@@ -611,13 +264,7 @@ const DataGridUI: React.FC<{
 
   const [sorts] = useTableStore((state) => [state.sorts], shallow);
   const rowsQueryKey = React.useMemo<
-    [
-      "rows.byTableId",
-      (
-        | { tableId: string; sorts: { columnId: string; direction: string }[] }
-        | undefined
-      )?
-    ]
+    ["rows.byTableId", InferQueryInput<"rows.byTableId">]
   >(
     () => [
       "rows.byTableId",
