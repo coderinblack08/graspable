@@ -1,6 +1,7 @@
 import {
   ActionIcon,
   AppShell,
+  Box,
   Button,
   Group,
   Header,
@@ -37,6 +38,14 @@ const WorkspacePage: React.FC<
   return (
     <AppShell
       padding={0}
+      styles={{
+        root: {
+          display: "flex",
+          flexDirection: "column",
+          height: "100vh",
+        },
+        body: { height: "100%" },
+      }}
       header={
         <Header height="auto" sx={{ borderColor: "transparent" }} p={8}>
           <Group align="center" spacing={8}>
@@ -80,7 +89,12 @@ const WorkspacePage: React.FC<
       }
     >
       {tables && (
-        <Tabs tabPadding={0} mt="xs" onTabChange={(index) => setTab(index)}>
+        <Tabs
+          tabPadding={0}
+          styles={{ root: { height: "100%" }, body: { height: "100%" } }}
+          mt="xs"
+          onTabChange={(index) => setTab(index)}
+        >
           {tables?.map((table, index) => (
             <Tabs.Tab
               sx={{ transition: "none" }}

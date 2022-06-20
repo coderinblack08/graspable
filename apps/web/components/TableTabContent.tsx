@@ -1,13 +1,4 @@
-import { ActionIcon, Box, Button, Group, useMantineTheme } from "@mantine/core";
-import {
-  IconFilter,
-  IconFrame,
-  IconLayout,
-  IconList,
-  IconRobot,
-  IconSearch,
-  IconSortAscending,
-} from "@tabler/icons";
+import { Box, useMantineTheme } from "@mantine/core";
 import React from "react";
 import { DataGrid } from "./DataGrid";
 
@@ -23,7 +14,13 @@ export const TableTabContent: React.FC<TableTabContentProps> = ({
   const theme = useMantineTheme();
 
   return (
-    <Box>
+    <Box
+      sx={(theme) => ({
+        backgroundColor: theme.colors.gray[0],
+        width: "100%",
+        height: "100%",
+      })}
+    >
       <DataGrid workspaceId={workspaceId} tableId={tableId} />
     </Box>
   );

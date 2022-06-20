@@ -334,6 +334,7 @@ const DataGridUI: React.FC<{
         position="apart"
         p={8}
         sx={{
+          backgroundColor: "white",
           borderBottom: "2px solid",
           borderColor: theme.colors.gray[2],
         }}
