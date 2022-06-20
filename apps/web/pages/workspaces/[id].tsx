@@ -1,11 +1,13 @@
 import {
   ActionIcon,
   AppShell,
-  Box,
   Button,
+  Center,
   Group,
   Header,
   Menu,
+  ScrollArea,
+  Stack,
   Tabs,
   Text,
   Title,
@@ -19,33 +21,40 @@ import {
   IconTrash,
 } from "@tabler/icons";
 import { GetServerSideProps, InferGetServerSidePropsType } from "next";
+import Image from "next/image";
 import React from "react";
 import { HiChevronDown } from "react-icons/hi";
 import { TableTabContent } from "../../components/TableTabContent";
 import { trpc } from "../../lib/trpc";
+import DashboardSkeleton from "../../public/dashboard-skeleton.svg";
 
 const WorkspacePage: React.FC<
   InferGetServerSidePropsType<typeof getServerSideProps>
 > = ({ id }) => {
   const [tab, setTab] = React.useState(0);
   const createTable = trpc.useMutation(["tables.add"]);
+  const updateTable = trpc.useMutation(["tables.update"]);
+  const deleteTable = trpc.useMutation(["tables.delete"]);
   const { data: workspace } = trpc.useQuery(["workspace.byId", { id }]);
   const { data: tables } = trpc.useQuery([
     "tables.byWorkspaceId",
     { workspaceId: id },
   ]);
+  const utils = trpc.useContext();
 
   return (
     <AppShell
       padding={0}
-      styles={{
+      styles={(theme) => ({
         root: {
           display: "flex",
           flexDirection: "column",
+          backgroundColor: theme.colors.gray[0],
+          overflow: "auto",
           height: "100vh",
         },
         body: { height: "100%" },
-      }}
+      })}
       header={
         <Header height="auto" sx={{ borderColor: "transparent" }} p={8}>
           <Group align="center" spacing={8}>
@@ -80,7 +89,19 @@ const WorkspacePage: React.FC<
               color="gray"
               variant="default"
               compact
-              onClick={() => createTable.mutate({ workspaceId: id })}
+              onClick={() =>
+                createTable.mutate(
+                  { workspaceId: id },
+                  {
+                    onSuccess: () => {
+                      utils.refetchQueries([
+                        "tables.byWorkspaceId",
+                        { workspaceId: id },
+                      ]);
+                    },
+                  }
+                )
+              }
             >
               New Table
             </Button>
@@ -88,11 +109,22 @@ const WorkspacePage: React.FC<
         </Header>
       }
     >
-      {tables && (
+      {tables && tables.length ? (
         <Tabs
           tabPadding={0}
-          styles={{ root: { height: "100%" }, body: { height: "100%" } }}
-          mt="xs"
+          styles={{
+            tabsListWrapper: {
+              backgroundColor: "white",
+              paddingTop: 8,
+            },
+            root: {
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+            },
+            body: { height: "100%" },
+          }}
+          tabIndex={tab}
           onTabChange={(index) => setTab(index)}
         >
           {tables?.map((table, index) => (
@@ -115,9 +147,56 @@ const WorkspacePage: React.FC<
                       </ActionIcon>
                     }
                   >
-                    <Menu.Item>Export CSV</Menu.Item>
-                    <Menu.Item>Rename Table</Menu.Item>
-                    <Menu.Item color="red">Delete Table</Menu.Item>
+                    <Menu.Item disabled>Export CSV</Menu.Item>
+                    <Menu.Item
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        const newTableName = prompt("New table name:");
+                        if (newTableName) {
+                          updateTable.mutate(
+                            {
+                              name: newTableName,
+                              tableId: table.id,
+                            },
+                            {
+                              onSuccess: () => {
+                                utils.setQueryData(
+                                  ["tables.byWorkspaceId", { workspaceId: id }],
+                                  (old) => {
+                                    return (old || []).map((t) =>
+                                      t.id === table.id
+                                        ? { ...t, name: newTableName }
+                                        : t
+                                    );
+                                  }
+                                );
+                              },
+                            }
+                          );
+                        }
+                      }}
+                    >
+                      Rename Table
+                    </Menu.Item>
+                    <Menu.Item
+                      onClick={() =>
+                        deleteTable.mutate(
+                          { tableId: table.id },
+                          {
+                            onSuccess: () => {
+                              utils.refetchQueries([
+                                "tables.byWorkspaceId",
+                                { workspaceId: id },
+                              ]);
+                            },
+                          }
+                        )
+                      }
+                      color="red"
+                    >
+                      Delete Table
+                    </Menu.Item>
                   </Menu>
                 </Group>
               }
@@ -127,6 +206,22 @@ const WorkspacePage: React.FC<
             </Tabs.Tab>
           ))}
         </Tabs>
+      ) : (
+        <Center sx={{ height: "100%" }}>
+          <Stack
+            align="center"
+            sx={(theme) => ({
+              color: theme.colors.gray[5],
+              userSelect: "none",
+            })}
+          >
+            <Image
+              src={DashboardSkeleton}
+              alt="Dashboard skeleton placeholder"
+            />
+            Press new table in the upper left to begin
+          </Stack>
+        </Center>
       )}
     </AppShell>
   );

@@ -30,10 +30,6 @@ export const rowRouter = createRouter()
         }`,
         ...[input.tableId, ...input.sorts.map(({ columnId }) => columnId)]
       );
-      // return ctx.prisma.row.findMany({
-      //   where: { tableId: {equals: input.tableId, mode: "default" } },
-      //   orderBy: { rank: "asc" },
-      // });
     },
   })
   .mutation("updateRank", {

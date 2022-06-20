@@ -52,7 +52,7 @@ export const SortPopover: React.FC<{
     >
       <form
         onSubmit={form.onSubmit(({ sorts }) => {
-          setSort(sorts as Sort[]);
+          setSort(sorts.filter((s) => Boolean(s.columnId)) as Sort[]);
           setOpened(false);
         })}
       >

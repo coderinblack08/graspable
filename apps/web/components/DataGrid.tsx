@@ -2,8 +2,10 @@ import {
   ActionIcon,
   Box,
   Button,
+  Center,
   createStyles,
   Group,
+  Loader,
   ScrollArea,
   Tooltip,
   useMantineTheme,
@@ -39,6 +41,7 @@ import { EditableCell } from "./EditableCell";
 import { NewColumnPopover } from "./NewColumnPopover";
 import { IndeterminateCheckbox } from "./IndeterminateCheckbox";
 import { useTableStore } from "./useTableStore";
+import { FilterPopover } from "./FilterPopover";
 
 export const useStyles = createStyles((theme) => ({
   table: {
@@ -124,7 +127,11 @@ export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
     );
   }
 
-  return null;
+  return (
+    <Center sx={{ height: "100%" }}>
+      <Loader variant="dots" color="gray" />
+    </Center>
+  );
 };
 
 const DataGridUI: React.FC<{
@@ -185,7 +192,27 @@ const DataGridUI: React.FC<{
     handlers.apply((row, index) => {
       const rowId = records[rowIndex].id;
       if (index === rowIndex) {
-        createCell.mutate({ tableId, rowId, columnId, value });
+        createCell.mutate(
+          { tableId, rowId, columnId, value },
+          {
+            onSuccess: (data) => {
+              utils.refetchQueries(["cells.byTableId", { tableId }]);
+              utils.setQueryData(["cells.byTableId", { tableId }], (old) => {
+                let found = false;
+                old = (old || []).map((x) => {
+                  found = true;
+                  return x.rowId === rowId && x.columnId === columnId
+                    ? { ...x, value }
+                    : x;
+                });
+                if (!found) {
+                  old.push(data);
+                }
+                return old;
+              });
+            },
+          }
+        );
         return {
           ...row,
           [columnId]: value,
@@ -284,7 +311,8 @@ const DataGridUI: React.FC<{
       { tableId, rank },
       {
         onSuccess: (row) => {
-          utils.setQueryData(rowsQueryKey, (old) => [...(old || []), row]);
+          // utils.setQueryData(rowsQueryKey, (old) => [...(old || []), row]);
+          utils.refetchQueries(rowsQueryKey);
         },
       }
     );
@@ -373,9 +401,7 @@ const DataGridUI: React.FC<{
             </>
           ) : (
             <>
-              <Button leftIcon={<IconFilter size={16} />} compact>
-                Filter
-              </Button>
+              <FilterPopover columns={dbColumns} />
               <Button leftIcon={<IconFrame size={16} />} compact>
                 Group
               </Button>
@@ -602,7 +628,7 @@ const DataGridUI: React.FC<{
             </DragDropContext>
           </Box>
         </ScrollArea>
-        <Group spacing="sm" m="sm" align="center">
+        <Group spacing="sm" p="sm" align="center">
           <Tooltip withArrow label="shift + enter" position="bottom">
             <Button
               loading={addRow.isLoading}

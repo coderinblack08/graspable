@@ -3,6 +3,7 @@ import { z } from "zod";
 import { LexoRank } from "lexorank";
 import { ColumnType, MemberRole, PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
+import { useMemberCheck } from "../../lib/security-utils";
 
 export const createNewTable = async (
   prisma: PrismaClient,
@@ -68,7 +69,11 @@ export const tablesRouter = createRouter()
       workspaceId: z.string(),
     }),
     async resolve({ ctx, input }) {
-      return ctx.prisma.table.findMany({ where: input });
+      await useMemberCheck(ctx, input.workspaceId);
+      return ctx.prisma.table.findMany({
+        where: input,
+        orderBy: { createdAt: "asc" },
+      });
     },
   })
   .mutation("add", {
@@ -76,20 +81,45 @@ export const tablesRouter = createRouter()
       workspaceId: z.string(),
     }),
     async resolve({ ctx, input }) {
-      const membership = await ctx.prisma.member.findFirst({
-        where: {
-          userId: ctx.session!.user.id,
-          workspaceId: input.workspaceId,
-          role: { in: [MemberRole.owner, MemberRole.editor] },
-        },
-      });
-      if (!membership) {
-        throw new TRPCError({ code: "UNAUTHORIZED" });
-      }
+      await useMemberCheck(ctx, input.workspaceId, false);
       const { columns, rows, table } = await createNewTable(
         ctx.prisma,
         input.workspaceId
       );
       return { ...table, columns, rows };
+    },
+  })
+  .mutation("update", {
+    input: z.object({
+      tableId: z.string(),
+      name: z.string(),
+    }),
+    async resolve({ ctx, input }) {
+      const table = await ctx.prisma.table.findFirst({
+        where: { id: input.tableId },
+      });
+      if (!table) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      await useMemberCheck(ctx, table.workspaceId, false);
+      return ctx.prisma.table.update({
+        where: { id: input.tableId },
+        data: { name: input.name },
+      });
+    },
+  })
+  .mutation("delete", {
+    input: z.object({
+      tableId: z.string(),
+    }),
+    async resolve({ ctx, input }) {
+      const table = await ctx.prisma.table.findFirst({
+        where: { id: input.tableId },
+      });
+      if (!table) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      await useMemberCheck(ctx, table.workspaceId, false);
+      return ctx.prisma.table.delete({ where: { id: input.tableId } });
     },
   });
