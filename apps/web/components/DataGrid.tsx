@@ -129,10 +129,13 @@ interface DataGridProps {
 
 export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
   const [sorts] = useTableStore((state) => [state.sorts], shallow);
-  const { data: rows } = trpc.useQuery([
-    "rows.byTableId",
-    { tableId, sorts: sorts.filter((x) => x.columnId !== null) as any },
-  ]);
+  const { data: rows } = trpc.useQuery(
+    [
+      "rows.byTableId",
+      { tableId, sorts: sorts.filter((x) => x.columnId !== null) as any },
+    ],
+    { keepPreviousData: true }
+  );
   const { data: columns } = trpc.useQuery(["columns.byTableId", { tableId }]);
   const { data: cells } = trpc.useQuery(["cells.byTableId", { tableId }]);
   const utils = trpc.useContext();
