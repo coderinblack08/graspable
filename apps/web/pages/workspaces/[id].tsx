@@ -26,6 +26,8 @@ import { trpc } from "../../lib/trpc";
 const WorkspacePage: React.FC<
   InferGetServerSidePropsType<typeof getServerSideProps>
 > = ({ id }) => {
+  const [tab, setTab] = React.useState(0);
+  const createTable = trpc.useMutation(["tables.add"]);
   const { data: workspace } = trpc.useQuery(["workspace.byId", { id }]);
   const { data: tables } = trpc.useQuery([
     "tables.byWorkspaceId",
@@ -65,7 +67,12 @@ const WorkspacePage: React.FC<
                 Delete workspace
               </Menu.Item>
             </Menu>
-            <Button color="gray" variant="default" compact>
+            <Button
+              color="gray"
+              variant="default"
+              compact
+              onClick={() => createTable.mutate({ workspaceId: id })}
+            >
               New Table
             </Button>
           </Group>
@@ -73,9 +80,10 @@ const WorkspacePage: React.FC<
       }
     >
       {tables && (
-        <Tabs tabPadding={0} mt="xs">
-          {tables?.map((table) => (
+        <Tabs tabPadding={0} mt="xs" onTabChange={(index) => setTab(index)}>
+          {tables?.map((table, index) => (
             <Tabs.Tab
+              sx={{ transition: "none" }}
               label={
                 <Group spacing={8}>
                   <Text weight={600}>{table.name}</Text>
@@ -87,7 +95,7 @@ const WorkspacePage: React.FC<
                           e.stopPropagation();
                           e.preventDefault();
                         }}
-                        color="blue"
+                        color={tab === index ? "blue" : "gray"}
                       >
                         <IconDotsVertical size={16} />
                       </ActionIcon>

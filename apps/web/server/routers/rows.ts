@@ -1,18 +1,37 @@
-import { createRouter } from "../createRouter";
-import { z } from "zod";
 import { Row } from "@prisma/client";
+import { z } from "zod";
+import { createRouter } from "../createRouter";
 
 export const rowRouter = createRouter()
   .query("byTableId", {
     input: z.object({
       tableId: z.string(),
+      sorts: z.array(
+        z.object({ columnId: z.string(), direction: z.enum(["asc", "desc"]) })
+      ),
     }),
     async resolve({ ctx, input }) {
-      return ctx.prisma.$queryRaw<
-        Row[]
-      >`select * from public."Row" where "tableId" = ${input.tableId} order by rank collate "C";`;
+      return ctx.prisma.$queryRawUnsafe<Row[]>(
+        `
+        select r.* 
+        from public."Row" r 
+        where r."tableId" = $1
+        order by ${
+          input.sorts.length
+            ? input.sorts
+                .map(
+                  ({ direction }, index) =>
+                    `(select c.value from public."Cell" c where c."rowId" = r."id" and c."columnId" = $${
+                      2 + index
+                    }) ${direction}`
+                )
+                .join(", ")
+            : `r.rank collate "C"`
+        }`,
+        ...[input.tableId, ...input.sorts.map(({ columnId }) => columnId)]
+      );
       // return ctx.prisma.row.findMany({
-      //   where: input,
+      //   where: { tableId: {equals: input.tableId, mode: "default" } },
       //   orderBy: { rank: "asc" },
       // });
     },

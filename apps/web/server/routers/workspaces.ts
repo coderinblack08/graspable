@@ -1,8 +1,8 @@
-import { z } from "zod";
+import { MemberRole } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
+import { z } from "zod";
 import { createRouter } from "../createRouter";
-import { ColumnType, MemberRole } from "@prisma/client";
-import { LexoRank } from "lexorank";
+import { createNewTable } from "./tables";
 
 export const workspaceRouter = createRouter()
   .middleware(async ({ ctx, next }) => {
@@ -22,6 +22,10 @@ export const workspaceRouter = createRouter()
         await ctx.prisma.workspace.findMany({
           where: {
             id: { in: members.map((m) => m.workspaceId) },
+          },
+          include: {
+            Table: true,
+            User: true,
           },
         })
       ).filter((w) => !w.deleted);
@@ -43,70 +47,17 @@ export const workspaceRouter = createRouter()
       const workspace = await ctx.prisma.workspace.create({
         data: {
           ...input,
-          ownerId: ctx.session!.user!.id,
-          Table: {
-            create: {
-              name: "Table 1",
-            },
-          },
-        },
-        include: {
-          Table: true,
+          ownerId: ctx.session!.user.id,
         },
       });
       await ctx.prisma.member.create({
         data: {
           role: MemberRole.owner,
-          userId: ctx.session!.user!.id,
+          userId: ctx.session!.user.id,
           workspaceId: workspace.id,
         },
       });
-      const { id: tableId } = workspace.Table[0];
-      let firstRank = LexoRank.middle();
-      const generateNextRank = () => {
-        firstRank = firstRank.genNext();
-        return firstRank;
-      };
-      const columns = await ctx.prisma.column.createMany({
-        data: [
-          {
-            name: "Task",
-            type: ColumnType.text,
-            rank: firstRank.toString(),
-            tableId,
-          },
-          {
-            name: "Status",
-            type: ColumnType.dropdown,
-            rank: generateNextRank().toString(),
-            dropdownOptions: ["Todo", "In Progress", "Done"],
-            tableId,
-          },
-          {
-            name: "Due Date",
-            rank: generateNextRank().toString(),
-            type: ColumnType.date,
-            tableId,
-          },
-        ],
-      });
-      firstRank = LexoRank.middle();
-      const rows = await ctx.prisma.row.createMany({
-        data: [
-          {
-            rank: firstRank.toString(),
-            tableId,
-          },
-          {
-            rank: generateNextRank().toString(),
-            tableId,
-          },
-          {
-            rank: generateNextRank().toString(),
-            tableId,
-          },
-        ],
-      });
+      const { columns, rows } = await createNewTable(ctx.prisma, workspace.id);
       return { ...workspace, columns, rows };
     },
   })

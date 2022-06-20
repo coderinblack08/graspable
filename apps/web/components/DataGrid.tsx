@@ -1,3 +1,5 @@
+import create from "zustand";
+import { combine } from "zustand/middleware";
 import {
   ActionIcon,
   Box,
@@ -28,7 +30,6 @@ import {
   IconPlus,
   IconRobot,
   IconSearch,
-  IconSortAscending,
   IconTrash,
 } from "@tabler/icons";
 import { LexoRank } from "lexorank";
@@ -45,6 +46,8 @@ import {
 } from "react-table";
 import { useDebouncedCallback } from "use-debounce";
 import { InferQueryOutput, trpc } from "../lib/trpc";
+import { Sort, SortPopover } from "./SortPopover";
+import shallow from "zustand/shallow";
 
 const useStyles = createStyles((theme) => ({
   table: {
@@ -89,15 +92,35 @@ const useStyles = createStyles((theme) => ({
     touchAction: "none",
     "&:hover": {
       width: 4,
+      background: theme.colors.blue[3],
       transform: "translateX(3px)",
     },
     "&.isResizing": {
-      background: theme.colors.gray[4],
+      background: theme.colors.blue[3],
       transform: "translateX(3px)",
       width: 4,
     },
   },
 }));
+
+interface Filter {}
+interface Hide {
+  columnId: string | null;
+}
+
+export const useTableStore = create(
+  combine(
+    {
+      filters: [] as Filter[],
+      sorts: [] as Sort[],
+      hides: [] as Hide[],
+    },
+    (set) => ({
+      clearAll: () => set(() => ({ filters: [], sorts: [], hides: [] })),
+      setSort: (sorts: Sort[]) => set((state) => ({ sorts })),
+    })
+  )
+);
 
 interface DataGridProps {
   workspaceId: string;
@@ -105,9 +128,14 @@ interface DataGridProps {
 }
 
 export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
-  const { data: rows } = trpc.useQuery(["rows.byTableId", { tableId }]);
+  const [sorts] = useTableStore((state) => [state.sorts], shallow);
+  const { data: rows } = trpc.useQuery([
+    "rows.byTableId",
+    { tableId, sorts: sorts.filter((x) => x.columnId !== null) as any },
+  ]);
   const { data: columns } = trpc.useQuery(["columns.byTableId", { tableId }]);
   const { data: cells } = trpc.useQuery(["cells.byTableId", { tableId }]);
+  const utils = trpc.useContext();
 
   if (rows && cells && columns) {
     return (
@@ -367,26 +395,31 @@ export const HeaderCell: React.FC<HeaderCellProps> = ({ index, column }) => {
   const { classes } = useStyles();
 
   const updateColumn = trpc.useMutation(["columns.update"]);
+  const [previousWidth, setPreviousWidth] = React.useState(column.width);
   const cellRef = React.useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (
+      column.width !== previousWidth &&
       column.isResizing === false &&
       column.width &&
       column.id !== "selection" &&
       column.id !== "new-column" &&
       cellRef.current
     ) {
-      updateColumn.mutate({
-        id: columnId,
-        width: cellRef.current.clientWidth + 2,
-      });
+      const newWidth = cellRef.current.clientWidth + 2;
+      updateColumn.mutate({ id: columnId, width: newWidth });
+      setPreviousWidth(column.width);
     }
-  }, [column.id, column.isResizing, column.width, columnId]);
+  }, [column.id, column.isResizing, column.width, columnId, previousWidth]);
 
   return (
     <Draggable
-      isDragDisabled={column.id === "selection" || column.id === "new-column"}
+      isDragDisabled={
+        column.id === "selection" ||
+        column.id === "new-column" ||
+        column.isResizing
+      }
       key={column.id}
       index={index}
       draggableId={column.id}
@@ -408,7 +441,6 @@ export const HeaderCell: React.FC<HeaderCellProps> = ({ index, column }) => {
           <Box
             ref={provided.innerRef}
             {...provided.draggableProps}
-            {...provided.dragHandleProps}
             // style={style}
           >
             <Box
@@ -422,7 +454,7 @@ export const HeaderCell: React.FC<HeaderCellProps> = ({ index, column }) => {
               }}
               {...column.getHeaderProps()}
             >
-              {column.render("Header")}
+              <div {...provided.dragHandleProps}>{column.render("Header")}</div>
               {column?.canResize && (
                 <div
                   {...column.getResizerProps()}
@@ -574,6 +606,26 @@ const DataGridUI: React.FC<{
   const removeRows = trpc.useMutation(["rows.delete"]);
   const utils = trpc.useContext();
 
+  const [sorts] = useTableStore((state) => [state.sorts], shallow);
+  const rowsQueryKey = React.useMemo<
+    [
+      "rows.byTableId",
+      (
+        | { tableId: string; sorts: { columnId: string; direction: string }[] }
+        | undefined
+      )?
+    ]
+  >(
+    () => [
+      "rows.byTableId",
+      {
+        tableId,
+        sorts: sorts.filter((x) => x.columnId !== null) as any,
+      },
+    ],
+    [tableId, sorts]
+  );
+
   const createNewRow = async () => {
     const rank = dbRows.length
       ? LexoRank.parse(dbRows.at(-1)?.rank!).genNext().toString()
@@ -582,10 +634,7 @@ const DataGridUI: React.FC<{
       { tableId, rank },
       {
         onSuccess: (row) => {
-          utils.setQueryData(["rows.byTableId", { tableId }], (old) => [
-            ...(old || []),
-            row,
-          ]);
+          utils.setQueryData(rowsQueryKey, (old) => [...(old || []), row]);
         },
       }
     );
@@ -658,12 +707,10 @@ const DataGridUI: React.FC<{
                     { ids: Object.keys(state.selectedRowIds) },
                     {
                       onSuccess: () => {
-                        utils.setQueryData(
-                          ["rows.byTableId", { tableId }],
-                          (old) =>
-                            (old || [])?.filter(
-                              (row) => !state.selectedRowIds[row.id]
-                            )
+                        utils.setQueryData(rowsQueryKey, (old) =>
+                          (old || [])?.filter(
+                            (row) => !state.selectedRowIds[row.id]
+                          )
                         );
                       },
                     }
@@ -681,9 +728,7 @@ const DataGridUI: React.FC<{
               <Button leftIcon={<IconFrame size={16} />} compact>
                 Group
               </Button>
-              <Button leftIcon={<IconSortAscending size={16} />} compact>
-                Sort
-              </Button>
+              <SortPopover columns={dbColumns} />
               <Button leftIcon={<IconEyeOff size={16} />} compact>
                 Hide Columns
               </Button>
@@ -702,7 +747,7 @@ const DataGridUI: React.FC<{
           </ActionIcon>
         </Group>
       </Group>
-      <Box m="sm">
+      <Box mt={-2}>
         <ScrollArea>
           <Box
             // component="table"
@@ -717,11 +762,7 @@ const DataGridUI: React.FC<{
                 const colOrder = [...(currentColOrder.current || [])];
                 const sIndex = source.index;
                 const dIndex = destination && destination.index;
-                if (
-                  typeof sIndex === "number" &&
-                  typeof dIndex === "number" &&
-                  sIndex !== dIndex
-                ) {
+                if (typeof sIndex === "number" && typeof dIndex === "number") {
                   colOrder.splice(sIndex, 1);
                   colOrder.splice(dIndex, 0, draggableId);
                   setColumnOrder(colOrder);
@@ -767,8 +808,6 @@ const DataGridUI: React.FC<{
                                 ? { ...column, rank: rank.toString() }
                                 : column
                             );
-
-                            console.log({ returnValue });
 
                             return returnValue;
                           }
@@ -825,22 +864,19 @@ const DataGridUI: React.FC<{
                     { id, rank },
                     {
                       onSuccess: () => {
-                        // utils.refetchQueries(["rows.byTableId", { tableId }]);
-                        utils.setQueryData(
-                          ["rows.byTableId", { tableId }],
-                          (old) => {
-                            if (!old) return [];
-                            const cloned = [...old];
-                            const item = old[source.index];
+                        // utils.refetchQueries(rowsQueryKey);
+                        utils.setQueryData(rowsQueryKey, (old) => {
+                          if (!old) return [];
+                          const cloned = [...old];
+                          const item = old[source.index];
 
-                            cloned.splice(source.index, 1);
-                            cloned.splice(destination.index, 0, item);
+                          cloned.splice(source.index, 1);
+                          cloned.splice(destination.index, 0, item);
 
-                            return cloned.map((row) =>
-                              row.id === id ? { ...row, rank } : row
-                            );
-                          }
-                        );
+                          return cloned.map((row) =>
+                            row.id === id ? { ...row, rank } : row
+                          );
+                        });
                       },
                     }
                   );
@@ -915,7 +951,7 @@ const DataGridUI: React.FC<{
             </DragDropContext>
           </Box>
         </ScrollArea>
-        <Group spacing="sm" my="sm" align="center">
+        <Group spacing="sm" m="sm" align="center">
           <Tooltip withArrow label="shift + enter" position="bottom">
             <Button
               loading={addRow.isLoading}

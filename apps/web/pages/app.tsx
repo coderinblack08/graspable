@@ -15,7 +15,6 @@ import {
   useMantineTheme,
 } from "@mantine/core";
 import {
-  IconCalendarEvent,
   IconDatabase,
   IconEdit,
   IconLayout,
@@ -27,6 +26,7 @@ import {
   IconUser,
 } from "@tabler/icons";
 import { NextPage } from "next";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { NavbarLink } from "../components/NavbarLink";
 import { NewWorkspaceModal } from "../components/NewWorkspaceModal";
@@ -35,6 +35,7 @@ import { trpc } from "../lib/trpc";
 
 const AppPage: NextPage = () => {
   const theme = useMantineTheme();
+  const { data: session } = useSession();
   const utils = trpc.useContext();
   const deleteWorkspace = trpc.useMutation(["workspace.delete"]);
   const { data: workspaces } = trpc.useQuery(["workspace.all"]);
@@ -107,9 +108,11 @@ const AppPage: NextPage = () => {
           >
             <Card component="a" href="#" shadow="xs" p="md" radius="md">
               <Group position="apart">
-                <Text weight={500} size="xl">
-                  {workspace.name}
-                </Text>
+                <Box>
+                  <Text weight={500} size="xl">
+                    {workspace.name}
+                  </Text>
+                </Box>
                 <Menu
                   transition="rotate-left"
                   position="bottom"
@@ -144,20 +147,15 @@ const AppPage: NextPage = () => {
                   </Menu.Item>
                 </Menu>
               </Group>
-              {/* <Group spacing="xs">
+              <Group spacing="xs">
                 <ThemeIcon variant="light" size="xs">
                   <IconUser />
                 </ThemeIcon>
                 <Text size="sm" style={{ lineHeight: 1.5 }} color="dimmed">
-                  Owned by me
-                </Text>
-              </Group>
-              <Group spacing="xs">
-                <ThemeIcon variant="light" size="xs">
-                  <IconCalendarEvent />
-                </ThemeIcon>
-                <Text size="sm" style={{ lineHeight: 1.5 }} color="dimmed">
-                  Opened just now
+                  Owned by{" "}
+                  {workspace.User.id === session?.user.id
+                    ? "me"
+                    : workspace.User.name}
                 </Text>
               </Group>
               <Group spacing="xs">
@@ -165,9 +163,9 @@ const AppPage: NextPage = () => {
                   <IconTable />
                 </ThemeIcon>
                 <Text size="sm" style={{ lineHeight: 1.5 }} color="dimmed">
-                  1 Table
+                  {workspace.Table.length} Table
                 </Text>
-              </Group> */}
+              </Group>
             </Card>
           </Link>
         ))}
