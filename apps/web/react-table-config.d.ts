@@ -105,7 +105,9 @@ declare module "react-table" {
       UseGlobalFiltersColumnOptions<D>,
       UseGroupByColumnOptions<D>,
       UseResizeColumnsColumnOptions<D>,
-      UseSortByColumnOptions<D> {}
+      UseSortByColumnOptions<D> {
+    type?: InferQueryOutput<"columns.byTableId">[0]["type"];
+  }
 
   export interface ColumnInstance<
     D extends Record<string, unknown> = Record<string, unknown>

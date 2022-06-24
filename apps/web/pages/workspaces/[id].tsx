@@ -6,7 +6,6 @@ import {
   Group,
   Header,
   Menu,
-  ScrollArea,
   Stack,
   Tabs,
   Text,
@@ -34,6 +33,7 @@ const WorkspacePage: React.FC<
   const [tab, setTab] = React.useState(0);
   const createTable = trpc.useMutation(["tables.add"]);
   const updateTable = trpc.useMutation(["tables.update"]);
+  const updateWorkspace = trpc.useMutation(["workspace.update"]);
   const deleteTable = trpc.useMutation(["tables.delete"]);
   const { data: workspace } = trpc.useQuery(["workspace.byId", { id }]);
   const { data: tables } = trpc.useQuery([
@@ -78,7 +78,41 @@ const WorkspacePage: React.FC<
               <Menu.Item icon={<IconShare size={14} />}>
                 Share workspace
               </Menu.Item>
-              <Menu.Item icon={<IconEdit size={14} />}>
+              <Menu.Item
+                icon={<IconEdit size={14} />}
+                onClick={(e: any) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  const newWorkspaceName = prompt("New workspace name:");
+                  if (newWorkspaceName) {
+                    updateWorkspace.mutate(
+                      {
+                        name: newWorkspaceName,
+                        id,
+                      },
+                      {
+                        onSuccess: () => {
+                          utils.setQueryData(["workspace.all"], (old) => {
+                            return (old || []).map((w) =>
+                              w.id === id ? { ...w, name: newWorkspaceName } : w
+                            );
+                          });
+                          utils.setQueryData(
+                            ["workspace.byId", { id }],
+                            (old) =>
+                              old
+                                ? {
+                                    ...old,
+                                    name: newWorkspaceName,
+                                  }
+                                : ({} as any)
+                          );
+                        },
+                      }
+                    );
+                  }
+                }}
+              >
                 Rename workspace
               </Menu.Item>
               <Menu.Item color="red" icon={<IconTrash size={14} />}>
@@ -149,7 +183,7 @@ const WorkspacePage: React.FC<
                   >
                     <Menu.Item disabled>Export CSV</Menu.Item>
                     <Menu.Item
-                      onClick={(e) => {
+                      onClick={(e: any) => {
                         e.stopPropagation();
                         e.preventDefault();
                         const newTableName = prompt("New table name:");

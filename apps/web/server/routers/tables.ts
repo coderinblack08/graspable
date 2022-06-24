@@ -1,9 +1,9 @@
-import { createRouter } from "../createRouter";
-import { z } from "zod";
-import { LexoRank } from "lexorank";
-import { ColumnType, MemberRole, PrismaClient } from "@prisma/client";
+import { ColumnType, PrismaClient } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
+import { LexoRank } from "lexorank";
+import { z } from "zod";
 import { useMemberCheck } from "../../lib/security-utils";
+import { createRouter } from "../createRouter";
 
 export const createNewTable = async (
   prisma: PrismaClient,

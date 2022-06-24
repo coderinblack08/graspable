@@ -36,6 +36,7 @@ import { InferQueryInput, InferQueryOutput, trpc } from "../lib/trpc";
 import { EditableCell } from "./EditableCell";
 import { FilterPopover } from "./FilterPopover";
 import { HeaderCell } from "./HeaderCell";
+import { HideColumnPopover } from "./HideCoumnPopover";
 import { IndeterminateCheckbox } from "./IndeterminateCheckbox";
 import { NewColumnPopover } from "./NewColumnPopover";
 import { SortPopover } from "./SortPopover";
@@ -156,6 +157,7 @@ const DataGridUI: React.FC<{
         Header: db_column.name,
         accessor: db_column.id,
         width: db_column.width || 150,
+        type: db_column.type,
       })),
     [dbColumns]
   );
@@ -361,6 +363,7 @@ const DataGridUI: React.FC<{
     headerGroups,
     rows,
     flatHeaders,
+    allColumns,
     prepareRow,
     state,
   } = tableInstance;
@@ -415,9 +418,7 @@ const DataGridUI: React.FC<{
                 Group
               </Button> */}
               <SortPopover columns={dbColumns} />
-              <Button leftIcon={<IconEyeOff size={16} />} compact>
-                Hide Columns
-              </Button>
+              <HideColumnPopover allColumns={allColumns} />
             </>
           )}
         </Group>

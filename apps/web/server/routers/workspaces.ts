@@ -1,6 +1,7 @@
 import { MemberRole } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { useMemberCheck } from "../../lib/security-utils";
 import { createRouter } from "../createRouter";
 import { createNewTable } from "./tables";
 
@@ -36,6 +37,7 @@ export const workspaceRouter = createRouter()
       id: z.string(),
     }),
     async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, input.id, true);
       return ctx.prisma.workspace.findFirst({
         where: input,
       });
@@ -61,9 +63,20 @@ export const workspaceRouter = createRouter()
       return { ...workspace, columns, rows };
     },
   })
+  .mutation("update", {
+    input: z.object({ id: z.string(), name: z.string() }),
+    async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, input.id, true);
+      return ctx.prisma.workspace.update({
+        where: { id: input.id },
+        data: { name: input.name },
+      });
+    },
+  })
   .mutation("delete", {
     input: z.object({ id: z.string() }),
     async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, input.id, false);
       return ctx.prisma.workspace.update({
         where: { id: input.id },
         data: { deleted: true },

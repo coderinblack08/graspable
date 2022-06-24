@@ -1,13 +1,39 @@
-import { Box } from "@mantine/core";
+import { Box, Group } from "@mantine/core";
+import {
+  IconCalendarEvent,
+  IconCheckbox,
+  IconHash,
+  IconLetterA,
+  IconList,
+} from "@tabler/icons";
 import React, { useEffect } from "react";
 import { Draggable } from "react-beautiful-dnd";
 import { HeaderGroup } from "react-table";
-import { trpc } from "../lib/trpc";
+import { InferQueryOutput, trpc } from "../lib/trpc";
 import { useStyles } from "./DataGrid";
 
 type HeaderCellProps = {
   column: HeaderGroup<Record<string, any>>;
   index: number;
+};
+
+export const HeaderCellIcon: React.FC<{
+  type: InferQueryOutput<"columns.byTableId">[0]["type"];
+}> = ({ type }) => {
+  switch (type) {
+    case "dropdown":
+      return <IconList size={16} />;
+    case "checkbox":
+      return <IconCheckbox size={16} />;
+    case "date":
+      return <IconCalendarEvent size={16} />;
+    case "number":
+      return <IconHash size={16} />;
+    case "text":
+      return <IconLetterA size={16} />;
+    default:
+      return null;
+  }
 };
 
 export const HeaderCell: React.FC<HeaderCellProps> = ({ index, column }) => {
@@ -67,7 +93,10 @@ export const HeaderCell: React.FC<HeaderCellProps> = ({ index, column }) => {
               }}
               {...column.getHeaderProps()}
             >
-              <div {...provided.dragHandleProps}>{column.render("Header")}</div>
+              <Group spacing={8} {...provided.dragHandleProps}>
+                <HeaderCellIcon type={column.type} />
+                <div>{column.render("Header")}</div>
+              </Group>
               {column?.canResize && (
                 <div
                   {...column.getResizerProps()}

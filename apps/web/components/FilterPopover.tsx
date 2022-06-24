@@ -63,6 +63,7 @@ const FilterValueInput: React.FC<{
       size="xs"
       placeholder="Value"
       value={value.value}
+      type={item.column.type === "number" ? "number" : "text"}
       name={`filters[${index}].value`}
       onChange={onChange}
     />
