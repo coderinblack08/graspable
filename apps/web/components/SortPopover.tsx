@@ -48,7 +48,6 @@ export const SortPopover: React.FC<{
       }
       width={320}
       position="bottom"
-      withArrow
     >
       <form
         onSubmit={form.onSubmit(({ sorts }) => {

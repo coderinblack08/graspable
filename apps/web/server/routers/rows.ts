@@ -1,6 +1,20 @@
 import { Row } from "@prisma/client";
 import { z } from "zod";
 import { createRouter } from "../createRouter";
+import SqlString from "sqlstring";
+
+const zodFilter = z.object({
+  columnId: z.string(),
+  operation: z.enum([
+    "equals",
+    "contains",
+    "checked",
+    "unchecked",
+    "startsWith",
+    "endsWith",
+  ]),
+  value: z.string(),
+});
 
 export const rowRouter = createRouter()
   .query("byTableId", {
@@ -9,26 +23,63 @@ export const rowRouter = createRouter()
       sorts: z.array(
         z.object({ columnId: z.string(), direction: z.enum(["asc", "desc"]) })
       ),
+      filters: z.array(zodFilter),
     }),
     async resolve({ ctx, input }) {
+      function generateFilterClause({
+        columnId,
+        operation,
+        value,
+      }: z.infer<typeof zodFilter>) {
+        const cellSubQuery = `(select c.value from public."Cell" c where c."columnId" = ${SqlString.escape(
+          columnId
+        )} and c."rowId" = r.id)`;
+
+        switch (operation) {
+          case "equals":
+            return `and ${SqlString.escape(value)} = ${cellSubQuery}`;
+          case "unchecked":
+            return `and (not exists ${cellSubQuery} or 'false' = ${cellSubQuery})`;
+          case "checked":
+            return `and 'true' = ${cellSubQuery}`;
+          case "startsWith":
+          case "endsWith":
+          case "contains":
+            return `and ${cellSubQuery} ilike ${
+              operation === "endsWith" || operation === "contains"
+                ? "'%' || "
+                : ""
+            }${SqlString.escape(value)}${
+              operation === "contains" || operation === "startsWith"
+                ? " || '%'"
+                : ""
+            }`;
+        }
+      }
       return ctx.prisma.$queryRawUnsafe<Row[]>(
         `
         select r.* 
-        from public."Row" r 
-        where r."tableId" = $1
+        from public."Row" r
+        where r."tableId" = $1 ${
+          input.filters.length > 0
+            ? input.filters
+                .map((filter) => generateFilterClause(filter))
+                .join(" ")
+            : ""
+        }
         order by ${
           input.sorts.length
             ? input.sorts
                 .map(
-                  ({ direction }, index) =>
-                    `(select c.value from public."Cell" c where c."rowId" = r."id" and c."columnId" = $${
-                      2 + index
-                    }) ${direction}`
+                  ({ direction, columnId }) =>
+                    `(select c.value from public."Cell" c where c."rowId" = r."id" and c."columnId" = ${SqlString.escape(
+                      columnId
+                    )}) ${direction}`
                 )
                 .join(", ")
             : `r.rank collate "C"`
         }`,
-        ...[input.tableId, ...input.sorts.map(({ columnId }) => columnId)]
+        ...[input.tableId]
       );
     },
   })

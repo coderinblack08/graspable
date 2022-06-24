@@ -13,8 +13,6 @@ import {
 import { useHotkeys, useListState } from "@mantine/hooks";
 import {
   IconEyeOff,
-  IconFilter,
-  IconFrame,
   IconLayout,
   IconList,
   IconPlus,
@@ -33,15 +31,15 @@ import {
   useRowSelect,
   useTable,
 } from "react-table";
-import { InferQueryInput, InferQueryOutput, trpc } from "../lib/trpc";
-import { SortPopover } from "./SortPopover";
 import shallow from "zustand/shallow";
-import { HeaderCell } from "./HeaderCell";
+import { InferQueryInput, InferQueryOutput, trpc } from "../lib/trpc";
 import { EditableCell } from "./EditableCell";
-import { NewColumnPopover } from "./NewColumnPopover";
-import { IndeterminateCheckbox } from "./IndeterminateCheckbox";
-import { useTableStore } from "./useTableStore";
 import { FilterPopover } from "./FilterPopover";
+import { HeaderCell } from "./HeaderCell";
+import { IndeterminateCheckbox } from "./IndeterminateCheckbox";
+import { NewColumnPopover } from "./NewColumnPopover";
+import { SortPopover } from "./SortPopover";
+import { useTableStore } from "./useTableStore";
 
 export const useStyles = createStyles((theme) => ({
   table: {
@@ -103,11 +101,18 @@ interface DataGridProps {
 }
 
 export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
-  const [sorts] = useTableStore((state) => [state.sorts], shallow);
+  const [sorts, filters] = useTableStore(
+    (state) => [state.sorts, state.filters],
+    shallow
+  );
   const { data: rows } = trpc.useQuery(
     [
       "rows.byTableId",
-      { tableId, sorts: sorts.filter((x) => x.columnId !== null) as any },
+      {
+        tableId,
+        sorts: sorts.filter((x) => x.columnId !== null) as any,
+        filters: filters as any,
+      },
     ],
     { keepPreviousData: true }
   );
@@ -289,7 +294,10 @@ const DataGridUI: React.FC<{
   const removeRows = trpc.useMutation(["rows.delete"]);
   const utils = trpc.useContext();
 
-  const [sorts] = useTableStore((state) => [state.sorts], shallow);
+  const [sorts, filters] = useTableStore(
+    (state) => [state.sorts, state.filters],
+    shallow
+  );
   const rowsQueryKey = React.useMemo<
     ["rows.byTableId", InferQueryInput<"rows.byTableId">]
   >(
@@ -298,9 +306,10 @@ const DataGridUI: React.FC<{
       {
         tableId,
         sorts: sorts.filter((x) => x.columnId !== null) as any,
+        filters: filters as any,
       },
     ],
-    [tableId, sorts]
+    [tableId, sorts, filters]
   );
 
   const createNewRow = async () => {
@@ -402,9 +411,9 @@ const DataGridUI: React.FC<{
           ) : (
             <>
               <FilterPopover columns={dbColumns} />
-              <Button leftIcon={<IconFrame size={16} />} compact>
+              {/* <Button leftIcon={<IconFrame size={16} />} compact>
                 Group
-              </Button>
+              </Button> */}
               <SortPopover columns={dbColumns} />
               <Button leftIcon={<IconEyeOff size={16} />} compact>
                 Hide Columns
@@ -502,7 +511,7 @@ const DataGridUI: React.FC<{
                       {headerGroups.map((headerGroup) => (
                         <Box
                           {...headerGroup.getHeaderGroupProps()}
-                          sx={{ backgroundColor: theme.colors.gray[0] }}
+                          sx={{ backgroundColor: "white" }}
                         >
                           {headerGroup.headers.map((column, index) => (
                             <HeaderCell
@@ -575,6 +584,7 @@ const DataGridUI: React.FC<{
                           key={row.id}
                           index={index}
                           draggableId={row.id}
+                          isDragDisabled={sorts.length > 0}
                         >
                           {(provided) => {
                             return (

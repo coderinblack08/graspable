@@ -13,7 +13,7 @@ export const TableTabContent: React.FC<TableTabContentProps> = ({
 }) => {
   return (
     <Box
-      sx={(theme) => ({
+      sx={(_theme) => ({
         height: "100%",
       })}
     >

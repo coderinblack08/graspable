@@ -124,7 +124,7 @@ const WorkspacePage: React.FC<
             },
             body: { height: "100%" },
           }}
-          tabIndex={tab}
+          initialTab={tab}
           onTabChange={(index) => setTab(index)}
         >
           {tables?.map((table, index) => (
