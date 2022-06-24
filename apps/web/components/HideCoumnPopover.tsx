@@ -1,4 +1,4 @@
-import { Button, Checkbox, Group, Popover, Stack } from "@mantine/core";
+import { Button, Checkbox, Group, Popover, Stack, Text } from "@mantine/core";
 import { IconEyeOff } from "@tabler/icons";
 import React from "react";
 
@@ -29,8 +29,8 @@ export const HideColumnPopover: React.FC<{
             <div key={column.id}>
               <label>
                 <Group spacing={8} sx={{ cursor: "pointer" }}>
-                  <Checkbox {...column.getToggleHiddenProps()} />
-                  {column.Header}
+                  <Checkbox size="xs" {...column.getToggleHiddenProps()} />
+                  <Text size="xs">{column.Header}</Text>
                 </Group>
               </label>
             </div>

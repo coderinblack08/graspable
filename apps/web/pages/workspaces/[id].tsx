@@ -9,21 +9,13 @@ import {
   Stack,
   Tabs,
   Text,
-  Title,
-  UnstyledButton,
 } from "@mantine/core";
-import {
-  IconDotsVertical,
-  IconEdit,
-  IconMenu2,
-  IconShare,
-  IconTrash,
-} from "@tabler/icons";
+import { IconDotsVertical, IconMenu2 } from "@tabler/icons";
 import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import Image from "next/image";
 import React from "react";
-import { HiChevronDown } from "react-icons/hi";
 import { TableTabContent } from "../../components/TableTabContent";
+import { WorkspaceDropdown } from "../../components/WorkspaceDropdown";
 import { trpc } from "../../lib/trpc";
 import DashboardSkeleton from "../../public/dashboard-skeleton.svg";
 
@@ -33,7 +25,6 @@ const WorkspacePage: React.FC<
   const [tab, setTab] = React.useState(0);
   const createTable = trpc.useMutation(["tables.add"]);
   const updateTable = trpc.useMutation(["tables.update"]);
-  const updateWorkspace = trpc.useMutation(["workspace.update"]);
   const deleteTable = trpc.useMutation(["tables.delete"]);
   const { data: workspace } = trpc.useQuery(["workspace.byId", { id }]);
   const { data: tables } = trpc.useQuery([
@@ -61,64 +52,7 @@ const WorkspacePage: React.FC<
             <ActionIcon color="gray">
               <IconMenu2 size={16} />
             </ActionIcon>
-            <Menu
-              transition="rotate-right"
-              control={
-                <UnstyledButton>
-                  <Group spacing={8}>
-                    <Title order={6} sx={{ fontWeight: 500 }}>
-                      {workspace?.name}
-                    </Title>
-                    <HiChevronDown size={16} />
-                  </Group>
-                </UnstyledButton>
-              }
-            >
-              <Menu.Label>Actions</Menu.Label>
-              <Menu.Item icon={<IconShare size={14} />}>
-                Share workspace
-              </Menu.Item>
-              <Menu.Item
-                icon={<IconEdit size={14} />}
-                onClick={(e: any) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  const newWorkspaceName = prompt("New workspace name:");
-                  if (newWorkspaceName) {
-                    updateWorkspace.mutate(
-                      {
-                        name: newWorkspaceName,
-                        id,
-                      },
-                      {
-                        onSuccess: () => {
-                          utils.setQueryData(["workspace.all"], (old) => {
-                            return (old || []).map((w) =>
-                              w.id === id ? { ...w, name: newWorkspaceName } : w
-                            );
-                          });
-                          utils.setQueryData(
-                            ["workspace.byId", { id }],
-                            (old) =>
-                              old
-                                ? {
-                                    ...old,
-                                    name: newWorkspaceName,
-                                  }
-                                : ({} as any)
-                          );
-                        },
-                      }
-                    );
-                  }
-                }}
-              >
-                Rename workspace
-              </Menu.Item>
-              <Menu.Item color="red" icon={<IconTrash size={14} />}>
-                Delete workspace
-              </Menu.Item>
-            </Menu>
+            <WorkspaceDropdown includeControl workspace={workspace} />
             <Button
               color="gray"
               variant="default"

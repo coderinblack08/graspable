@@ -3,34 +3,27 @@ import { InputStylesParams, MantineProvider } from "@mantine/core";
 import { withTRPC } from "@trpc/next";
 import { SessionProvider } from "next-auth/react";
 import type { AppProps } from "next/app";
-import { FirebaseAppProvider } from "reactfire";
-import { FirebaseComponents } from "../components/FirebaseComponents";
-import { app } from "../lib/firebase-client";
 import { AppRouter } from "../server/routers/_app";
 
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   return (
     <SessionProvider session={session}>
-      <FirebaseAppProvider firebaseApp={app}>
-        <FirebaseComponents>
-          <MantineProvider
-            withGlobalStyles
-            withNormalizeCSS
-            theme={{ colorScheme: "light" }}
-            styles={{
-              Text: { root: { fontSize: 14 } },
-              Input: (theme, _params: InputStylesParams) => ({
-                input: {
-                  borderRadius: theme.radius.sm,
-                  borderColor: theme.colors.gray[3],
-                },
-              }),
-            }}
-          >
-            <Component {...pageProps} />
-          </MantineProvider>
-        </FirebaseComponents>
-      </FirebaseAppProvider>
+      <MantineProvider
+        withGlobalStyles
+        withNormalizeCSS
+        theme={{ colorScheme: "light" }}
+        styles={{
+          Text: { root: { fontSize: 14 } },
+          Input: (theme, _params: InputStylesParams) => ({
+            input: {
+              borderRadius: theme.radius.sm,
+              borderColor: theme.colors.gray[3],
+            },
+          }),
+        }}
+      >
+        <Component {...pageProps} />
+      </MantineProvider>
     </SessionProvider>
   );
 }

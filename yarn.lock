@@ -1416,6 +1416,15 @@
     "@types/scheduler" "*"
     csstype "^3.0.2"
 
+"@types/react@^16.7.20":
+  version "16.14.28"
+  resolved "https://registry.yarnpkg.com/@types/react/-/react-16.14.28.tgz#073258f3fe7bb80c748842c1f93aeaafe16dffad"
+  integrity sha512-83zBE6+XUVXsdL3iFzOyUewdauaU+KviKCHEGOgSW52coAuqW7tEKQM0E9+ZC0Zk6TELQ2/JgogPvp7FavzFwg==
+  dependencies:
+    "@types/prop-types" "*"
+    "@types/scheduler" "*"
+    csstype "^3.0.2"
+
 "@types/react@^17", "@types/react@^17.0.37":
   version "17.0.44"
   resolved "https://registry.yarnpkg.com/@types/react/-/react-17.0.44.tgz#c3714bd34dd551ab20b8015d9d0dbec812a51ec7"
@@ -5015,6 +5024,13 @@ react-universal-interface@^0.6.2:
   version "0.6.2"
   resolved "https://registry.yarnpkg.com/react-universal-interface/-/react-universal-interface-0.6.2.tgz#5e8d438a01729a4dbbcbeeceb0b86be146fe2b3b"
   integrity sha512-dg8yXdcQmvgR13RIlZbTRQOoUrDciFVoSBZILwjE2LFISxZZ8loVJKAkuzswl5js8BHda79bIb2b84ehU8IjXw==
+
+react-use-hover@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/react-use-hover/-/react-use-hover-2.0.0.tgz#3a43f014e832307428dfac1ad6a2b6a170aeb466"
+  integrity sha512-A2OYaC8OnWCD7ZOGbnUX4nJlwr0VEtu1gMnZ5U4w8BoXkwCvBlACgBiUd0Ay+goTqHGq4OSwq4Gxr2x05TQUFA==
+  dependencies:
+    "@types/react" "^16.7.20"
 
 react-use@^17.4.0:
   version "17.4.0"

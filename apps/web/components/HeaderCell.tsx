@@ -1,10 +1,15 @@
-import { Box, Group } from "@mantine/core";
+import { ActionIcon, Box, Group, Menu, MenuItem, Text } from "@mantine/core";
+import useHover from "react-use-hover";
 import {
   IconCalendarEvent,
   IconCheckbox,
+  IconDots,
+  IconEdit,
   IconHash,
   IconLetterA,
+  IconLink,
   IconList,
+  IconTrash,
 } from "@tabler/icons";
 import React, { useEffect } from "react";
 import { Draggable } from "react-beautiful-dnd";
@@ -31,6 +36,8 @@ export const HeaderCellIcon: React.FC<{
       return <IconHash size={16} />;
     case "text":
       return <IconLetterA size={16} />;
+    case "url":
+      return <IconLink size={16} />;
     default:
       return null;
   }
@@ -39,6 +46,7 @@ export const HeaderCellIcon: React.FC<{
 export const HeaderCell: React.FC<HeaderCellProps> = ({ index, column }) => {
   const { id: columnId } = column;
   const { classes } = useStyles();
+  const [isHovering, hoverProps] = useHover();
 
   const updateColumn = trpc.useMutation(["columns.update"]);
   const [previousWidth, setPreviousWidth] = React.useState(column.width);
@@ -87,16 +95,46 @@ export const HeaderCell: React.FC<HeaderCellProps> = ({ index, column }) => {
               className={classes.cell}
               sx={{
                 backgroundColor: "white",
+                padding: 0,
                 fontWeight: 700,
                 userSelect: "none",
                 height: "100%",
               }}
               {...column.getHeaderProps()}
             >
-              <Group spacing={8} {...provided.dragHandleProps}>
-                <HeaderCellIcon type={column.type} />
-                <div>{column.render("Header")}</div>
-              </Group>
+              <Box p={8} {...hoverProps} {...provided.dragHandleProps}>
+                <Group noWrap position="apart" sx={{ minWidth: 0 }}>
+                  <Group spacing={8} sx={{ minWidth: 0, width: "100%" }}>
+                    <HeaderCellIcon type={column.type} />
+                    <Text
+                      sx={{
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {column.render("Header")}
+                    </Text>
+                  </Group>
+                  {column.id !== "selection" && column.id !== "new-column" ? (
+                    <Menu
+                      sx={{ display: isHovering ? "block" : "none" }}
+                      control={
+                        <ActionIcon size="xs">
+                          <IconDots size={16} />
+                        </ActionIcon>
+                      }
+                    >
+                      <MenuItem icon={<IconEdit size={14} />}>
+                        Rename Column
+                      </MenuItem>
+                      <Menu.Item color="red" icon={<IconTrash size={14} />}>
+                        Delete Column
+                      </Menu.Item>
+                    </Menu>
+                  ) : null}
+                </Group>
+              </Box>
               {column?.canResize && (
                 <div
                   {...column.getResizerProps()}

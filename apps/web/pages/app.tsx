@@ -31,6 +31,7 @@ import Link from "next/link";
 import { NavbarLink } from "../components/NavbarLink";
 import { NewWorkspaceModal } from "../components/NewWorkspaceModal";
 import { UserDropdown } from "../components/UserDropdown";
+import { WorkspaceDropdown } from "../components/WorkspaceDropdown";
 import { trpc } from "../lib/trpc";
 
 const AppPage: NextPage = () => {
@@ -113,39 +114,7 @@ const AppPage: NextPage = () => {
                     {workspace.name}
                   </Text>
                 </Box>
-                <Menu
-                  transition="rotate-left"
-                  position="bottom"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                  }}
-                  placement="end"
-                >
-                  <Menu.Label>Actions</Menu.Label>
-                  <Menu.Item icon={<IconShare size={14} />}>
-                    Share workspace
-                  </Menu.Item>
-                  <Menu.Item icon={<IconEdit size={14} />}>
-                    Rename workspace
-                  </Menu.Item>
-                  <Menu.Item
-                    color="red"
-                    icon={<IconTrash size={14} />}
-                    onClick={() =>
-                      deleteWorkspace.mutate(
-                        { id: workspace.id },
-                        {
-                          onSuccess: () => {
-                            utils.invalidateQueries(["workspace.all"]);
-                          },
-                        }
-                      )
-                    }
-                  >
-                    Delete workspace
-                  </Menu.Item>
-                </Menu>
+                <WorkspaceDropdown workspace={workspace} />
               </Group>
               <Group spacing="xs">
                 <ThemeIcon variant="light" size="xs">
