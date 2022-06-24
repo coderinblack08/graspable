@@ -1,4 +1,4 @@
-import { Form, Formik } from "formik";
+import { Form, Formik, useField } from "formik";
 import {
   Button,
   Checkbox,
@@ -30,6 +30,45 @@ interface FilterPopoverProps {
   columns: InferQueryOutput<"columns.byTableId">;
 }
 
+const FilterValueInput: React.FC<{
+  item: {
+    columnId: string;
+    value: string;
+    operation: string;
+    column: InferQueryOutput<"columns.byTableId">[0];
+  };
+  index: number;
+}> = ({ item, index }) => {
+  const [{ value, onChange }, _, { setValue }] = useField(`filters[${index}]`);
+  if (item.column.type === "checkbox") {
+    return null;
+  }
+  if (item.column.type === "dropdown") {
+    return (
+      <Select
+        color="blue"
+        size="xs"
+        placeholder="Select a value"
+        value={value.value}
+        onChange={(value) => value && setValue({ ...item, value })}
+        data={
+          item.column.dropdownOptions?.map((x) => ({ label: x, value: x })) ||
+          []
+        }
+      />
+    );
+  }
+  return (
+    <Input
+      size="xs"
+      placeholder="Value"
+      value={value.value}
+      name={`filters[${index}].value`}
+      onChange={onChange}
+    />
+  );
+};
+
 export const FilterPopover: React.FC<FilterPopoverProps> = ({ columns }) => {
   const [opened, setOpened] = React.useState(false);
   const [tab, setTab] = React.useState(0);
@@ -57,6 +96,7 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({ columns }) => {
   ) {
     switch (type) {
       case "dropdown":
+        return [{ value: "equals", label: "Equals" }];
       case "text":
         return [
           { value: "equals", label: "Equals" },
@@ -135,10 +175,10 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({ columns }) => {
                           ![
                             "number",
                             "text",
-                            "url",
                             "dropdown",
-                            // "tags",
                             "checkbox",
+                            // "tags",
+                            // "url",
                             // "date",
                           ].includes(item.column.type)
                         }
@@ -163,44 +203,7 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({ columns }) => {
                               })
                             }
                           />
-                          {item.column.type === "dropdown" &&
-                          values.filters[index].operation === "equals" ? (
-                            <Select
-                              color="blue"
-                              size="xs"
-                              placeholder="Select a value"
-                              name={`filters[${index}].value`}
-                              value={values.filters[index].value}
-                              onChange={(value) =>
-                                value &&
-                                setValues({
-                                  filters: [
-                                    ...values.filters.map((f) =>
-                                      f.columnId === item.columnId
-                                        ? { ...item, value }
-                                        : f
-                                    ),
-                                  ],
-                                })
-                              }
-                              data={
-                                item.column.dropdownOptions?.map((x) => ({
-                                  label: x,
-                                  value: x,
-                                })) || []
-                              }
-                            />
-                          ) : (
-                            item.column.type !== "checkbox" && (
-                              <Input
-                                size="xs"
-                                placeholder="Value"
-                                name={`filters[${index}].value`}
-                                value={values.filters[index].value}
-                                onChange={handleChange}
-                              />
-                            )
-                          )}
+                          <FilterValueInput index={index} item={item} />
                           <Button
                             size="xs"
                             variant="default"

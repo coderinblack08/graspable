@@ -12,6 +12,8 @@ const zodFilter = z.object({
     "unchecked",
     "startsWith",
     "endsWith",
+    "gt",
+    "lt",
   ]),
   value: z.string(),
 });
@@ -36,6 +38,10 @@ export const rowRouter = createRouter()
         )} and c."rowId" = r.id)`;
 
         switch (operation) {
+          case "gt":
+            return `and ${SqlString.escape(value)}::int < ${cellSubQuery}::int`;
+          case "lt":
+            return `and ${SqlString.escape(value)}::int > ${cellSubQuery}::int`;
           case "equals":
             return `and ${SqlString.escape(value)} = ${cellSubQuery}`;
           case "unchecked":

@@ -70,10 +70,11 @@ export const EditableCell = (
         );
       case "number":
         return (
-          <NumberInput
+          <TextInput
+            type="number"
             value={value}
-            onChange={(val) => {
-              setValue(val || null);
+            onChange={(e) => {
+              setValue(e.target.value);
               debounced();
             }}
             styles={styles}
