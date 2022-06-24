@@ -107,6 +107,7 @@ declare module "react-table" {
       UseResizeColumnsColumnOptions<D>,
       UseSortByColumnOptions<D> {
     type?: InferQueryOutput<"columns.byTableId">[0]["type"];
+    tableId?: string;
   }
 
   export interface ColumnInstance<

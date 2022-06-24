@@ -158,6 +158,7 @@ const DataGridUI: React.FC<{
         accessor: db_column.id,
         width: db_column.width || 150,
         type: db_column.type,
+        tableId: db_column.tableId,
       })),
     [dbColumns]
   );

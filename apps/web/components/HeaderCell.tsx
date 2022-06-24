@@ -1,5 +1,4 @@
 import { ActionIcon, Box, Group, Menu, MenuItem, Text } from "@mantine/core";
-import useHover from "react-use-hover";
 import {
   IconCalendarEvent,
   IconCheckbox,
@@ -14,6 +13,7 @@ import {
 import React, { useEffect } from "react";
 import { Draggable } from "react-beautiful-dnd";
 import { HeaderGroup } from "react-table";
+import useHover from "react-use-hover";
 import { InferQueryOutput, trpc } from "../lib/trpc";
 import { useStyles } from "./DataGrid";
 
@@ -48,6 +48,8 @@ export const HeaderCell: React.FC<HeaderCellProps> = ({ index, column }) => {
   const { classes } = useStyles();
   const [isHovering, hoverProps] = useHover();
 
+  const utils = trpc.useContext();
+  const deleteColumn = trpc.useMutation(["columns.delete"]);
   const updateColumn = trpc.useMutation(["columns.update"]);
   const [previousWidth, setPreviousWidth] = React.useState(column.width);
   const cellRef = React.useRef<HTMLDivElement | null>(null);
@@ -125,10 +127,60 @@ export const HeaderCell: React.FC<HeaderCellProps> = ({ index, column }) => {
                         </ActionIcon>
                       }
                     >
-                      <MenuItem icon={<IconEdit size={14} />}>
+                      <MenuItem
+                        icon={<IconEdit size={14} />}
+                        onClick={() => {
+                          const newColumnName =
+                            window.prompt("New column name:");
+                          if (newColumnName) {
+                            updateColumn.mutate(
+                              { id: columnId, name: newColumnName },
+                              {
+                                onSuccess: () => {
+                                  utils.setQueryData(
+                                    [
+                                      "columns.byTableId",
+                                      { tableId: column.tableId! },
+                                    ],
+                                    (old) =>
+                                      (old || []).map((c) =>
+                                        c.id === columnId
+                                          ? { ...c, name: newColumnName }
+                                          : c
+                                      )
+                                  );
+                                },
+                              }
+                            );
+                          }
+                        }}
+                      >
                         Rename Column
                       </MenuItem>
-                      <Menu.Item color="red" icon={<IconTrash size={14} />}>
+                      <Menu.Item
+                        color="red"
+                        icon={<IconTrash size={14} />}
+                        onClick={() => {
+                          deleteColumn.mutate(
+                            { id: columnId },
+                            {
+                              onSuccess: () => {
+                                utils.setQueryData(
+                                  [
+                                    "columns.byTableId",
+                                    { tableId: column.tableId! },
+                                  ],
+                                  (old) => {
+                                    return (old || []).filter(
+                                      (c) => c.id !== columnId
+                                    );
+                                  }
+                                );
+                              },
+                            }
+                          );
+                        }}
+                      >
                         Delete Column
                       </Menu.Item>
                     </Menu>

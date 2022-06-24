@@ -31,10 +31,19 @@ export const columnsRouter = createRouter()
   .mutation("update", {
     input: z.object({
       id: z.string(),
+      name: z.string().optional(),
       width: z.number().min(100).max(400).optional(),
       rank: z.string().optional(),
     }),
     async resolve({ ctx, input }) {
       return ctx.prisma.column.update({ where: { id: input.id }, data: input });
+    },
+  })
+  .mutation("delete", {
+    input: z.object({
+      id: z.string(),
+    }),
+    async resolve({ ctx, input }) {
+      return ctx.prisma.column.delete({ where: { id: input.id } });
     },
   });
