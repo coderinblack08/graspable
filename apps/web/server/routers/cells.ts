@@ -20,15 +20,11 @@ export const cellRouter = createRouter()
     resolve({ input }) {
       return new Subscription<Cell>((emit) => {
         const onUpsert = (data: Cell) => {
-          console.log(data);
-
           if (data.tableId === input.tableId) {
             emit.data(data);
           }
         };
-
         ee.on("cell.upsert", onUpsert);
-
         return () => {
           ee.off("cell.upsert", onUpsert);
         };

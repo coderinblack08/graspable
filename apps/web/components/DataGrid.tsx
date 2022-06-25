@@ -105,25 +105,52 @@ export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
     (state) => [state.sorts, state.filters],
     shallow
   );
-  const { data: rows } = trpc.useQuery(
-    [
-      "rows.byTableId",
-      {
-        tableId,
-        sorts: sorts.filter((x) => x.columnId !== null) as any,
-        filters: filters as any,
-      },
-    ],
-    { keepPreviousData: true }
+  const rowsQueryKey = React.useMemo(
+    () => ({
+      tableId,
+      sorts: sorts.filter((x) => x.columnId !== null) as any,
+      filters: filters as any,
+    }),
+    [sorts, filters, tableId]
   );
+  const { data: rows } = trpc.useQuery(["rows.byTableId", rowsQueryKey], {
+    keepPreviousData: true,
+  });
   const { data: columns } = trpc.useQuery(["columns.byTableId", { tableId }]);
   const { data: cells } = trpc.useQuery(["cells.byTableId", { tableId }]);
+  const utils = trpc.useContext();
   trpc.useSubscription(["cells.onUpsert", { tableId }], {
     onNext(data) {
-      console.log(data);
+      // upsert on cell might affect the rows, so we need to re-query them
+      // ...
+      utils.setQueryData(["cells.byTableId", { tableId }], (old) => {
+        if (!old) return [];
+        const existingCell = old.find((x) => x.id === data.id);
+        if (existingCell) {
+          return old.map((x) => (x.id === data.id ? data : x));
+        } else {
+          return [...old, data];
+        }
+      });
     },
   });
-  const utils = trpc.useContext();
+  trpc.useSubscription(["rows.onAdd", { tableId }], {
+    onNext(data) {
+      utils.refetchQueries(["rows.byTableId", rowsQueryKey]);
+      // utils.setQueryData(["rows.byTableId", rowsQueryKey], (old) => {
+      //   if (!old) return [];
+      //   return [...old, data];
+      // });
+    },
+  });
+  trpc.useSubscription(["rows.onDelete", { tableId }], {
+    onNext(ids) {
+      utils.setQueryData(["rows.byTableId", rowsQueryKey], (old) => {
+        if (!old) return [];
+        return old.filter((x) => !ids.includes(x.id));
+      });
+    },
+  });
 
   if (rows && cells && columns) {
     return (
@@ -208,7 +235,7 @@ const DataGridUI: React.FC<{
           { tableId, rowId, columnId, value },
           {
             onSuccess: (data) => {
-              utils.refetchQueries(["cells.byTableId", { tableId }]);
+              // utils.refetchQueries(["cells.byTableId", { tableId }]);
               utils.setQueryData(["cells.byTableId", { tableId }], (old) => {
                 let found = false;
                 old = (old || []).map((x) => {
@@ -400,7 +427,7 @@ const DataGridUI: React.FC<{
                 compact
                 onClick={() =>
                   removeRows.mutate(
-                    { ids: Object.keys(state.selectedRowIds) },
+                    { ids: Object.keys(state.selectedRowIds), tableId },
                     {
                       onSuccess: () => {
                         utils.setQueryData(rowsQueryKey, (old) =>

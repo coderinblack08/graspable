@@ -2,6 +2,8 @@ import { Row } from "@prisma/client";
 import { z } from "zod";
 import { createRouter } from "../createRouter";
 import SqlString from "sqlstring";
+import { Subscription } from "@trpc/server";
+import { ee } from "../ee";
 
 const zodFilter = z.object({
   columnId: z.string(),
@@ -89,6 +91,46 @@ export const rowRouter = createRouter()
       );
     },
   })
+  .subscription("onDelete", {
+    input: z.object({
+      tableId: z.string(),
+    }),
+    resolve({ input }) {
+      return new Subscription<string[]>((emit) => {
+        const onUpsert = ({
+          ids,
+          tableId,
+        }: {
+          ids: string[];
+          tableId: string;
+        }) => {
+          emit.data(ids);
+        };
+        ee.on("row.delete", onUpsert);
+        return () => {
+          ee.off("row.delete", onUpsert);
+        };
+      });
+    },
+  })
+  .subscription("onAdd", {
+    input: z.object({
+      tableId: z.string(),
+    }),
+    resolve({ input }) {
+      return new Subscription<Row>((emit) => {
+        const onUpsert = (data: Row) => {
+          if (data.tableId === input.tableId) {
+            emit.data(data);
+          }
+        };
+        ee.on("row.add", onUpsert);
+        return () => {
+          ee.off("row.add", onUpsert);
+        };
+      });
+    },
+  })
   .mutation("updateRank", {
     input: z.object({
       id: z.string(),
@@ -107,14 +149,18 @@ export const rowRouter = createRouter()
       rank: z.string(),
     }),
     async resolve({ ctx, input }) {
-      return ctx.prisma.row.create({ data: input });
+      const row = await ctx.prisma.row.create({ data: input });
+      ee.emit("row.add", row);
+      return row;
     },
   })
   .mutation("delete", {
     input: z.object({
+      tableId: z.string(),
       ids: z.array(z.string()),
     }),
     async resolve({ ctx, input }) {
+      ee.emit("row.delete", input);
       return ctx.prisma.row.deleteMany({ where: { id: { in: input.ids } } });
     },
   });

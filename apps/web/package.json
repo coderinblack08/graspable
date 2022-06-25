@@ -6,7 +6,7 @@
     "build": "next build",
     "dev": "concurrently \"npm:dev:*\"",
     "dev:next": "next dev",
-    "dev:wss": "cross-env PORT=3001 nodemon --watch . --ext .ts,.tsx,js,jsx --signal SIGTERM --exec \"ts-node --project tsconfig.server.json --files server/wssDevServer.ts\"",
+    "dev:wss": "cross-env PORT=3001 nodemon --watch ./server --ext .ts,.tsx,js,jsx --signal SIGTERM --exec \"ts-node --project tsconfig.server.json --files server/wssDevServer.ts\"",
     "start": "next start",
     "lint": "next lint"
   },

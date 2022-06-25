@@ -171,6 +171,7 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({ columns }) => {
                   (item, index) =>
                     item.column && (
                       <Tabs.Tab
+                        key={index}
                         label={item.column.name}
                         disabled={
                           ![

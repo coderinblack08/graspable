@@ -72,7 +72,7 @@ export const EditableCell = (
         return (
           <TextInput
             type="number"
-            value={value}
+            value={value || ""}
             onChange={(e) => {
               setValue(e.target.value);
               debounced();
