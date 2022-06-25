@@ -7,9 +7,12 @@ export const useMemberCheck = async (
   workspaceId: string,
   viewersIncluded = true
 ) => {
+  if (!ctx.session) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
   const membership = await ctx.prisma.member.findFirst({
     where: {
-      userId: ctx.session!.user.id,
+      userId: ctx.session.user.id,
       workspaceId: workspaceId,
       role: {
         in: [MemberRole.owner, MemberRole.editor].concat(

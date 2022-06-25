@@ -1,5 +1,8 @@
 import { createRouter } from "../createRouter";
 import { z } from "zod";
+import { ee } from "../ee";
+import { Cell } from "@prisma/client";
+import { Subscription } from "@trpc/server";
 
 export const cellRouter = createRouter()
   .query("byTableId", {
@@ -8,6 +11,28 @@ export const cellRouter = createRouter()
     }),
     async resolve({ ctx, input }) {
       return ctx.prisma.cell.findMany({ where: input });
+    },
+  })
+  .subscription("onUpsert", {
+    input: z.object({
+      tableId: z.string(),
+    }),
+    resolve({ input }) {
+      return new Subscription<Cell>((emit) => {
+        const onUpsert = (data: Cell) => {
+          console.log(data);
+
+          if (data.tableId === input.tableId) {
+            emit.data(data);
+          }
+        };
+
+        ee.on("cell.upsert", onUpsert);
+
+        return () => {
+          ee.off("cell.upsert", onUpsert);
+        };
+      });
     },
   })
   .mutation("upsert", {
@@ -20,8 +45,10 @@ export const cellRouter = createRouter()
         z.number(),
         z.boolean(),
         z.array(z.string()),
+        z.null(),
       ]),
     }),
+
     async resolve({ ctx, input }) {
       if (input.value instanceof Array) {
         input.value = JSON.stringify(input.value);
@@ -30,7 +57,7 @@ export const cellRouter = createRouter()
         input.value = input.value.toString();
       }
       const update: Record<string, any> = { value: input.value };
-      return ctx.prisma.cell.upsert({
+      const cell = await ctx.prisma.cell.upsert({
         where: {
           rowId_columnId: {
             rowId: input.rowId,
@@ -40,5 +67,7 @@ export const cellRouter = createRouter()
         create: { ...input, value: input.value },
         update,
       });
+      ee.emit("cell.upsert", cell);
+      return cell;
     },
   });

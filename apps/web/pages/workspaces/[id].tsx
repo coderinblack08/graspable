@@ -12,6 +12,7 @@ import {
 } from "@mantine/core";
 import { IconDotsVertical, IconMenu2 } from "@tabler/icons";
 import { GetServerSideProps, InferGetServerSidePropsType } from "next";
+import Head from "next/head";
 import Image from "next/image";
 import React from "react";
 import { TableTabContent } from "../../components/TableTabContent";
@@ -77,6 +78,9 @@ const WorkspacePage: React.FC<
         </Header>
       }
     >
+      <Head>
+        <title>Workspace: {workspace?.name}</title>
+      </Head>
       {tables && tables.length ? (
         <Tabs
           tabPadding={0}

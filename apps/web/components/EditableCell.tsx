@@ -48,7 +48,7 @@ export const EditableCell = (
           <>
             <DatePicker
               onChange={(date) => {
-                setValue(date?.toDateString());
+                setValue(date ? date.toDateString() : "");
                 debounced();
               }}
               styles={styles}

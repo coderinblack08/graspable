@@ -13,7 +13,9 @@ export const createContext = async ({
 }:
   | trpcNext.CreateNextContextOptions
   | NodeHTTPCreateContextFnOptions<IncomingMessage, ws>) => {
+  // const session = await getSessionFromCookie({ req: req as NextApiRequest });
   const session = await getSession({ req });
+
   return {
     req,
     res,

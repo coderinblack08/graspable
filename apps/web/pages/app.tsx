@@ -27,6 +27,7 @@ import {
 } from "@tabler/icons";
 import { NextPage } from "next";
 import { useSession } from "next-auth/react";
+import Head from "next/head";
 import Link from "next/link";
 import { NavbarLink } from "../components/NavbarLink";
 import { NewWorkspaceModal } from "../components/NewWorkspaceModal";
@@ -98,6 +99,9 @@ const AppPage: NextPage = () => {
         </Navbar>
       }
     >
+      <Head>
+        <title>Graspable</title>
+      </Head>
       <NewWorkspaceModal />
       <SimpleGrid cols={2} my="md">
         {workspaces?.map((workspace) => (

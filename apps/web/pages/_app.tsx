@@ -1,5 +1,8 @@
 import superjson from "superjson";
 import { InputStylesParams, MantineProvider } from "@mantine/core";
+import { httpBatchLink } from "@trpc/client/links/httpBatchLink";
+import { loggerLink } from "@trpc/client/links/loggerLink";
+import { wsLink, createWSClient } from "@trpc/client/links/wsLink";
 import { withTRPC } from "@trpc/next";
 import { SessionProvider } from "next-auth/react";
 import type { AppProps } from "next/app";
@@ -28,6 +31,20 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   );
 }
 
+function getEndingLink() {
+  if (!process.browser) {
+    return httpBatchLink({
+      url: `${process.env.NEXT_PUBLIC_APP_URL}/api/trpc`,
+    });
+  }
+  const client = createWSClient({
+    url: process.env.NEXT_PUBLIC_WS_URL!,
+  });
+  return wsLink<AppRouter>({
+    client,
+  });
+}
+
 export default withTRPC<AppRouter>({
   config() {
     /**
@@ -40,11 +57,22 @@ export default withTRPC<AppRouter>({
 
     return {
       url,
+      links: [
+        // adds pretty logs to your console in development and logs errors in production
+        loggerLink({
+          enabled: (opts) =>
+            (process.env.NODE_ENV === "development" && process.browser) ||
+            (opts.direction === "down" && opts.result instanceof Error),
+        }),
+        getEndingLink(),
+      ],
       transformer: superjson,
       /**
        * @link https://react-query.tanstack.com/reference/QueryClient
        */
-      // queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
+      queryClientConfig: {
+        defaultOptions: { queries: { refetchOnWindowFocus: false } },
+      },
     };
   },
   /**

@@ -12,7 +12,6 @@ import {
 } from "@mantine/core";
 import { useHotkeys, useListState } from "@mantine/hooks";
 import {
-  IconEyeOff,
   IconLayout,
   IconList,
   IconPlus,
@@ -119,6 +118,11 @@ export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
   );
   const { data: columns } = trpc.useQuery(["columns.byTableId", { tableId }]);
   const { data: cells } = trpc.useQuery(["cells.byTableId", { tableId }]);
+  trpc.useSubscription(["cells.onUpsert", { tableId }], {
+    onNext(data) {
+      console.log(data);
+    },
+  });
   const utils = trpc.useContext();
 
   if (rows && cells && columns) {
@@ -435,8 +439,9 @@ const DataGridUI: React.FC<{
           </ActionIcon>
         </Group>
       </Group>
-      <Box mt={-2}>
-        <ScrollArea>
+
+      <ScrollArea scrollbarSize={0}>
+        <Box mt={-2}>
           <Box
             // component="table"
             className={classes.table}
@@ -639,25 +644,25 @@ const DataGridUI: React.FC<{
               </Droppable>
             </DragDropContext>
           </Box>
-        </ScrollArea>
-        <Group spacing="sm" p="sm" align="center">
-          <Tooltip withArrow label="shift + enter" position="bottom">
-            <Button
-              loading={addRow.isLoading}
-              variant="default"
-              color="gray"
-              leftIcon={<IconPlus size={16} />}
-              onClick={createNewRow}
-              compact
-            >
-              New Row
+          <Group spacing="sm" p="sm" align="center">
+            <Tooltip withArrow label="shift + enter" position="bottom">
+              <Button
+                loading={addRow.isLoading}
+                variant="default"
+                color="gray"
+                leftIcon={<IconPlus size={16} />}
+                onClick={createNewRow}
+                compact
+              >
+                New Row
+              </Button>
+            </Tooltip>
+            <Button color="gray" variant="default" compact disabled>
+              Load More
             </Button>
-          </Tooltip>
-          <Button color="gray" variant="default" compact disabled>
-            Load More
-          </Button>
-        </Group>
-      </Box>
+          </Group>
+        </Box>
+      </ScrollArea>
     </Box>
   );
 };

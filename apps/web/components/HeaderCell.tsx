@@ -4,9 +4,9 @@ import {
   IconCheckbox,
   IconDots,
   IconEdit,
+  IconExternalLink,
   IconHash,
   IconLetterA,
-  IconLink,
   IconList,
   IconTrash,
 } from "@tabler/icons";
@@ -37,7 +37,7 @@ export const HeaderCellIcon: React.FC<{
     case "text":
       return <IconLetterA size={16} />;
     case "url":
-      return <IconLink size={16} />;
+      return <IconExternalLink size={16} />;
     default:
       return null;
   }

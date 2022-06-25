@@ -3,10 +3,17 @@
   "compilerOptions": {
     "module": "commonjs",
     "outDir": "dist",
-    "target": "ES2019",
-    "lib": ["ES2019", "DOM"],
+    "target": "es2019",
+    "lib": ["es2019", "dom"],
     "isolatedModules": false,
     "noEmit": false
   },
-  "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx"]
+  "include": [
+    "next-env.d.ts",
+    "next-auth.d.ts",
+    "react-table-config.d.ts",
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": ["node_modules"]
 }
