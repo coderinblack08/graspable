@@ -18,11 +18,38 @@ export const sortRouter = createRouter()
   .mutation("add", {
     input: z.object({
       tableId: z.string(),
-      columnId: z.string(),
-      direction: z.nativeEnum(SortDirection),
+      columnId: z.string().nullable(),
+      direction: z.nativeEnum(SortDirection).nullable(),
     }),
     async resolve({ ctx, input }) {
       const sort = await ctx.prisma.sort.create({ data: input });
       return sort;
+    },
+  })
+  .mutation("update", {
+    input: z.object({
+      id: z.string(),
+      tableId: z.string(),
+      columnId: z.string().nullable(),
+      direction: z.nativeEnum(SortDirection).nullable(),
+    }),
+    async resolve({ ctx, input }) {
+      return ctx.prisma.sort.update({
+        where: { id: input.id },
+        data: input,
+      });
+    },
+  })
+  .mutation("delete", {
+    input: z.object({
+      id: z.string(),
+      tableId: z.string(),
+    }),
+    async resolve({ ctx, input }) {
+      return ctx.prisma.sort.delete({
+        where: {
+          id: input.id,
+        },
+      });
     },
   });

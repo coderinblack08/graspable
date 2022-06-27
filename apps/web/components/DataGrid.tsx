@@ -430,7 +430,7 @@ const DataGridUI: React.FC<{
               {/* <Button leftIcon={<IconFrame size={16} />} compact>
                 Group
               </Button> */}
-              <SortPopover columns={dbColumns} />
+              <SortPopover tableId={tableId} columns={dbColumns} />
               <HideColumnPopover allColumns={allColumns} />
             </>
           )}

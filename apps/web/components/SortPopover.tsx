@@ -1,40 +1,120 @@
 import {
+  ActionIcon,
+  Box,
   Button,
   Group,
   Popover,
-  Radio,
-  RadioGroup,
+  SegmentedControl,
   Select,
   Stack,
 } from "@mantine/core";
-import { formList, useForm } from "@mantine/form";
-import { IconPlus, IconSortAscending } from "@tabler/icons";
+import { IconPlus, IconSortAscending, IconTrash } from "@tabler/icons";
+import { Form, Formik } from "formik";
 import React from "react";
-import shallow from "zustand/shallow";
-import { InferQueryOutput } from "../lib/trpc";
-import { useTableStore } from "./useTableStore";
+import { InferQueryOutput, trpc } from "../lib/trpc";
+import { AutoSave } from "./AutoSave";
 
 export interface Sort {
   direction: "asc" | "desc";
   columnId: string | null;
 }
 
+const SortRow: React.FC<{
+  sort: InferQueryOutput<"sorts.byTableId">[0];
+  columns: InferQueryOutput<"columns.byTableId">;
+  tableId: string;
+}> = ({ sort, columns, tableId }) => {
+  const updateSort = trpc.useMutation("sorts.update");
+  const deleteSort = trpc.useMutation("sorts.delete");
+  const utils = trpc.useContext();
+
+  return (
+    <Formik
+      onSubmit={(values) => {
+        updateSort.mutate(values, {
+          onSuccess(data) {
+            utils.setQueryData(["sorts.byTableId", { tableId }], (old) =>
+              (old || []).map((x) => (x.id === data.id ? data : x))
+            );
+            utils.refetchQueries(["rows.byTableId", { tableId }]);
+          },
+        });
+      }}
+      initialValues={sort}
+      enableReinitialize
+    >
+      {({ values, setFieldValue }) => (
+        <Form>
+          <Group spacing={8} noWrap>
+            <Select
+              size="xs"
+              onChange={(col) => setFieldValue("columnId", col, false)}
+              value={values.columnId}
+              placeholder="Column"
+              sx={{ width: "100%" }}
+              data={columns.map((col) => ({
+                label: col.name,
+                value: col.id,
+              }))}
+            />
+            <SegmentedControl
+              value={values.direction || ""}
+              onChange={(dir) => setFieldValue("direction", dir, false)}
+              sx={{ flexShrink: 0 }}
+              size="xs"
+              data={[
+                { label: "Asc.", value: "asc" },
+                { label: "Desc.", value: "desc" },
+              ]}
+            />
+            <ActionIcon
+              variant="outline"
+              onClick={() => {
+                deleteSort.mutate(
+                  {
+                    tableId: sort.tableId,
+                    id: sort.id,
+                  },
+                  {
+                    onSuccess() {
+                      utils.setQueryData(
+                        ["sorts.byTableId", { tableId: sort.tableId }],
+                        (old) => {
+                          return (old || []).filter((f) => f.id !== sort.id);
+                        }
+                      );
+                      utils.refetchQueries(["rows.byTableId", { tableId }]);
+                    },
+                  }
+                );
+              }}
+              color="red"
+            >
+              <IconTrash size={16} />
+            </ActionIcon>
+            <AutoSave />
+          </Group>
+        </Form>
+      )}
+    </Formik>
+  );
+};
+
 export const SortPopover: React.FC<{
   columns: InferQueryOutput<"columns.byTableId">;
-}> = ({ columns }) => {
+  tableId: string;
+}> = ({ columns, tableId }) => {
   const [opened, setOpened] = React.useState(false);
-  const [sorts, setSort] = useTableStore(
-    (store) => [store.sorts, store.setSort],
-    shallow
-  );
-  const form = useForm({
-    initialValues: {
-      sorts: formList(sorts),
-    },
-  });
+  const addSort = trpc.useMutation(["sorts.add"]);
+  const utils = trpc.useContext();
+  const { data: sorts } = trpc.useQuery(["sorts.byTableId", { tableId }]);
 
   return (
     <Popover
+      styles={{
+        inner: { padding: 0 },
+        body: { width: "100%" },
+      }}
       opened={opened}
       onClose={() => setOpened(false)}
       target={
@@ -46,67 +126,42 @@ export const SortPopover: React.FC<{
           Sort
         </Button>
       }
-      width={360}
+      width={400}
       position="bottom"
     >
-      <form
-        onSubmit={form.onSubmit(({ sorts }) => {
-          setSort(sorts.filter((s) => Boolean(s.columnId)) as Sort[]);
-          setOpened(false);
-        })}
-      >
-        <Stack>
-          {form.values.sorts.map((item, index) => (
-            <Stack spacing={8}>
-              <Select
-                data={columns.map((col) => ({
-                  value: col.id,
-                  label: col.name,
-                }))}
-                size="xs"
-                placeholder="Select a column"
-                {...form.getListInputProps("sorts", index, "columnId")}
-              />
-              <Group position="apart">
-                <RadioGroup
-                  size="xs"
-                  spacing={8}
-                  required
-                  {...form.getListInputProps("sorts", index, "direction")}
-                >
-                  <Radio value="asc" label="Asc." />
-                  <Radio value="desc" label="Desc." />
-                </RadioGroup>
-                <Button
-                  onClick={() => form.removeListItem("sorts", index)}
-                  color="red"
-                  size="xs"
-                  compact
-                >
-                  Delete
-                </Button>
-              </Group>
-            </Stack>
-          ))}
-          <Group spacing="xs" noWrap>
-            <Button
-              variant="light"
-              color="gray"
-              leftIcon={<IconPlus size={16} />}
-              size="xs"
-              onClick={() =>
-                form.addListItem("sorts", { columnId: "", direction: "asc" })
+      <Stack spacing={8} m="xs" mb={0}>
+        {sorts?.map((sort) => (
+          <SortRow
+            key={sort.id}
+            columns={columns}
+            sort={sort}
+            tableId={tableId}
+          />
+        ))}
+      </Stack>
+      <Box m="xs">
+        <Button
+          color="gray"
+          leftIcon={<IconPlus size={16} />}
+          onClick={() =>
+            addSort.mutate(
+              { tableId, columnId: null, direction: "asc" },
+              {
+                onSuccess(data) {
+                  utils.setQueryData(
+                    ["sorts.byTableId", { tableId }],
+                    (old) => [...(old || []), data]
+                  );
+                },
               }
-              fullWidth
-            >
-              Add Condition
-            </Button>
-            <Button color="gray" size="xs" type="submit" fullWidth>
-              Apply
-            </Button>
-          </Group>
-        </Stack>
-      </form>
+            )
+          }
+          size="xs"
+          fullWidth
+        >
+          Add Condition
+        </Button>
+      </Box>
     </Popover>
   );
 };

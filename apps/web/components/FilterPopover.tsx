@@ -5,17 +5,16 @@ import {
   Button,
   Group,
   Input,
-  Loader,
   Popover,
   Select,
   Stack,
   Text,
 } from "@mantine/core";
 import { IconFilter, IconPlus, IconTrash } from "@tabler/icons";
-import { Form, Formik, useField, useFormikContext } from "formik";
-import debounce from "lodash.debounce";
-import React, { useCallback, useEffect, useState } from "react";
+import { Form, Formik, useField } from "formik";
+import React from "react";
 import { InferQueryOutput, trpc } from "../lib/trpc";
+import { AutoSave } from "./AutoSave";
 
 export interface Filter {
   columnId: string;
@@ -79,25 +78,6 @@ const FilterValueInput: React.FC<{
       onChange={onChange}
     />
   );
-};
-
-const AutoSave: React.FC = () => {
-  const formik = useFormikContext();
-  const [isLoading, setIsLoading] = useState(false);
-  const debouncedSubmit = useCallback(
-    debounce(() => formik.submitForm().then(() => setIsLoading(false)), 500),
-    [formik.submitForm, formik.isValid, formik.initialValues, formik.values]
-  );
-
-  useEffect(() => {
-    if (formik.isValid && formik.dirty) {
-      setIsLoading(true);
-      debouncedSubmit();
-    }
-    return debouncedSubmit.cancel;
-  }, [debouncedSubmit, formik.dirty, formik.isValid, formik.values]);
-
-  return isLoading ? <Loader ml={8} size="xs" color="gray" /> : null;
 };
 
 const FilterRow: React.FC<{
