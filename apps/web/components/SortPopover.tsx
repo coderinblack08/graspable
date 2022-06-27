@@ -46,7 +46,7 @@ export const SortPopover: React.FC<{
           Sort
         </Button>
       }
-      width={320}
+      width={360}
       position="bottom"
     >
       <form
@@ -88,21 +88,23 @@ export const SortPopover: React.FC<{
               </Group>
             </Stack>
           ))}
-          <Button
-            leftIcon={<IconPlus size={16} />}
-            size="xs"
-            color="gray"
-            variant="default"
-            onClick={() =>
-              form.addListItem("sorts", { columnId: "", direction: "asc" })
-            }
-            fullWidth
-          >
-            Add sort column
-          </Button>
-          <Button color="gray" size="xs" type="submit" fullWidth>
-            Apply
-          </Button>
+          <Group spacing="xs" noWrap>
+            <Button
+              variant="light"
+              color="gray"
+              leftIcon={<IconPlus size={16} />}
+              size="xs"
+              onClick={() =>
+                form.addListItem("sorts", { columnId: "", direction: "asc" })
+              }
+              fullWidth
+            >
+              Add Condition
+            </Button>
+            <Button color="gray" size="xs" type="submit" fullWidth>
+              Apply
+            </Button>
+          </Group>
         </Stack>
       </form>
     </Popover>

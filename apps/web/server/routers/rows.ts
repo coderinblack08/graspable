@@ -1,40 +1,17 @@
-import { Row } from "@prisma/client";
+import { Filter, Row } from "@prisma/client";
+import { Subscription } from "@trpc/server";
+import SqlString from "sqlstring";
 import { z } from "zod";
 import { createRouter } from "../createRouter";
-import SqlString from "sqlstring";
-import { Subscription } from "@trpc/server";
 import { ee } from "../ee";
-
-const zodFilter = z.object({
-  columnId: z.string(),
-  operation: z.enum([
-    "equals",
-    "contains",
-    "checked",
-    "unchecked",
-    "startsWith",
-    "endsWith",
-    "gt",
-    "lt",
-  ]),
-  value: z.string(),
-});
 
 export const rowRouter = createRouter()
   .query("byTableId", {
     input: z.object({
       tableId: z.string(),
-      sorts: z.array(
-        z.object({ columnId: z.string(), direction: z.enum(["asc", "desc"]) })
-      ),
-      filters: z.array(zodFilter),
     }),
     async resolve({ ctx, input }) {
-      function generateFilterClause({
-        columnId,
-        operation,
-        value,
-      }: z.infer<typeof zodFilter>) {
+      function generateFilterClause({ columnId, operation, value }: Filter) {
         const cellSubQuery = `(select c.value from public."Cell" c where c."columnId" = ${SqlString.escape(
           columnId
         )} and c."rowId" = r.id)`;
@@ -64,20 +41,28 @@ export const rowRouter = createRouter()
             }`;
         }
       }
+      const filters = (
+        await ctx.prisma.filter.findMany({
+          where: { tableId: input.tableId },
+        })
+      ).filter((f) => f.columnId && f.value && f.operation);
+      const sorts = (
+        await ctx.prisma.sort.findMany({
+          where: { tableId: input.tableId },
+        })
+      ).filter((f) => f.columnId && f.direction);
       return ctx.prisma.$queryRawUnsafe<Row[]>(
         `
         select r.* 
         from public."Row" r
         where r."tableId" = $1 ${
-          input.filters.length > 0
-            ? input.filters
-                .map((filter) => generateFilterClause(filter))
-                .join(" ")
+          filters.length > 0
+            ? filters.map((filter) => generateFilterClause(filter)).join(" ")
             : ""
         }
         order by ${
-          input.sorts.length
-            ? input.sorts
+          sorts.length
+            ? sorts
                 .map(
                   ({ direction, columnId }) =>
                     `(select c.value from public."Cell" c where c."rowId" = r."id" and c."columnId" = ${SqlString.escape(

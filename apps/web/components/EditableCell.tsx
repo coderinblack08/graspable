@@ -1,10 +1,4 @@
-import {
-  Center,
-  Checkbox,
-  NumberInput,
-  Select,
-  TextInput,
-} from "@mantine/core";
+import { Center, Checkbox, Select, TextInput } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import React, { useEffect } from "react";
 import { useDebouncedCallback } from "use-debounce";

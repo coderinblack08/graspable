@@ -83,6 +83,8 @@ model Column {
   createdAt       DateTime   @default(now()) @db.Timestamp(6)
   Table           Table      @relation(fields: [tableId], references: [id], onDelete: Cascade)
   Cell            Cell[]
+  Filter          Filter[]
+  Sort            Sort[]
 }
 
 model Member {
@@ -115,6 +117,43 @@ model Table {
   Column      Column[]
   Row         Row[]
   Cell        Cell[]
+  Filter      Filter[]
+  Sort        Sort[]
+}
+
+enum FilterOperation {
+  gt
+  lt
+  equals
+  contains
+  checked
+  unchecked
+  startsWith
+  endsWith
+}
+
+model Filter {
+  id        String           @id @default(cuid())
+  columnId  String?
+  tableId   String
+  operation FilterOperation?
+  value     String?
+  Column    Column?          @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  Table     Table            @relation(fields: [tableId], references: [id], onDelete: Cascade)
+}
+
+enum SortDirection {
+  asc
+  desc
+}
+
+model Sort {
+  id        String         @id @default(cuid())
+  columnId  String?
+  tableId   String
+  direction SortDirection?
+  Column    Column?        @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  Table     Table          @relation(fields: [tableId], references: [id], onDelete: Cascade)
 }
 
 model Workspace {

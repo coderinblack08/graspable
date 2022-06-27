@@ -122,7 +122,7 @@ export const HeaderCell: React.FC<HeaderCellProps> = ({ index, column }) => {
                     <Menu
                       sx={{ display: isHovering ? "block" : "none" }}
                       control={
-                        <ActionIcon size="xs">
+                        <ActionIcon size="xs" variant="light">
                           <IconDots size={16} />
                         </ActionIcon>
                       }

@@ -105,15 +105,7 @@ export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
     (state) => [state.sorts, state.filters],
     shallow
   );
-  const rowsQueryKey = React.useMemo(
-    () => ({
-      tableId,
-      sorts: sorts.filter((x) => x.columnId !== null) as any,
-      filters: filters as any,
-    }),
-    [sorts, filters, tableId]
-  );
-  const { data: rows } = trpc.useQuery(["rows.byTableId", rowsQueryKey], {
+  const { data: rows } = trpc.useQuery(["rows.byTableId", { tableId }], {
     keepPreviousData: true,
   });
   const { data: columns } = trpc.useQuery(["columns.byTableId", { tableId }]);
@@ -136,8 +128,8 @@ export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
   });
   trpc.useSubscription(["rows.onAdd", { tableId }], {
     onNext(data) {
-      utils.refetchQueries(["rows.byTableId", rowsQueryKey]);
-      // utils.setQueryData(["rows.byTableId", rowsQueryKey], (old) => {
+      utils.refetchQueries(["rows.byTableId", { tableId }]);
+      // utils.setQueryData(["rows.byTableId", { tableId }], (old) => {
       //   if (!old) return [];
       //   return [...old, data];
       // });
@@ -145,7 +137,7 @@ export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
   });
   trpc.useSubscription(["rows.onDelete", { tableId }], {
     onNext(ids) {
-      utils.setQueryData(["rows.byTableId", rowsQueryKey], (old) => {
+      utils.setQueryData(["rows.byTableId", { tableId }], (old) => {
         if (!old) return [];
         return old.filter((x) => !ids.includes(x.id));
       });
@@ -332,19 +324,6 @@ const DataGridUI: React.FC<{
     (state) => [state.sorts, state.filters],
     shallow
   );
-  const rowsQueryKey = React.useMemo<
-    ["rows.byTableId", InferQueryInput<"rows.byTableId">]
-  >(
-    () => [
-      "rows.byTableId",
-      {
-        tableId,
-        sorts: sorts.filter((x) => x.columnId !== null) as any,
-        filters: filters as any,
-      },
-    ],
-    [tableId, sorts, filters]
-  );
 
   const createNewRow = async () => {
     const rank = dbRows.length
@@ -354,8 +333,8 @@ const DataGridUI: React.FC<{
       { tableId, rank },
       {
         onSuccess: (row) => {
-          // utils.setQueryData(rowsQueryKey, (old) => [...(old || []), row]);
-          utils.refetchQueries(rowsQueryKey);
+          // utils.setQueryData(["rows.byTableId", { tableId }], (old) => [...(old || []), row]);
+          utils.refetchQueries(["rows.byTableId", { tableId }]);
         },
       }
     );
@@ -430,10 +409,12 @@ const DataGridUI: React.FC<{
                     { ids: Object.keys(state.selectedRowIds), tableId },
                     {
                       onSuccess: () => {
-                        utils.setQueryData(rowsQueryKey, (old) =>
-                          (old || [])?.filter(
-                            (row) => !state.selectedRowIds[row.id]
-                          )
+                        utils.setQueryData(
+                          ["rows.byTableId", { tableId }],
+                          (old) =>
+                            (old || [])?.filter(
+                              (row) => !state.selectedRowIds[row.id]
+                            )
                         );
                       },
                     }
@@ -445,7 +426,7 @@ const DataGridUI: React.FC<{
             </>
           ) : (
             <>
-              <FilterPopover columns={dbColumns} />
+              <FilterPopover tableId={tableId} columns={dbColumns} />
               {/* <Button leftIcon={<IconFrame size={16} />} compact>
                 Group
               </Button> */}
@@ -585,18 +566,21 @@ const DataGridUI: React.FC<{
                     {
                       onSuccess: () => {
                         // utils.refetchQueries(rowsQueryKey);
-                        utils.setQueryData(rowsQueryKey, (old) => {
-                          if (!old) return [];
-                          const cloned = [...old];
-                          const item = old[source.index];
+                        utils.setQueryData(
+                          ["rows.byTableId", { tableId }],
+                          (old) => {
+                            if (!old) return [];
+                            const cloned = [...old];
+                            const item = old[source.index];
 
-                          cloned.splice(source.index, 1);
-                          cloned.splice(destination.index, 0, item);
+                            cloned.splice(source.index, 1);
+                            cloned.splice(destination.index, 0, item);
 
-                          return cloned.map((row) =>
-                            row.id === id ? { ...row, rank } : row
-                          );
-                        });
+                            return cloned.map((row) =>
+                              row.id === id ? { ...row, rank } : row
+                            );
+                          }
+                        );
                       },
                     }
                   );

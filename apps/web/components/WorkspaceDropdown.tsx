@@ -1,5 +1,5 @@
-import { Group, Menu, Title, UnstyledButton } from "@mantine/core";
-import { IconShare, IconEdit, IconTrash } from "@tabler/icons";
+import { ActionIcon, Group, Menu, Title, UnstyledButton } from "@mantine/core";
+import { IconShare, IconEdit, IconTrash, IconDots } from "@tabler/icons";
 import { useRouter } from "next/router";
 import React from "react";
 import { HiChevronDown } from "react-icons/hi";
@@ -24,12 +24,7 @@ export const WorkspaceDropdown: React.FC<WorkspaceDropdownProps> = ({
       transition="rotate-right"
       control={
         includeControl ? (
-          <UnstyledButton
-            onClick={(e: any) => {
-              e.stopPropagation();
-              e.preventDefault();
-            }}
-          >
+          <UnstyledButton>
             <Group spacing={8}>
               <Title order={6} sx={{ fontWeight: 500 }}>
                 {workspace?.name}
@@ -37,7 +32,18 @@ export const WorkspaceDropdown: React.FC<WorkspaceDropdownProps> = ({
               <HiChevronDown size={16} />
             </Group>
           </UnstyledButton>
-        ) : undefined
+        ) : (
+          <ActionIcon
+            color="gray"
+            variant="light"
+            onClick={(e: any) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+          >
+            <IconDots size={16} />
+          </ActionIcon>
+        )
       }
     >
       <Menu.Label>Actions</Menu.Label>
