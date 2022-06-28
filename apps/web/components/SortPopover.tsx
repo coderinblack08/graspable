@@ -1,5 +1,6 @@
 import {
   ActionIcon,
+  Badge,
   Box,
   Button,
   Group,
@@ -121,6 +122,9 @@ export const SortPopover: React.FC<{
         <Button
           onClick={() => setOpened(true)}
           leftIcon={<IconSortAscending size={16} />}
+          rightIcon={
+            sorts?.length ? <Badge size="xs">{sorts.length}</Badge> : undefined
+          }
           compact
         >
           Sort
@@ -129,7 +133,7 @@ export const SortPopover: React.FC<{
       width={400}
       position="bottom"
     >
-      <Stack spacing={8} m="xs" mb={0}>
+      <Stack spacing={8} m="xs" mb={sorts?.length ? "xs" : 0}>
         {sorts?.map((sort) => (
           <SortRow
             key={sort.id}
@@ -139,7 +143,7 @@ export const SortPopover: React.FC<{
           />
         ))}
       </Stack>
-      <Box m="xs">
+      <Box mb="xs" mx="xs">
         <Button
           color="gray"
           leftIcon={<IconPlus size={16} />}

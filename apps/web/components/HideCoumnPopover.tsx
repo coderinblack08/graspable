@@ -24,6 +24,7 @@ export const HideColumnPopover: React.FC<{
       position="bottom"
     >
       <Stack spacing={8}>
+        <Text color="dimmed">Changes only visible to you</Text>
         {allColumns.map((column: any) =>
           column.id !== "selection" && column.id !== "new-column" ? (
             <div key={column.id}>

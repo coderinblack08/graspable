@@ -127,6 +127,7 @@ const FilterRow: React.FC<{
   return (
     <Formik
       onSubmit={(values) => {
+        values.value = values.value?.toString() || "";
         updateFilter.mutate(values, {
           onSuccess(data) {
             utils.setQueryData(["filters.byTableId", { tableId }], (old) =>

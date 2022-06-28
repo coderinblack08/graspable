@@ -1,6 +1,8 @@
-import { Filter, FilterOperation } from "@prisma/client";
+import { Filter, FilterOperation, Sort } from "@prisma/client";
+import { Subscription } from "@trpc/server";
 import { z } from "zod";
 import { createRouter } from "../createRouter";
+import { ee } from "../ee";
 
 export const filterRouter = createRouter()
   .query("byTableId", {
@@ -15,6 +17,60 @@ export const filterRouter = createRouter()
       });
     },
   })
+  .subscription("onAdd", {
+    input: z.object({
+      tableId: z.string(),
+    }),
+    resolve({ input }) {
+      return new Subscription<Filter>((emit) => {
+        const onInsert = (filter: Filter) => {
+          if (filter.tableId === input.tableId) {
+            emit.data(filter);
+          }
+        };
+        ee.on("filter.add", onInsert);
+        return () => {
+          ee.off("filter.add", onInsert);
+        };
+      });
+    },
+  })
+  .subscription("onUpdate", {
+    input: z.object({
+      tableId: z.string(),
+    }),
+    resolve({ input }) {
+      return new Subscription<Filter>((emit) => {
+        const onUpdate = (filter: Filter) => {
+          if (filter.tableId === input.tableId) {
+            emit.data(filter);
+          }
+        };
+        ee.on("filter.update", onUpdate);
+        return () => {
+          ee.off("filter.update", onUpdate);
+        };
+      });
+    },
+  })
+  .subscription("onDelete", {
+    input: z.object({
+      tableId: z.string(),
+    }),
+    resolve({ input }) {
+      return new Subscription<string[]>((emit) => {
+        const onDelete = (filter: Filter) => {
+          if (filter.tableId === input.tableId) {
+            emit.data([filter.id]);
+          }
+        };
+        ee.on("filter.delete", onDelete);
+        return () => {
+          ee.off("filter.delete", onDelete);
+        };
+      });
+    },
+  })
   .mutation("add", {
     input: z.object({
       tableId: z.string(),
@@ -24,6 +80,7 @@ export const filterRouter = createRouter()
     }),
     async resolve({ ctx, input }) {
       const filter = await ctx.prisma.filter.create({ data: input });
+      ee.emit("filter.add", filter);
       return filter;
     },
   })
@@ -36,10 +93,12 @@ export const filterRouter = createRouter()
       value: z.string().nullable(),
     }),
     async resolve({ ctx, input }) {
-      return ctx.prisma.filter.update({
+      const filter = await ctx.prisma.filter.update({
         where: { id: input.id },
         data: input,
       });
+      ee.emit("filter.update", filter);
+      return filter;
       // const filter = await ctx.prisma
       //   .$executeRaw<Filter>`update "Filter" set "columnId" = ${input.columnId}, "operation" = ${input.operation}, "value" = ${input.value} where id = ${input.id} and "tableId" = ${input.tableId} returning *`;
     },
@@ -55,6 +114,7 @@ export const filterRouter = createRouter()
           id: input.id,
         },
       });
+      ee.emit("filter.delete", filter);
       return filter;
     },
   });
