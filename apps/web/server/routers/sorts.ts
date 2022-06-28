@@ -58,10 +58,10 @@ export const sortRouter = createRouter()
       tableId: z.string(),
     }),
     resolve({ input }) {
-      return new Subscription<string[]>((emit) => {
+      return new Subscription<Sort>((emit) => {
         const onDelete = (sort: Sort) => {
           if (sort.tableId === input.tableId) {
-            emit.data([sort.id]);
+            emit.data(sort);
           }
         };
         ee.on("sort.delete", onDelete);

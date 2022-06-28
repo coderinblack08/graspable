@@ -87,7 +87,6 @@ const FilterRow: React.FC<{
 }> = ({ filter, columns, tableId }) => {
   const deleteFilter = trpc.useMutation(["filters.delete"]);
   const updateFilter = trpc.useMutation(["filters.update"]);
-  const utils = trpc.useContext();
   const columnsDict = React.useMemo(() => {
     return columns.reduce((acc, column) => {
       acc[column.id] = column;
@@ -128,14 +127,7 @@ const FilterRow: React.FC<{
     <Formik
       onSubmit={(values) => {
         values.value = values.value?.toString() || "";
-        updateFilter.mutate(values, {
-          onSuccess(data) {
-            utils.setQueryData(["filters.byTableId", { tableId }], (old) =>
-              (old || []).map((x) => (x.id === data.id ? data : x))
-            );
-            utils.refetchQueries(["rows.byTableId", { tableId }]);
-          },
-        });
+        updateFilter.mutate(values, {});
       }}
       initialValues={filter}
       enableReinitialize
@@ -175,7 +167,13 @@ const FilterRow: React.FC<{
                   : []
               }
               size="xs"
-              styles={{ input: { borderRadius: 0, borderRight: 0 } }}
+              styles={{
+                input:
+                  values.columnId &&
+                  columnsDict[values.columnId].type === "checkbox"
+                    ? { borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }
+                    : { borderRadius: 0, borderRight: 0 },
+              }}
               placeholder="Operation"
               name="operation"
               value={values.operation}
@@ -191,23 +189,10 @@ const FilterRow: React.FC<{
               variant="outline"
               ml={8}
               onClick={() => {
-                deleteFilter.mutate(
-                  {
-                    tableId: filter.tableId,
-                    id: filter.id,
-                  },
-                  {
-                    onSuccess() {
-                      utils.setQueryData(
-                        ["filters.byTableId", { tableId: filter.tableId }],
-                        (old) => {
-                          return (old || []).filter((f) => f.id !== filter.id);
-                        }
-                      );
-                      utils.refetchQueries(["rows.byTableId", { tableId }]);
-                    },
-                  }
-                );
+                deleteFilter.mutate({
+                  tableId: filter.tableId,
+                  id: filter.id,
+                });
               }}
               color="red"
             >
@@ -230,6 +215,30 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({
 
   const utils = trpc.useContext();
   const [opened, setOpened] = React.useState(false);
+
+  trpc.useSubscription(["filters.onAdd", { tableId }], {
+    onNext(data) {
+      utils.setQueryData(["filters.byTableId", { tableId }], (old) =>
+        old ? [...old, data] : [data]
+      );
+    },
+  });
+  trpc.useSubscription(["filters.onUpdate", { tableId }], {
+    onNext(data) {
+      utils.setQueryData(["filters.byTableId", { tableId }], (old) =>
+        (old || [])?.map((x) => (x.id === data.id ? data : x))
+      );
+      utils.refetchQueries(["rows.byTableId", { tableId }]);
+    },
+  });
+  trpc.useSubscription(["filters.onDelete", { tableId }], {
+    onNext(data) {
+      utils.setQueryData(["filters.byTableId", { tableId }], (old) =>
+        (old || []).filter((f) => f.id !== data.id)
+      );
+      utils.refetchQueries(["rows.byTableId", { tableId }]);
+    },
+  });
 
   if (filters) {
     return (
@@ -274,22 +283,12 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({
               leftIcon={<IconPlus size={16} />}
               size="xs"
               onClick={() => {
-                addFilter.mutate(
-                  {
-                    tableId,
-                    columnId: null,
-                    operation: null,
-                    value: null,
-                  },
-                  {
-                    onSuccess(data) {
-                      utils.setQueryData(
-                        ["filters.byTableId", { tableId }],
-                        (old) => [...(old || []), data]
-                      );
-                    },
-                  }
-                );
+                addFilter.mutate({
+                  tableId,
+                  columnId: null,
+                  operation: null,
+                  value: null,
+                });
               }}
               fullWidth
             >

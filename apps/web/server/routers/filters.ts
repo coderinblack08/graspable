@@ -58,10 +58,10 @@ export const filterRouter = createRouter()
       tableId: z.string(),
     }),
     resolve({ input }) {
-      return new Subscription<string[]>((emit) => {
+      return new Subscription<Filter>((emit) => {
         const onDelete = (filter: Filter) => {
           if (filter.tableId === input.tableId) {
-            emit.data([filter.id]);
+            emit.data(filter);
           }
         };
         ee.on("filter.delete", onDelete);

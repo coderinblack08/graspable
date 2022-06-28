@@ -32,14 +32,7 @@ const SortRow: React.FC<{
   return (
     <Formik
       onSubmit={(values) => {
-        updateSort.mutate(values, {
-          onSuccess(data) {
-            utils.setQueryData(["sorts.byTableId", { tableId }], (old) =>
-              (old || []).map((x) => (x.id === data.id ? data : x))
-            );
-            utils.refetchQueries(["rows.byTableId", { tableId }]);
-          },
-        });
+        updateSort.mutate(values);
       }}
       initialValues={sort}
       enableReinitialize
@@ -71,23 +64,10 @@ const SortRow: React.FC<{
             <ActionIcon
               variant="outline"
               onClick={() => {
-                deleteSort.mutate(
-                  {
-                    tableId: sort.tableId,
-                    id: sort.id,
-                  },
-                  {
-                    onSuccess() {
-                      utils.setQueryData(
-                        ["sorts.byTableId", { tableId: sort.tableId }],
-                        (old) => {
-                          return (old || []).filter((f) => f.id !== sort.id);
-                        }
-                      );
-                      utils.refetchQueries(["rows.byTableId", { tableId }]);
-                    },
-                  }
-                );
+                deleteSort.mutate({
+                  tableId: sort.tableId,
+                  id: sort.id,
+                });
               }}
               color="red"
             >
@@ -109,6 +89,30 @@ export const SortPopover: React.FC<{
   const addSort = trpc.useMutation(["sorts.add"]);
   const utils = trpc.useContext();
   const { data: sorts } = trpc.useQuery(["sorts.byTableId", { tableId }]);
+
+  trpc.useSubscription(["sorts.onAdd", { tableId }], {
+    onNext(data) {
+      utils.setQueryData(["sorts.byTableId", { tableId }], (old) =>
+        old ? [...old, data] : [data]
+      );
+    },
+  });
+  trpc.useSubscription(["sorts.onUpdate", { tableId }], {
+    onNext(data) {
+      utils.setQueryData(["sorts.byTableId", { tableId }], (old) =>
+        (old || [])?.map((x) => (x.id === data.id ? data : x))
+      );
+      utils.refetchQueries(["rows.byTableId", { tableId }]);
+    },
+  });
+  trpc.useSubscription(["sorts.onDelete", { tableId }], {
+    onNext(data) {
+      utils.setQueryData(["sorts.byTableId", { tableId }], (old) =>
+        (old || []).filter((f) => f.id !== data.id)
+      );
+      utils.refetchQueries(["rows.byTableId", { tableId }]);
+    },
+  });
 
   return (
     <Popover
@@ -148,17 +152,7 @@ export const SortPopover: React.FC<{
           color="gray"
           leftIcon={<IconPlus size={16} />}
           onClick={() =>
-            addSort.mutate(
-              { tableId, columnId: null, direction: "asc" },
-              {
-                onSuccess(data) {
-                  utils.setQueryData(
-                    ["sorts.byTableId", { tableId }],
-                    (old) => [...(old || []), data]
-                  );
-                },
-              }
-            )
+            addSort.mutate({ tableId, columnId: null, direction: "asc" })
           }
           size="xs"
           fullWidth

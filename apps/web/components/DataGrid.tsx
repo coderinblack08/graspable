@@ -329,15 +329,7 @@ const DataGridUI: React.FC<{
     const rank = dbRows.length
       ? LexoRank.parse(dbRows.at(-1)?.rank!).genNext().toString()
       : LexoRank.middle().toString();
-    await addRow.mutateAsync(
-      { tableId, rank },
-      {
-        onSuccess: (row) => {
-          // utils.setQueryData(["rows.byTableId", { tableId }], (old) => [...(old || []), row]);
-          utils.refetchQueries(["rows.byTableId", { tableId }]);
-        },
-      }
-    );
+    await addRow.mutateAsync({ tableId, rank });
   };
 
   const getNewRank = (
@@ -405,20 +397,10 @@ const DataGridUI: React.FC<{
                 color="red"
                 compact
                 onClick={() =>
-                  removeRows.mutate(
-                    { ids: Object.keys(state.selectedRowIds), tableId },
-                    {
-                      onSuccess: () => {
-                        utils.setQueryData(
-                          ["rows.byTableId", { tableId }],
-                          (old) =>
-                            (old || [])?.filter(
-                              (row) => !state.selectedRowIds[row.id]
-                            )
-                        );
-                      },
-                    }
-                  )
+                  removeRows.mutate({
+                    ids: Object.keys(state.selectedRowIds),
+                    tableId,
+                  })
                 }
               >
                 Delete

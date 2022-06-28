@@ -45,7 +45,7 @@ export const rowRouter = createRouter()
         await ctx.prisma.filter.findMany({
           where: { tableId: input.tableId },
         })
-      ).filter((f) => f.columnId && f.value && f.operation);
+      ).filter((f) => f.columnId && f.operation);
       const sorts = (
         await ctx.prisma.sort.findMany({
           where: { tableId: input.tableId },
