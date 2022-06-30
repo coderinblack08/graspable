@@ -67,10 +67,10 @@ const LoginPage: NextPage<{
               color="dark"
               variant="default"
               leftIcon={<FaGoogle size={16} />}
+              onClick={() => signIn("google", { callbackUrl: "/app" })}
               sx={(theme) => ({ fontSize: theme.fontSizes.md })}
               size="lg"
               fullWidth
-              disabled
             >
               Continue with Google
             </Button>
