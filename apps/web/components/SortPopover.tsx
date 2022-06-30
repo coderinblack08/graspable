@@ -62,7 +62,7 @@ const SortRow: React.FC<{
               ]}
             />
             <ActionIcon
-              variant="outline"
+              variant="light"
               onClick={() => {
                 deleteSort.mutate({
                   tableId: sort.tableId,
@@ -127,7 +127,11 @@ export const SortPopover: React.FC<{
           onClick={() => setOpened(true)}
           leftIcon={<IconSortAscending size={16} />}
           rightIcon={
-            sorts?.length ? <Badge size="xs">{sorts.length}</Badge> : undefined
+            sorts?.length ? (
+              <Badge variant="outline" size="xs">
+                {sorts.length}
+              </Badge>
+            ) : undefined
           }
           compact
         >
@@ -149,7 +153,7 @@ export const SortPopover: React.FC<{
       </Stack>
       <Box mb="xs" mx="xs">
         <Button
-          color="gray"
+          color="dark"
           leftIcon={<IconPlus size={16} />}
           onClick={() =>
             addSort.mutate({ tableId, columnId: null, direction: "asc" })

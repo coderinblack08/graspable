@@ -31,7 +31,7 @@ import {
   useTable,
 } from "react-table";
 import shallow from "zustand/shallow";
-import { InferQueryInput, InferQueryOutput, trpc } from "../lib/trpc";
+import { InferQueryOutput, trpc } from "../lib/trpc";
 import { EditableCell } from "./EditableCell";
 import { FilterPopover } from "./FilterPopover";
 import { HeaderCell } from "./HeaderCell";
@@ -45,8 +45,7 @@ export const useStyles = createStyles((theme) => ({
   table: {
     display: "inline-block",
     borderSpacing: 0,
-    border: `1px solid ${theme.colors.gray[2]}`,
-    borderCollapse: "separate",
+    border: `1px solid ${theme.colors.dark[6]}`,
   },
   cell: {
     position: "relative",
@@ -54,7 +53,7 @@ export const useStyles = createStyles((theme) => ({
     textAlign: "left",
     padding: "8px",
     fontSize: theme.fontSizes.sm,
-    border: `1px solid ${theme.colors.gray[2]}`,
+    border: `1px solid ${theme.colors.dark[6]}`,
     "&:focus-within": {
       position: "relative",
       zIndex: 50,
@@ -69,11 +68,11 @@ export const useStyles = createStyles((theme) => ({
         : theme.colors[theme.primaryColor][0],
   },
   rowUnselected: {
-    backgroundColor: "white",
+    backgroundColor: theme.colors.dark[8],
   },
   resizer: {
     display: "inline-block",
-    background: theme.colors.gray[2],
+    background: theme.colors.dark[5],
     width: 2,
     height: "100%",
     position: "absolute",
@@ -320,11 +319,6 @@ const DataGridUI: React.FC<{
   const removeRows = trpc.useMutation(["rows.delete"]);
   const utils = trpc.useContext();
 
-  const [sorts, filters] = useTableStore(
-    (state) => [state.sorts, state.filters],
-    shallow
-  );
-
   const createNewRow = async () => {
     const rank = dbRows.length
       ? LexoRank.parse(dbRows.at(-1)?.rank!).genNext().toString()
@@ -377,9 +371,9 @@ const DataGridUI: React.FC<{
         position="apart"
         p={8}
         sx={{
-          backgroundColor: "white",
+          backgroundColor: theme.colors.dark[8],
           borderBottom: "2px solid",
-          borderColor: theme.colors.gray[2],
+          borderColor: theme.colors.dark[5],
         }}
       >
         <Group spacing={8}>
@@ -584,7 +578,6 @@ const DataGridUI: React.FC<{
                           key={row.id}
                           index={index}
                           draggableId={row.id}
-                          isDragDisabled={sorts.length > 0}
                         >
                           {(provided) => {
                             return (

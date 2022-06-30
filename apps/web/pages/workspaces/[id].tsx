@@ -34,6 +34,27 @@ const WorkspacePage: React.FC<
   ]);
   const utils = trpc.useContext();
 
+  trpc.useSubscription(["tables.onUpdate", { workspaceId: id }], {
+    onNext(data) {
+      utils.setQueryData(
+        ["tables.byWorkspaceId", { workspaceId: id }],
+        (old) => {
+          return (old || []).map((t) =>
+            t.id === data.id ? { ...t, name: data.name } : t
+          );
+        }
+      );
+    },
+  });
+  trpc.useSubscription(["tables.onAdd", { workspaceId: id }], {
+    onNext(data) {
+      utils.setQueryData(
+        ["tables.byWorkspaceId", { workspaceId: id }],
+        (old) => [...(old || []), data]
+      );
+    },
+  });
+
   return (
     <AppShell
       padding={0}
@@ -41,14 +62,21 @@ const WorkspacePage: React.FC<
         root: {
           display: "flex",
           flexDirection: "column",
-          backgroundColor: theme.colors.gray[0],
+          backgroundColor: theme.colors.dark[8],
           overflow: "auto",
           height: "100vh",
         },
         body: { height: "100%" },
       })}
       header={
-        <Header height="auto" sx={{ borderColor: "transparent" }} p={8}>
+        <Header
+          height="auto"
+          sx={(theme) => ({
+            borderColor: "transparent",
+            backgroundColor: theme.colors.dark[8],
+          })}
+          p={8}
+        >
           <Group align="center" spacing={8}>
             <ActionIcon color="gray">
               <IconMenu2 size={16} />
@@ -63,10 +91,7 @@ const WorkspacePage: React.FC<
                   { workspaceId: id },
                   {
                     onSuccess: () => {
-                      utils.refetchQueries([
-                        "tables.byWorkspaceId",
-                        { workspaceId: id },
-                      ]);
+                      if (tables) setTab(tables.length);
                     },
                   }
                 )
@@ -84,9 +109,9 @@ const WorkspacePage: React.FC<
       {tables && tables.length ? (
         <Tabs
           tabPadding={0}
-          styles={{
+          styles={(theme) => ({
             tabsListWrapper: {
-              backgroundColor: "white",
+              backgroundColor: theme.colors.dark[8],
               paddingTop: 8,
             },
             root: {
@@ -95,8 +120,8 @@ const WorkspacePage: React.FC<
               flexDirection: "column",
             },
             body: { height: "100%" },
-          }}
-          initialTab={tab}
+          })}
+          active={tab}
           onTabChange={(index) => setTab(index)}
         >
           {tables?.map((table, index) => (
@@ -126,26 +151,10 @@ const WorkspacePage: React.FC<
                         e.preventDefault();
                         const newTableName = prompt("New table name:");
                         if (newTableName) {
-                          updateTable.mutate(
-                            {
-                              name: newTableName,
-                              tableId: table.id,
-                            },
-                            {
-                              onSuccess: () => {
-                                utils.setQueryData(
-                                  ["tables.byWorkspaceId", { workspaceId: id }],
-                                  (old) => {
-                                    return (old || []).map((t) =>
-                                      t.id === table.id
-                                        ? { ...t, name: newTableName }
-                                        : t
-                                    );
-                                  }
-                                );
-                              },
-                            }
-                          );
+                          updateTable.mutate({
+                            name: newTableName,
+                            tableId: table.id,
+                          });
                         }
                       }}
                     >
@@ -156,11 +165,12 @@ const WorkspacePage: React.FC<
                         deleteTable.mutate(
                           { tableId: table.id },
                           {
-                            onSuccess: () => {
-                              utils.refetchQueries([
+                            onSuccess: async () => {
+                              await utils.refetchQueries([
                                 "tables.byWorkspaceId",
                                 { workspaceId: id },
                               ]);
+                              setTab(Math.max(0, tab - 1));
                             },
                           }
                         )

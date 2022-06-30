@@ -1,4 +1,4 @@
-import { Cell, Filter, Row, Sort } from "@prisma/client";
+import { Cell, Filter, Row, Sort, Table } from "@prisma/client";
 import { EventEmitter } from "events";
 
 interface MyEvents {
@@ -11,6 +11,8 @@ interface MyEvents {
   "filter.add": (filter: Filter) => void;
   "filter.update": (filter: Filter) => void;
   "filter.delete": (filter: Filter) => void;
+  "table.add": (table: Table) => void;
+  "table.update": (table: Table) => void;
 }
 
 declare interface MyEventEmitter {

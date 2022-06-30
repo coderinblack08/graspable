@@ -14,15 +14,15 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
       <MantineProvider
         withGlobalStyles
         withNormalizeCSS
-        theme={{ colorScheme: "light" }}
+        theme={{ colorScheme: "dark" }}
         styles={{
           Text: { root: { fontSize: 14 } },
-          Input: (theme, _params: InputStylesParams) => ({
-            input: {
-              borderRadius: theme.radius.sm,
-              borderColor: theme.colors.gray[3],
-            },
-          }),
+          // Input: (theme, _params: InputStylesParams) => ({
+          //   input: {
+          //     borderRadius: theme.radius.sm,
+          //     borderColor: theme.colors.dark[5],
+          //   },
+          // }),
         }}
       >
         <Component {...pageProps} />

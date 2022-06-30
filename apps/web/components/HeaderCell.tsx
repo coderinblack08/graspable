@@ -80,7 +80,7 @@ export const HeaderCell: React.FC<HeaderCellProps> = ({ index, column }) => {
       index={index}
       draggableId={column.id}
     >
-      {(provided, snapshot) => {
+      {(provided, _snapshot) => {
         // let transform = provided.draggableProps.style?.transform;
         // if (snapshot.isDragging && transform) {
         //   // transform = transform.replace(/\(.+\,/, "(0,");
@@ -95,13 +95,13 @@ export const HeaderCell: React.FC<HeaderCellProps> = ({ index, column }) => {
             <Box
               ref={cellRef}
               className={classes.cell}
-              sx={{
-                backgroundColor: "white",
+              sx={(theme) => ({
+                backgroundColor: theme.colors.dark[7],
                 padding: 0,
                 fontWeight: 700,
                 userSelect: "none",
                 height: "100%",
-              }}
+              })}
               {...column.getHeaderProps()}
             >
               <Box p={8} {...hoverProps} {...provided.dragHandleProps}>

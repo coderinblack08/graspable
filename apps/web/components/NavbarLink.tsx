@@ -22,7 +22,7 @@ export function NavbarLink({ icon, color, label }: MainLinkProps) {
         width: "100%",
         borderRadius: theme.radius.sm,
         color:
-          theme.colorScheme === "dark" ? theme.colors.dark[0] : theme.black,
+          theme.colorScheme === "dark" ? theme.colors.dark[2] : theme.black,
         "&:hover": {
           backgroundColor:
             theme.colorScheme === "dark"
@@ -35,7 +35,7 @@ export function NavbarLink({ icon, color, label }: MainLinkProps) {
         <ThemeIcon size="lg" color={color} variant="light">
           {icon}
         </ThemeIcon>
-        <Text weight={500} color={theme.colors.gray[7]} size="sm">
+        <Text weight={500} size="sm">
           {label}
         </Text>
       </Group>

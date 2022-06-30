@@ -43,12 +43,6 @@ const FilterValueInput: React.FC<{
   if (column?.type === "dropdown") {
     return (
       <Select
-        styles={{
-          input: {
-            borderStartStartRadius: 0,
-            borderEndStartRadius: 0,
-          },
-        }}
         color="blue"
         size="xs"
         placeholder="Select a value"
@@ -66,13 +60,6 @@ const FilterValueInput: React.FC<{
       size="xs"
       placeholder="Value"
       value={value || ""}
-      styles={(theme) => ({
-        input: {
-          borderStartStartRadius: 0,
-          borderEndStartRadius: 0,
-          borderColor: theme.colors.gray[4],
-        },
-      })}
       type={column?.type === "number" ? "number" : "text"}
       name="value"
       onChange={onChange}
@@ -134,7 +121,7 @@ const FilterRow: React.FC<{
     >
       {({ values, setFieldValue }) => (
         <Form>
-          <Group spacing={0} noWrap>
+          <Group spacing={8} noWrap>
             <Text
               px={8}
               weight={500}
@@ -167,27 +154,18 @@ const FilterRow: React.FC<{
                   : []
               }
               size="xs"
-              styles={{
-                input:
-                  values.columnId &&
-                  columnsDict[values.columnId].type === "checkbox"
-                    ? { borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }
-                    : { borderRadius: 0, borderRight: 0 },
-              }}
               placeholder="Operation"
               name="operation"
               value={values.operation}
               onChange={(op: any) =>
                 op && setFieldValue("operation", op, false)
               }
-              disabled={!values.columnId}
             />
             <FilterValueInput
               column={values.columnId ? columnsDict[values.columnId] : null}
             />
             <ActionIcon
-              variant="outline"
-              ml={8}
+              variant="light"
               onClick={() => {
                 deleteFilter.mutate({
                   tableId: filter.tableId,
@@ -255,7 +233,9 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({
             leftIcon={<IconFilter size={16} />}
             rightIcon={
               filters.length ? (
-                <Badge size="xs">{filters.length}</Badge>
+                <Badge size="xs" variant="outline">
+                  {filters.length}
+                </Badge>
               ) : undefined
             }
             compact
@@ -279,7 +259,7 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({
           </Stack>
           <Box mx="xs" mb="xs">
             <Button
-              color="gray"
+              color="dark"
               leftIcon={<IconPlus size={16} />}
               size="xs"
               onClick={() => {

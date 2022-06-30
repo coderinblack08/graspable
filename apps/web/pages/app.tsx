@@ -5,7 +5,6 @@ import {
   Group,
   Input,
   Kbd,
-  Menu,
   Navbar,
   SimpleGrid,
   Stack,
@@ -16,11 +15,9 @@ import {
 } from "@mantine/core";
 import {
   IconDatabase,
-  IconEdit,
   IconLayout,
   IconSearch,
   IconSettings,
-  IconShare,
   IconTable,
   IconTrash,
   IconUser,
@@ -38,15 +35,21 @@ import { trpc } from "../lib/trpc";
 const AppPage: NextPage = () => {
   const theme = useMantineTheme();
   const { data: session } = useSession();
-  const utils = trpc.useContext();
-  const deleteWorkspace = trpc.useMutation(["workspace.delete"]);
   const { data: workspaces } = trpc.useQuery(["workspace.all"]);
 
   return (
     <AppShell
-      sx={{ backgroundColor: theme.colors.gray[0] }}
+      sx={{ backgroundColor: theme.colors.dark[9] }}
       navbar={
-        <Navbar width={{ base: 300 }} height="100vh" p="xs">
+        <Navbar
+          width={{ base: 300 }}
+          height="100vh"
+          p="xs"
+          sx={(theme) => ({
+            borderRight: 0,
+            backgroundColor: theme.colors.dark[7],
+          })}
+        >
           <Navbar.Section>
             <Title order={5}>Graspable</Title>
           </Navbar.Section>
@@ -88,7 +91,7 @@ const AppPage: NextPage = () => {
                 paddingTop: theme.spacing.sm,
                 borderTop: `1px solid ${
                   theme.colorScheme === "dark"
-                    ? theme.colors.dark[4]
+                    ? theme.colors.dark[5]
                     : theme.colors.gray[2]
                 }`,
               }}
@@ -111,7 +114,16 @@ const AppPage: NextPage = () => {
             key={workspace.id}
             passHref
           >
-            <Card component="a" href="#" shadow="xs" p="md" radius="md">
+            <Card
+              component="a"
+              href="#"
+              p="md"
+              radius="md"
+              shadow="lg"
+              sx={(theme) => ({
+                backgroundColor: theme.colors.dark[7],
+              })}
+            >
               <Group position="apart">
                 <Box>
                   <Text weight={500} size="xl">

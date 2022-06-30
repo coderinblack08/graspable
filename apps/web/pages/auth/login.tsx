@@ -40,12 +40,12 @@ const LoginPage: NextPage<{
             <Title order={5}>Graspable</Title>
             <Box>
               <Link href="/docs" passHref>
-                <Button component="a" color="gray" compact variant="subtle">
+                <Button component="a" color="dark" compact variant="subtle">
                   Documentation
                 </Button>
               </Link>
               <Link href="/pricing" passHref>
-                <Button component="a" color="gray" compact variant="subtle">
+                <Button component="a" color="dark" compact variant="subtle">
                   Pricing
                 </Button>
               </Link>
@@ -64,7 +64,7 @@ const LoginPage: NextPage<{
         {providers && (
           <>
             <Button
-              color="gray"
+              color="dark"
               variant="default"
               leftIcon={<FaGoogle size={16} />}
               sx={(theme) => ({ fontSize: theme.fontSizes.md })}
@@ -75,7 +75,7 @@ const LoginPage: NextPage<{
               Continue with Google
             </Button>
             <Button
-              color="gray"
+              color="dark"
               variant="default"
               leftIcon={<FaGithub size={16} />}
               size="lg"

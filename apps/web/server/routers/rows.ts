@@ -89,7 +89,9 @@ export const rowRouter = createRouter()
           ids: string[];
           tableId: string;
         }) => {
-          emit.data(ids);
+          if (tableId === input.tableId) {
+            emit.data(ids);
+          }
         };
         ee.on("row.delete", onUpsert);
         return () => {

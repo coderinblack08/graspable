@@ -1,9 +1,11 @@
-import { ColumnType, PrismaClient } from "@prisma/client";
-import { TRPCError } from "@trpc/server";
+import { ColumnType, PrismaClient, Table } from "@prisma/client";
+import { Subscription, TRPCError } from "@trpc/server";
 import { LexoRank } from "lexorank";
 import { z } from "zod";
+import redis from "../../lib/redis";
 import { useMemberCheck } from "../../lib/security-utils";
 import { createRouter } from "../createRouter";
+import { ee } from "../ee";
 
 export const createNewTable = async (
   prisma: PrismaClient,
@@ -76,6 +78,42 @@ export const tablesRouter = createRouter()
       });
     },
   })
+  .subscription("onAdd", {
+    input: z.object({
+      workspaceId: z.string(),
+    }),
+    resolve({ input }) {
+      return new Subscription<Table>((emit) => {
+        const onAdd = (table: Table) => {
+          if (table.workspaceId === input.workspaceId) {
+            emit.data(table);
+          }
+        };
+        ee.on("table.add", onAdd);
+        return () => {
+          ee.off("table.add", onAdd);
+        };
+      });
+    },
+  })
+  .subscription("onUpdate", {
+    input: z.object({
+      workspaceId: z.string(),
+    }),
+    resolve({ input }) {
+      return new Subscription<Table>((emit) => {
+        const onUpdate = (table: Table) => {
+          if (table.workspaceId === input.workspaceId) {
+            emit.data(table);
+          }
+        };
+        ee.on("table.update", onUpdate);
+        return () => {
+          ee.off("table.update", onUpdate);
+        };
+      });
+    },
+  })
   .mutation("add", {
     input: z.object({
       workspaceId: z.string(),
@@ -86,6 +124,7 @@ export const tablesRouter = createRouter()
         ctx.prisma,
         input.workspaceId
       );
+      ee.emit("table.add", table);
       return { ...table, columns, rows };
     },
   })
@@ -102,10 +141,12 @@ export const tablesRouter = createRouter()
         throw new TRPCError({ code: "NOT_FOUND" });
       }
       await useMemberCheck(ctx, table.workspaceId, false);
-      return ctx.prisma.table.update({
+      const newTable = await ctx.prisma.table.update({
         where: { id: input.tableId },
         data: { name: input.name },
       });
+      ee.emit("table.update", newTable);
+      return newTable;
     },
   })
   .mutation("delete", {

@@ -12,6 +12,18 @@ export const workspaceRouter = createRouter()
     }
     return next();
   })
+  .mutation("join", {
+    input: z.object({
+      workspaceId: z.string(),
+    }),
+    async resolve({ ctx, input }) {},
+  })
+  .mutation("disconnect", {
+    input: z.object({
+      workspaceId: z.string(),
+    }),
+    async resolve({ ctx, input }) {},
+  })
   .query("all", {
     async resolve({ ctx }) {
       const members = await ctx.prisma.member.findMany({
