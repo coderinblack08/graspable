@@ -1,5 +1,5 @@
 import { ActionIcon, Group, Menu, Title, UnstyledButton } from "@mantine/core";
-import { IconShare, IconEdit, IconTrash, IconDots } from "@tabler/icons";
+import { IconDots, IconEdit, IconTrash } from "@tabler/icons";
 import { useRouter } from "next/router";
 import React from "react";
 import { HiChevronDown } from "react-icons/hi";
@@ -46,8 +46,6 @@ export const WorkspaceDropdown: React.FC<WorkspaceDropdownProps> = ({
         )
       }
     >
-      <Menu.Label>Actions</Menu.Label>
-      <Menu.Item icon={<IconShare size={14} />}>Share workspace</Menu.Item>
       <Menu.Item
         icon={<IconEdit size={14} />}
         onClick={(e: any) => {

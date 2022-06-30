@@ -132,13 +132,6 @@ const FilterRow: React.FC<{
             </Text>
             <Select
               size="xs"
-              styles={{
-                input: {
-                  borderEndEndRadius: 0,
-                  borderStartEndRadius: 0,
-                  borderRight: 0,
-                },
-              }}
               onChange={(col) => col && setFieldValue("columnId", col, false)}
               value={values.columnId}
               placeholder="Column"

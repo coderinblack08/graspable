@@ -15,6 +15,7 @@ import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import Head from "next/head";
 import Image from "next/image";
 import React from "react";
+import { ShareModal } from "../../components/ShareModal";
 import { TableTabContent } from "../../components/TableTabContent";
 import { WorkspaceDropdown } from "../../components/WorkspaceDropdown";
 import { trpc } from "../../lib/trpc";
@@ -90,7 +91,7 @@ const WorkspacePage: React.FC<
             </ActionIcon>
             <WorkspaceDropdown includeControl workspace={workspace} />
             <Button
-              color="gray"
+              color="dark"
               variant="default"
               compact
               onClick={() =>
@@ -106,6 +107,7 @@ const WorkspacePage: React.FC<
             >
               New Table
             </Button>
+            <ShareModal workspaceId={id} />
           </Group>
         </Header>
       }

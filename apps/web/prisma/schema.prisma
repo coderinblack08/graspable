@@ -93,6 +93,7 @@ model Member {
   workspaceId String
   User        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   Workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  active      Boolean    @default(true)
 
   @@id([userId, workspaceId])
 }

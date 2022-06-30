@@ -191,6 +191,9 @@ const DataGridUI: React.FC<{
   const theme = useMantineTheme();
   const [skipPageReset, setSkipPageReset] = React.useState(false);
 
+  const { data: sorts } = trpc.useQuery(["sorts.byTableId", { tableId }]);
+  const { data: filters } = trpc.useQuery(["filters.byTableId", { tableId }]);
+
   const RT_COLUMNS = React.useMemo(
     () =>
       dbColumns?.map((db_column) => ({
@@ -609,6 +612,11 @@ const DataGridUI: React.FC<{
                           key={row.id}
                           index={index}
                           draggableId={row.id}
+                          isDragDisabled={
+                            filters &&
+                            sorts &&
+                            (filters?.length > 0 || sorts?.length > 0)
+                          }
                         >
                           {(provided) => {
                             return (
@@ -666,7 +674,7 @@ const DataGridUI: React.FC<{
               <Button
                 loading={addRow.isLoading}
                 variant="default"
-                color="gray"
+                color="dark"
                 leftIcon={<IconPlus size={16} />}
                 onClick={createNewRow}
                 compact
@@ -674,7 +682,7 @@ const DataGridUI: React.FC<{
                 New Row
               </Button>
             </Tooltip>
-            <Button color="gray" variant="default" compact disabled>
+            <Button color="dark" variant="default" compact disabled>
               Load More
             </Button>
           </Group>
