@@ -85,7 +85,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ workspaceId }) => {
           {members?.map((member) => (
             <Group position="apart" key={member.userId}>
               <Group spacing="sm">
-                <Avatar color="blue" size="md" />
+                <Avatar src={member.User.image} color="blue" size="md" />
                 <Box>
                   <Text weight="bold">{member.User.name}</Text>
                   <Text color="dimmed">{member.User.email}</Text>

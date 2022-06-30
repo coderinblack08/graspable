@@ -2,8 +2,9 @@ import { createRouter } from "../createRouter";
 import { z } from "zod";
 import { Column, ColumnType } from "@prisma/client";
 import { LexoRank } from "lexorank";
-import { Subscription } from "@trpc/server";
+import { Subscription, TRPCError } from "@trpc/server";
 import { ee } from "../ee";
+import { useMemberCheck } from "../../lib/security-utils";
 
 export const columnsRouter = createRouter()
   .query("byTableId", {
@@ -11,6 +12,7 @@ export const columnsRouter = createRouter()
       tableId: z.string(),
     }),
     async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, input, true);
       // return ctx.prisma.column.findMany({ where: input });
       return ctx.prisma.$queryRaw<
         Column[]
@@ -21,7 +23,8 @@ export const columnsRouter = createRouter()
     input: z.object({
       tableId: z.string(),
     }),
-    resolve({ input }) {
+    async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, input, true);
       return new Subscription<Column>((emit) => {
         const onAdd = (data: Column) => {
           if (data.tableId === input.tableId) {
@@ -39,7 +42,8 @@ export const columnsRouter = createRouter()
     input: z.object({
       tableId: z.string(),
     }),
-    resolve({ input }) {
+    async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, input, true);
       return new Subscription<Column>((emit) => {
         const onUpdate = (column: Column) => {
           if (column.tableId === input.tableId) {
@@ -57,7 +61,8 @@ export const columnsRouter = createRouter()
     input: z.object({
       tableId: z.string(),
     }),
-    resolve({ input }) {
+    async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, input, true);
       return new Subscription<Column>((emit) => {
         const onDelete = (column: Column) => {
           if (column.tableId === input.tableId) {
@@ -80,6 +85,7 @@ export const columnsRouter = createRouter()
       rank: z.string().optional(),
     }),
     async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, { tableId: input.tableId }, false);
       if (!input.rank) input.rank = LexoRank.middle().toString();
       const column = await ctx.prisma.column.create({
         data: { ...input, rank: input.rank },
@@ -96,12 +102,19 @@ export const columnsRouter = createRouter()
       rank: z.string().optional(),
     }),
     async resolve({ ctx, input }) {
-      const column = await ctx.prisma.column.update({
+      const column = await ctx.prisma.column.findFirst({
+        where: { id: input.id },
+      });
+      if (!column) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      await useMemberCheck(ctx, { tableId: column.tableId }, false);
+      const newColumn = await ctx.prisma.column.update({
         where: { id: input.id },
         data: input,
       });
-      ee.emit("column.update", column);
-      return column;
+      ee.emit("column.update", newColumn);
+      return newColumn;
     },
   })
   .mutation("delete", {
@@ -109,10 +122,17 @@ export const columnsRouter = createRouter()
       id: z.string(),
     }),
     async resolve({ ctx, input }) {
-      const column = await ctx.prisma.column.delete({
+      const column = await ctx.prisma.column.findFirst({
         where: { id: input.id },
       });
-      ee.emit("column.delete", column);
-      return column;
+      if (!column) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      await useMemberCheck(ctx, { tableId: column.tableId }, false);
+      const oldColumn = await ctx.prisma.column.delete({
+        where: { id: input.id },
+      });
+      ee.emit("column.delete", oldColumn);
+      return oldColumn;
     },
   });

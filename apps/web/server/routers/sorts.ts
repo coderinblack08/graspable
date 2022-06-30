@@ -3,6 +3,7 @@ import { z } from "zod";
 import { Sort, SortDirection } from "@prisma/client";
 import { ee } from "../ee";
 import { Subscription } from "@trpc/server";
+import { useMemberCheck } from "../../lib/security-utils";
 
 export const sortRouter = createRouter()
   .query("byTableId", {
@@ -10,6 +11,7 @@ export const sortRouter = createRouter()
       tableId: z.string(),
     }),
     async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, input, true);
       return ctx.prisma.sort.findMany({
         where: {
           tableId: input.tableId,
@@ -21,7 +23,8 @@ export const sortRouter = createRouter()
     input: z.object({
       tableId: z.string(),
     }),
-    resolve({ input }) {
+    async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, input, true);
       return new Subscription<Sort>((emit) => {
         const onInsert = (sort: Sort) => {
           if (sort.tableId === input.tableId) {
@@ -39,7 +42,8 @@ export const sortRouter = createRouter()
     input: z.object({
       tableId: z.string(),
     }),
-    resolve({ input }) {
+    async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, input, true);
       return new Subscription<Sort>((emit) => {
         const onUpdate = (sort: Sort) => {
           if (sort.tableId === input.tableId) {
@@ -57,7 +61,8 @@ export const sortRouter = createRouter()
     input: z.object({
       tableId: z.string(),
     }),
-    resolve({ input }) {
+    async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, input, true);
       return new Subscription<Sort>((emit) => {
         const onDelete = (sort: Sort) => {
           if (sort.tableId === input.tableId) {
@@ -78,6 +83,7 @@ export const sortRouter = createRouter()
       direction: z.nativeEnum(SortDirection).nullable(),
     }),
     async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, { tableId: input.tableId }, false);
       const sort = await ctx.prisma.sort.create({ data: input });
       ee.emit("sort.add", sort);
       return sort;
@@ -91,6 +97,7 @@ export const sortRouter = createRouter()
       direction: z.nativeEnum(SortDirection).nullable(),
     }),
     async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, { tableId: input.tableId }, false);
       const sort = await ctx.prisma.sort.update({
         where: { id: input.id },
         data: input,
@@ -105,6 +112,7 @@ export const sortRouter = createRouter()
       tableId: z.string(),
     }),
     async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, { tableId: input.tableId }, false);
       const sort = await ctx.prisma.sort.delete({
         where: {
           id: input.id,

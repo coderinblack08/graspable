@@ -1,8 +1,7 @@
 import { ColumnType, PrismaClient, Table } from "@prisma/client";
-import { Subscription, TRPCError } from "@trpc/server";
+import { Subscription } from "@trpc/server";
 import { LexoRank } from "lexorank";
 import { z } from "zod";
-import redis from "../../lib/redis";
 import { useMemberCheck } from "../../lib/security-utils";
 import { createRouter } from "../createRouter";
 import { ee } from "../ee";
@@ -67,11 +66,12 @@ export const createNewTable = async (
 
 export const tablesRouter = createRouter()
   .query("byWorkspaceId", {
+    meta: { hasAuth: true },
     input: z.object({
       workspaceId: z.string(),
     }),
     async resolve({ ctx, input }) {
-      await useMemberCheck(ctx, input.workspaceId);
+      await useMemberCheck(ctx, { workspaceId: input.workspaceId });
       return ctx.prisma.table.findMany({
         where: input,
         orderBy: { createdAt: "asc" },
@@ -133,11 +133,12 @@ export const tablesRouter = createRouter()
     },
   })
   .mutation("add", {
+    meta: { hasAuth: true },
     input: z.object({
       workspaceId: z.string(),
     }),
     async resolve({ ctx, input }) {
-      await useMemberCheck(ctx, input.workspaceId, false);
+      await useMemberCheck(ctx, { workspaceId: input.workspaceId }, false);
       const { columns, rows, table } = await createNewTable(
         ctx.prisma,
         input.workspaceId
@@ -147,18 +148,13 @@ export const tablesRouter = createRouter()
     },
   })
   .mutation("update", {
+    meta: { hasAuth: true },
     input: z.object({
       tableId: z.string(),
       name: z.string(),
     }),
     async resolve({ ctx, input }) {
-      const table = await ctx.prisma.table.findFirst({
-        where: { id: input.tableId },
-      });
-      if (!table) {
-        throw new TRPCError({ code: "NOT_FOUND" });
-      }
-      await useMemberCheck(ctx, table.workspaceId, false);
+      await useMemberCheck(ctx, { tableId: input.tableId }, false);
       const newTable = await ctx.prisma.table.update({
         where: { id: input.tableId },
         data: { name: input.name },
@@ -168,17 +164,12 @@ export const tablesRouter = createRouter()
     },
   })
   .mutation("delete", {
+    meta: { hasAuth: true },
     input: z.object({
       tableId: z.string(),
     }),
     async resolve({ ctx, input }) {
-      const table = await ctx.prisma.table.findFirst({
-        where: { id: input.tableId },
-      });
-      if (!table) {
-        throw new TRPCError({ code: "NOT_FOUND" });
-      }
-      await useMemberCheck(ctx, table.workspaceId, false);
+      await useMemberCheck(ctx, { tableId: input.tableId }, false);
       const oldTable = await ctx.prisma.table.delete({
         where: { id: input.tableId },
       });

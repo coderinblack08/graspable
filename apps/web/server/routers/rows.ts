@@ -1,7 +1,8 @@
 import { Filter, Row } from "@prisma/client";
-import { Subscription } from "@trpc/server";
+import { Subscription, TRPCError } from "@trpc/server";
 import SqlString from "sqlstring";
 import { z } from "zod";
+import { useMemberCheck } from "../../lib/security-utils";
 import { createRouter } from "../createRouter";
 import { ee } from "../ee";
 
@@ -11,6 +12,7 @@ export const rowRouter = createRouter()
       tableId: z.string(),
     }),
     async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, { tableId: input.tableId }, true);
       function generateFilterClause({ columnId, operation, value }: Filter) {
         const cellSubQuery = `(select c.value from public."Cell" c where c."columnId" = ${SqlString.escape(
           columnId
@@ -80,7 +82,8 @@ export const rowRouter = createRouter()
     input: z.object({
       tableId: z.string(),
     }),
-    resolve({ input }) {
+    async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, { tableId: input.tableId }, false);
       return new Subscription<string[]>((emit) => {
         const onUpsert = ({
           ids,
@@ -104,7 +107,8 @@ export const rowRouter = createRouter()
     input: z.object({
       tableId: z.string(),
     }),
-    resolve({ input }) {
+    async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, { tableId: input.tableId }, true);
       return new Subscription<Row>((emit) => {
         const onUpsert = (data: Row) => {
           if (data.tableId === input.tableId) {
@@ -122,7 +126,8 @@ export const rowRouter = createRouter()
     input: z.object({
       tableId: z.string(),
     }),
-    resolve({ input }) {
+    async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, { tableId: input.tableId }, true);
       return new Subscription<Row>((emit) => {
         const onUpsert = (data: Row) => {
           if (data.tableId === input.tableId) {
@@ -142,12 +147,19 @@ export const rowRouter = createRouter()
       rank: z.string(),
     }),
     async resolve({ ctx, input }) {
-      const row = await ctx.prisma.row.update({
+      const row = await ctx.prisma.row.findFirst({
+        where: { id: input.id },
+      });
+      if (!row) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      await useMemberCheck(ctx, { tableId: row.tableId }, false);
+      const newRow = await ctx.prisma.row.update({
         where: { id: input.id },
         data: { rank: input.rank },
       });
-      ee.emit("row.updateRank", row);
-      return row;
+      ee.emit("row.updateRank", newRow);
+      return newRow;
     },
   })
   .mutation("add", {
@@ -156,6 +168,7 @@ export const rowRouter = createRouter()
       rank: z.string(),
     }),
     async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, { tableId: input.tableId }, false);
       const row = await ctx.prisma.row.create({ data: input });
       ee.emit("row.add", row);
       return row;
@@ -167,6 +180,7 @@ export const rowRouter = createRouter()
       ids: z.array(z.string()),
     }),
     async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, { tableId: input.tableId }, false);
       ee.emit("row.delete", input);
       return ctx.prisma.row.deleteMany({ where: { id: { in: input.ids } } });
     },

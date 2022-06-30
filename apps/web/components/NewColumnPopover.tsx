@@ -104,7 +104,7 @@ export const NewColumnPopover: React.FC<{
                 {...form.getInputProps("dropdownOptions")}
               />
             )}
-            <Button type="submit" size="xs" color="gray">
+            <Button type="submit" size="xs" color="blue">
               Create column
             </Button>
           </Stack>

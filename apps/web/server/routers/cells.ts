@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ee } from "../ee";
 import { Cell } from "@prisma/client";
 import { Subscription } from "@trpc/server";
+import { useMemberCheck } from "../../lib/security-utils";
 
 export const cellRouter = createRouter()
   .query("byTableId", {
@@ -10,6 +11,7 @@ export const cellRouter = createRouter()
       tableId: z.string(),
     }),
     async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, input, true);
       return ctx.prisma.cell.findMany({ where: input });
     },
   })
@@ -17,7 +19,8 @@ export const cellRouter = createRouter()
     input: z.object({
       tableId: z.string(),
     }),
-    resolve({ input }) {
+    async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, input, true);
       return new Subscription<Cell>((emit) => {
         const onUpsert = (data: Cell) => {
           if (data.tableId === input.tableId) {
@@ -44,8 +47,8 @@ export const cellRouter = createRouter()
         z.null(),
       ]),
     }),
-
     async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, input, false);
       if (input.value instanceof Array) {
         input.value = JSON.stringify(input.value);
       }

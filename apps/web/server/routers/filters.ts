@@ -1,6 +1,7 @@
 import { Filter, FilterOperation, Sort } from "@prisma/client";
 import { Subscription } from "@trpc/server";
 import { z } from "zod";
+import { useMemberCheck } from "../../lib/security-utils";
 import { createRouter } from "../createRouter";
 import { ee } from "../ee";
 
@@ -10,6 +11,7 @@ export const filterRouter = createRouter()
       tableId: z.string(),
     }),
     async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, input, true);
       return ctx.prisma.filter.findMany({
         where: {
           tableId: input.tableId,
@@ -21,7 +23,8 @@ export const filterRouter = createRouter()
     input: z.object({
       tableId: z.string(),
     }),
-    resolve({ input }) {
+    async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, input, true);
       return new Subscription<Filter>((emit) => {
         const onInsert = (filter: Filter) => {
           if (filter.tableId === input.tableId) {
@@ -39,7 +42,8 @@ export const filterRouter = createRouter()
     input: z.object({
       tableId: z.string(),
     }),
-    resolve({ input }) {
+    async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, input, true);
       return new Subscription<Filter>((emit) => {
         const onUpdate = (filter: Filter) => {
           if (filter.tableId === input.tableId) {
@@ -57,7 +61,8 @@ export const filterRouter = createRouter()
     input: z.object({
       tableId: z.string(),
     }),
-    resolve({ input }) {
+    async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, input, true);
       return new Subscription<Filter>((emit) => {
         const onDelete = (filter: Filter) => {
           if (filter.tableId === input.tableId) {
@@ -79,6 +84,7 @@ export const filterRouter = createRouter()
       value: z.string().nullable(),
     }),
     async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, { tableId: input.tableId }, false);
       const filter = await ctx.prisma.filter.create({ data: input });
       ee.emit("filter.add", filter);
       return filter;
@@ -93,6 +99,7 @@ export const filterRouter = createRouter()
       value: z.string().nullable(),
     }),
     async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, { tableId: input.tableId }, false);
       const filter = await ctx.prisma.filter.update({
         where: { id: input.id },
         data: input,
@@ -109,6 +116,7 @@ export const filterRouter = createRouter()
       tableId: z.string(),
     }),
     async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, { tableId: input.tableId }, false);
       const filter = await ctx.prisma.filter.delete({
         where: {
           id: input.id,

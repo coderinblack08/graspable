@@ -6,13 +6,8 @@ import { createRouter } from "../createRouter";
 import { createNewTable } from "./tables";
 
 export const workspaceRouter = createRouter()
-  .middleware(async ({ ctx, next }) => {
-    if (!ctx.session?.user) {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
-    }
-    return next();
-  })
   .mutation("joinOrDisconnect", {
+    meta: { hasAuth: true },
     input: z.object({
       workspaceId: z.string(),
       active: z.boolean(),
@@ -32,6 +27,7 @@ export const workspaceRouter = createRouter()
     },
   })
   .query("getMembers", {
+    meta: { hasAuth: true },
     input: z.object({
       workspaceId: z.string(),
     }),
@@ -44,13 +40,14 @@ export const workspaceRouter = createRouter()
     },
   })
   .mutation("addMember", {
+    meta: { hasAuth: true },
     input: z.object({
       workspaceId: z.string(),
       role: z.enum([MemberRole.viewer, MemberRole.editor]),
       email: z.string().email(),
     }),
     async resolve({ ctx, input }) {
-      await useMemberCheck(ctx, input.workspaceId, false);
+      await useMemberCheck(ctx, { workspaceId: input.workspaceId }, false);
       const user = await ctx.prisma.user.findFirst({
         where: { email: input.email },
       });
@@ -78,6 +75,7 @@ export const workspaceRouter = createRouter()
     },
   })
   .query("all", {
+    meta: { hasAuth: true },
     async resolve({ ctx }) {
       const members = await ctx.prisma.member.findMany({
         where: {
@@ -98,17 +96,19 @@ export const workspaceRouter = createRouter()
     },
   })
   .query("byId", {
+    meta: { hasAuth: true },
     input: z.object({
       id: z.string(),
     }),
     async resolve({ ctx, input }) {
-      await useMemberCheck(ctx, input.id, true);
+      await useMemberCheck(ctx, { workspaceId: input.id }, true);
       return ctx.prisma.workspace.findFirst({
         where: input,
       });
     },
   })
   .mutation("add", {
+    meta: { hasAuth: true },
     input: z.object({ name: z.string() }),
     async resolve({ ctx, input }) {
       const workspace = await ctx.prisma.workspace.create({
@@ -129,9 +129,10 @@ export const workspaceRouter = createRouter()
     },
   })
   .mutation("update", {
+    meta: { hasAuth: true },
     input: z.object({ id: z.string(), name: z.string() }),
     async resolve({ ctx, input }) {
-      await useMemberCheck(ctx, input.id, true);
+      await useMemberCheck(ctx, { workspaceId: input.id }, false);
       return ctx.prisma.workspace.update({
         where: { id: input.id },
         data: { name: input.name },
@@ -139,9 +140,10 @@ export const workspaceRouter = createRouter()
     },
   })
   .mutation("delete", {
+    meta: { hasAuth: true },
     input: z.object({ id: z.string() }),
     async resolve({ ctx, input }) {
-      await useMemberCheck(ctx, input.id, false);
+      await useMemberCheck(ctx, { workspaceId: input.id }, false);
       return ctx.prisma.workspace.update({
         where: { id: input.id },
         data: { deleted: true },
