@@ -75,6 +75,7 @@ export const workspaceRouter = createRouter()
             userId: user.id,
             role: input.role as MemberRole,
           },
+          include: { User: true },
         });
         return member;
       } catch (error) {

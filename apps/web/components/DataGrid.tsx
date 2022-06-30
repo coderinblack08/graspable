@@ -442,11 +442,19 @@ const DataGridUI: React.FC<{
             </>
           ) : (
             <>
-              <FilterPopover tableId={tableId} columns={dbColumns} />
+              <FilterPopover
+                workspaceId={workspaceId}
+                tableId={tableId}
+                columns={dbColumns}
+              />
               {/* <Button leftIcon={<IconFrame size={16} />} compact>
                 Group
               </Button> */}
-              <SortPopover tableId={tableId} columns={dbColumns} />
+              <SortPopover
+                workspaceId={workspaceId}
+                tableId={tableId}
+                columns={dbColumns}
+              />
               <HideColumnPopover allColumns={allColumns} />
             </>
           )}

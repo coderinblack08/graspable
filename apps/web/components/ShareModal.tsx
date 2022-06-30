@@ -43,12 +43,23 @@ export const ShareModal: React.FC<ShareModalProps> = ({ workspaceId }) => {
       >
         <Formik
           initialValues={{ email: "", role: "viewer" }}
-          onSubmit={(values) => {
-            createMember.mutate({
-              workspaceId,
-              email: values.email,
-              role: values.role as any,
-            });
+          onSubmit={(values, { resetForm }) => {
+            createMember.mutate(
+              {
+                workspaceId,
+                email: values.email,
+                role: values.role as any,
+              },
+              {
+                onSuccess: (data) => {
+                  utils.setQueryData(
+                    ["workspace.getMembers", { workspaceId }],
+                    (old) => [...(old || []), data!]
+                  );
+                  resetForm();
+                },
+              }
+            );
           }}
         >
           {({ values, handleSubmit, setFieldValue }) => (

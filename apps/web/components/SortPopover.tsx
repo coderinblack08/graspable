@@ -24,7 +24,8 @@ const SortRow: React.FC<{
   sort: InferQueryOutput<"sorts.byTableId">[0];
   columns: InferQueryOutput<"columns.byTableId">;
   tableId: string;
-}> = ({ sort, columns, tableId }) => {
+  interactive: boolean;
+}> = ({ sort, columns, tableId, interactive }) => {
   const updateSort = trpc.useMutation("sorts.update");
   const deleteSort = trpc.useMutation("sorts.delete");
   const utils = trpc.useContext();
@@ -42,6 +43,7 @@ const SortRow: React.FC<{
           <Group spacing={8} noWrap>
             <Select
               size="xs"
+              disabled={!interactive}
               onChange={(col) => setFieldValue("columnId", col, false)}
               value={values.columnId}
               placeholder="Column"
@@ -53,6 +55,7 @@ const SortRow: React.FC<{
             />
             <SegmentedControl
               value={values.direction || ""}
+              disabled={!interactive}
               onChange={(dir) => setFieldValue("direction", dir, false)}
               sx={{ flexShrink: 0 }}
               size="xs"
@@ -61,18 +64,20 @@ const SortRow: React.FC<{
                 { label: "Desc.", value: "desc" },
               ]}
             />
-            <ActionIcon
-              variant="light"
-              onClick={() => {
-                deleteSort.mutate({
-                  tableId: sort.tableId,
-                  id: sort.id,
-                });
-              }}
-              color="red"
-            >
-              <IconTrash size={16} />
-            </ActionIcon>
+            {interactive && (
+              <ActionIcon
+                variant="light"
+                onClick={() => {
+                  deleteSort.mutate({
+                    tableId: sort.tableId,
+                    id: sort.id,
+                  });
+                }}
+                color="red"
+              >
+                <IconTrash size={16} />
+              </ActionIcon>
+            )}
             <AutoSave />
           </Group>
         </Form>
@@ -84,11 +89,16 @@ const SortRow: React.FC<{
 export const SortPopover: React.FC<{
   columns: InferQueryOutput<"columns.byTableId">;
   tableId: string;
-}> = ({ columns, tableId }) => {
+  workspaceId: string;
+}> = ({ columns, workspaceId, tableId }) => {
   const [opened, setOpened] = React.useState(false);
   const addSort = trpc.useMutation(["sorts.add"]);
   const utils = trpc.useContext();
   const { data: sorts } = trpc.useQuery(["sorts.byTableId", { tableId }]);
+  const { data: membership } = trpc.useQuery([
+    "workspace.myMembership",
+    { workspaceId },
+  ]);
 
   trpc.useSubscription(["sorts.onAdd", { tableId }], {
     onNext(data) {
@@ -147,6 +157,7 @@ export const SortPopover: React.FC<{
             key={sort.id}
             columns={columns}
             sort={sort}
+            interactive={membership?.role !== "viewer"}
             tableId={tableId}
           />
         ))}
@@ -158,6 +169,7 @@ export const SortPopover: React.FC<{
           onClick={() =>
             addSort.mutate({ tableId, columnId: null, direction: "asc" })
           }
+          disabled={membership?.role === "viewer"}
           size="xs"
           fullWidth
         >

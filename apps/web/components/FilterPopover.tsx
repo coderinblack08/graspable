@@ -31,11 +31,13 @@ export interface Filter {
 interface FilterPopoverProps {
   columns: InferQueryOutput<"columns.byTableId">;
   tableId: string;
+  workspaceId: string;
 }
 
 const FilterValueInput: React.FC<{
   column?: InferQueryOutput<"columns.byTableId">[0] | null;
-}> = ({ column }) => {
+  disabled?: boolean;
+}> = ({ column, disabled = false }) => {
   const [{ value, onChange }, _, { setValue }] = useField("value");
   if (column?.type === "checkbox") {
     return null;
@@ -43,6 +45,7 @@ const FilterValueInput: React.FC<{
   if (column?.type === "dropdown") {
     return (
       <Select
+        disabled={disabled}
         color="blue"
         size="xs"
         placeholder="Select a value"
@@ -58,6 +61,7 @@ const FilterValueInput: React.FC<{
   return (
     <Input
       size="xs"
+      disabled={disabled}
       placeholder="Value"
       value={value || ""}
       type={column?.type === "number" ? "number" : "text"}
@@ -71,7 +75,8 @@ const FilterRow: React.FC<{
   filter: InferQueryOutput<"filters.byTableId">[0];
   columns: InferQueryOutput<"columns.byTableId">;
   tableId: string;
-}> = ({ filter, columns, tableId }) => {
+  interactive: boolean;
+}> = ({ filter, columns, tableId, interactive = true }) => {
   const deleteFilter = trpc.useMutation(["filters.delete"]);
   const updateFilter = trpc.useMutation(["filters.update"]);
   const columnsDict = React.useMemo(() => {
@@ -132,6 +137,7 @@ const FilterRow: React.FC<{
             </Text>
             <Select
               size="xs"
+              disabled={!interactive}
               onChange={(col) => col && setFieldValue("columnId", col, false)}
               value={values.columnId}
               placeholder="Column"
@@ -146,6 +152,7 @@ const FilterRow: React.FC<{
                   ? getOperations(columnsDict[values.columnId]?.type)
                   : []
               }
+              disabled={!interactive}
               size="xs"
               placeholder="Operation"
               name="operation"
@@ -155,20 +162,23 @@ const FilterRow: React.FC<{
               }
             />
             <FilterValueInput
+              disabled={!interactive}
               column={values.columnId ? columnsDict[values.columnId] : null}
             />
-            <ActionIcon
-              variant="light"
-              onClick={() => {
-                deleteFilter.mutate({
-                  tableId: filter.tableId,
-                  id: filter.id,
-                });
-              }}
-              color="red"
-            >
-              <IconTrash size={16} />
-            </ActionIcon>
+            {interactive && (
+              <ActionIcon
+                variant="light"
+                onClick={() => {
+                  deleteFilter.mutate({
+                    tableId: filter.tableId,
+                    id: filter.id,
+                  });
+                }}
+                color="red"
+              >
+                <IconTrash size={16} />
+              </ActionIcon>
+            )}
             <AutoSave />
           </Group>
         </Form>
@@ -180,9 +190,14 @@ const FilterRow: React.FC<{
 export const FilterPopover: React.FC<FilterPopoverProps> = ({
   columns,
   tableId,
+  workspaceId,
 }) => {
   const { data: filters } = trpc.useQuery(["filters.byTableId", { tableId }]);
   const addFilter = trpc.useMutation(["filters.add"]);
+  const { data: membership } = trpc.useQuery([
+    "workspace.myMembership",
+    { workspaceId },
+  ]);
 
   const utils = trpc.useContext();
   const [opened, setOpened] = React.useState(false);
@@ -243,6 +258,7 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({
           <Stack spacing={8} p="sm" pt={filters.length ? "sm" : 0}>
             {filters.map((item) => (
               <FilterRow
+                interactive={membership?.role !== "viewer"}
                 tableId={tableId}
                 key={item.id}
                 filter={item}
@@ -264,6 +280,7 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({
                 });
               }}
               fullWidth
+              disabled={membership?.role === "viewer"}
             >
               Add Condition
             </Button>
