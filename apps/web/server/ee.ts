@@ -1,9 +1,10 @@
-import { Cell, Filter, Row, Sort, Table } from "@prisma/client";
+import { Cell, Column, Filter, Row, Sort, Table } from "@prisma/client";
 import { EventEmitter } from "events";
 
 interface MyEvents {
   "cell.upsert": (cell: Cell) => void;
   "row.add": (row: Row) => void;
+  "row.updateRank": (row: Row) => void;
   "row.delete": (args: { ids: string[]; tableId: string }) => void;
   "sort.add": (sort: Sort) => void;
   "sort.update": (sort: Sort) => void;
@@ -13,6 +14,10 @@ interface MyEvents {
   "filter.delete": (filter: Filter) => void;
   "table.add": (table: Table) => void;
   "table.update": (table: Table) => void;
+  "table.delete": (table: Table) => void;
+  "column.add": (column: Column) => void;
+  "column.update": (column: Column) => void;
+  "column.delete": (column: Column) => void;
 }
 
 declare interface MyEventEmitter {

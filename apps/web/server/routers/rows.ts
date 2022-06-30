@@ -118,16 +118,36 @@ export const rowRouter = createRouter()
       });
     },
   })
+  .subscription("onUpdateRank", {
+    input: z.object({
+      tableId: z.string(),
+    }),
+    resolve({ input }) {
+      return new Subscription<Row>((emit) => {
+        const onUpsert = (data: Row) => {
+          if (data.tableId === input.tableId) {
+            emit.data(data);
+          }
+        };
+        ee.on("row.updateRank", onUpsert);
+        return () => {
+          ee.off("row.updateRank", onUpsert);
+        };
+      });
+    },
+  })
   .mutation("updateRank", {
     input: z.object({
       id: z.string(),
       rank: z.string(),
     }),
     async resolve({ ctx, input }) {
-      return ctx.prisma.row.update({
+      const row = await ctx.prisma.row.update({
         where: { id: input.id },
         data: { rank: input.rank },
       });
+      ee.emit("row.updateRank", row);
+      return row;
     },
   })
   .mutation("add", {

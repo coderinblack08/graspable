@@ -1,5 +1,5 @@
 import superjson from "superjson";
-import { InputStylesParams, MantineProvider } from "@mantine/core";
+import { Global, InputStylesParams, MantineProvider } from "@mantine/core";
 import { httpBatchLink } from "@trpc/client/links/httpBatchLink";
 import { loggerLink } from "@trpc/client/links/loggerLink";
 import { wsLink, createWSClient } from "@trpc/client/links/wsLink";
@@ -11,6 +11,11 @@ import { AppRouter } from "../server/routers/_app";
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   return (
     <SessionProvider session={session}>
+      <Global
+        styles={{
+          "html, body": { margin: 0, height: "100%", overflow: "hidden" },
+        }}
+      />
       <MantineProvider
         withGlobalStyles
         withNormalizeCSS

@@ -54,9 +54,9 @@ export const EditableCell = (
         return (
           <Center style={{ height: "100%" }}>
             <Checkbox
-              checked={!!value}
+              checked={value ? (value === "true" ? true : false) : false}
               onChange={(event) => {
-                setValue(event.currentTarget.checked);
+                setValue(event.currentTarget.checked.toString());
                 debounced();
               }}
             />

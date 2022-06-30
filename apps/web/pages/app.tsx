@@ -62,7 +62,7 @@ const AppPage: NextPage = () => {
               styles={{ rightSection: { pointerEvents: "none" } }}
               rightSection={<Kbd>⌘ + K</Kbd>}
             />
-            <Stack spacing={4}>
+            <Stack spacing={8}>
               <NavbarLink
                 icon={<IconDatabase size={16} />}
                 color="teal"
@@ -126,13 +126,13 @@ const AppPage: NextPage = () => {
             >
               <Group position="apart">
                 <Box>
-                  <Text weight={500} size="xl">
+                  <Text weight="bold" size="xl">
                     {workspace.name}
                   </Text>
                 </Box>
                 <WorkspaceDropdown workspace={workspace} />
               </Group>
-              <Group spacing="xs">
+              <Group spacing="xs" mt={4}>
                 <ThemeIcon variant="light" size="xs">
                   <IconUser />
                 </ThemeIcon>

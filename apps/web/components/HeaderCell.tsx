@@ -161,24 +161,7 @@ export const HeaderCell: React.FC<HeaderCellProps> = ({ index, column }) => {
                         color="red"
                         icon={<IconTrash size={14} />}
                         onClick={() => {
-                          deleteColumn.mutate(
-                            { id: columnId },
-                            {
-                              onSuccess: () => {
-                                utils.setQueryData(
-                                  [
-                                    "columns.byTableId",
-                                    { tableId: column.tableId! },
-                                  ],
-                                  (old) => {
-                                    return (old || []).filter(
-                                      (c) => c.id !== columnId
-                                    );
-                                  }
-                                );
-                              },
-                            }
-                          );
+                          deleteColumn.mutate({ id: columnId });
                         }}
                       >
                         Delete Column

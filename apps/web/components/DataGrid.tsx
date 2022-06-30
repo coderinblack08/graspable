@@ -30,7 +30,6 @@ import {
   useRowSelect,
   useTable,
 } from "react-table";
-import shallow from "zustand/shallow";
 import { InferQueryOutput, trpc } from "../lib/trpc";
 import { EditableCell } from "./EditableCell";
 import { FilterPopover } from "./FilterPopover";
@@ -39,7 +38,6 @@ import { HideColumnPopover } from "./HideCoumnPopover";
 import { IndeterminateCheckbox } from "./IndeterminateCheckbox";
 import { NewColumnPopover } from "./NewColumnPopover";
 import { SortPopover } from "./SortPopover";
-import { useTableStore } from "./useTableStore";
 
 export const useStyles = createStyles((theme) => ({
   table: {
@@ -100,10 +98,6 @@ interface DataGridProps {
 }
 
 export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
-  const [sorts, filters] = useTableStore(
-    (state) => [state.sorts, state.filters],
-    shallow
-  );
   const { data: rows } = trpc.useQuery(["rows.byTableId", { tableId }], {
     keepPreviousData: true,
   });
@@ -134,12 +128,36 @@ export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
       // });
     },
   });
+  trpc.useSubscription(["columns.onUpdate", { tableId }], {
+    onNext(ids) {
+      utils.refetchQueries(["columns.byTableId", { tableId }]);
+    },
+  });
   trpc.useSubscription(["rows.onDelete", { tableId }], {
     onNext(ids) {
       utils.setQueryData(["rows.byTableId", { tableId }], (old) => {
         if (!old) return [];
         return old.filter((x) => !ids.includes(x.id));
       });
+    },
+  });
+
+  trpc.useSubscription(["columns.onAdd", { tableId }], {
+    onNext(data) {
+      utils.setQueryData(["columns.byTableId", { tableId }], (old) => {
+        if (!old) return [];
+        return [...old, data];
+      });
+    },
+  });
+  trpc.useSubscription(["columns.onDelete", { tableId }], {
+    onNext(data) {
+      utils.setQueryData(
+        ["columns.byTableId", { tableId: data.tableId! }],
+        (old) => {
+          return (old || []).filter((c) => c.id !== data.id);
+        }
+      );
     },
   });
 
@@ -157,7 +175,7 @@ export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
 
   return (
     <Center sx={{ height: "100%" }}>
-      <Loader variant="dots" color="gray" />
+      <Loader variant="dots" color="dark" />
     </Center>
   );
 };
@@ -318,6 +336,17 @@ const DataGridUI: React.FC<{
   const addRow = trpc.useMutation(["rows.add"]);
   const removeRows = trpc.useMutation(["rows.delete"]);
   const utils = trpc.useContext();
+
+  trpc.useSubscription(["rows.onUpdateRank", { tableId }], {
+    onNext(data) {
+      utils.refetchQueries(["rows.byTableId", { tableId }]);
+      // utils.setQueryData(["rows.byTableId", { tableId }], (old) => {
+      //   console.log(data);
+      //   old = (old || []).map((x) => (x.id === data.id ? data : x));
+      //   return (old || [])?.sort((a, b) => a.rank - b.rank);
+      // });
+    },
+  });
 
   const createNewRow = async () => {
     const rank = dbRows.length
@@ -502,7 +531,9 @@ const DataGridUI: React.FC<{
                       {headerGroups.map((headerGroup) => (
                         <Box
                           {...headerGroup.getHeaderGroupProps()}
-                          sx={{ backgroundColor: "white" }}
+                          sx={(theme) => ({
+                            backgroundColor: theme.colors.dark[8],
+                          })}
                         >
                           {headerGroup.headers.map((column, index) => (
                             <HeaderCell

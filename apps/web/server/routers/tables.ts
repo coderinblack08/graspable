@@ -114,6 +114,24 @@ export const tablesRouter = createRouter()
       });
     },
   })
+  .subscription("onDelete", {
+    input: z.object({
+      workspaceId: z.string(),
+    }),
+    resolve({ input }) {
+      return new Subscription<Table>((emit) => {
+        const onUpdate = (table: Table) => {
+          if (table.workspaceId === input.workspaceId) {
+            emit.data(table);
+          }
+        };
+        ee.on("table.delete", onUpdate);
+        return () => {
+          ee.off("table.delete", onUpdate);
+        };
+      });
+    },
+  })
   .mutation("add", {
     input: z.object({
       workspaceId: z.string(),
@@ -161,6 +179,10 @@ export const tablesRouter = createRouter()
         throw new TRPCError({ code: "NOT_FOUND" });
       }
       await useMemberCheck(ctx, table.workspaceId, false);
-      return ctx.prisma.table.delete({ where: { id: input.tableId } });
+      const oldTable = await ctx.prisma.table.delete({
+        where: { id: input.tableId },
+      });
+      ee.emit("table.delete", oldTable);
+      return oldTable;
     },
   });

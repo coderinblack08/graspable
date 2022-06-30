@@ -32,7 +32,7 @@ export function NavbarLink({ icon, color, label }: MainLinkProps) {
       })}
     >
       <Group spacing="sm">
-        <ThemeIcon size="lg" color={color} variant="light">
+        <ThemeIcon size="md" color={color} variant="light">
           {icon}
         </ThemeIcon>
         <Text weight={500} size="sm">

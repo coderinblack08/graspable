@@ -2,6 +2,8 @@ import { createRouter } from "../createRouter";
 import { z } from "zod";
 import { Column, ColumnType } from "@prisma/client";
 import { LexoRank } from "lexorank";
+import { Subscription } from "@trpc/server";
+import { ee } from "../ee";
 
 export const columnsRouter = createRouter()
   .query("byTableId", {
@@ -15,6 +17,60 @@ export const columnsRouter = createRouter()
       >`select * from public."Column" where "tableId" = ${input.tableId} order by rank collate "C";`;
     },
   })
+  .subscription("onAdd", {
+    input: z.object({
+      tableId: z.string(),
+    }),
+    resolve({ input }) {
+      return new Subscription<Column>((emit) => {
+        const onAdd = (data: Column) => {
+          if (data.tableId === input.tableId) {
+            emit.data(data);
+          }
+        };
+        ee.on("column.add", onAdd);
+        return () => {
+          ee.off("column.add", onAdd);
+        };
+      });
+    },
+  })
+  .subscription("onUpdate", {
+    input: z.object({
+      tableId: z.string(),
+    }),
+    resolve({ input }) {
+      return new Subscription<Column>((emit) => {
+        const onUpdate = (column: Column) => {
+          if (column.tableId === input.tableId) {
+            emit.data(column);
+          }
+        };
+        ee.on("column.update", onUpdate);
+        return () => {
+          ee.off("column.update", onUpdate);
+        };
+      });
+    },
+  })
+  .subscription("onDelete", {
+    input: z.object({
+      tableId: z.string(),
+    }),
+    resolve({ input }) {
+      return new Subscription<Column>((emit) => {
+        const onDelete = (column: Column) => {
+          if (column.tableId === input.tableId) {
+            emit.data(column);
+          }
+        };
+        ee.on("column.delete", onDelete);
+        return () => {
+          ee.off("column.delete", onDelete);
+        };
+      });
+    },
+  })
   .mutation("add", {
     input: z.object({
       tableId: z.string(),
@@ -25,7 +81,11 @@ export const columnsRouter = createRouter()
     }),
     async resolve({ ctx, input }) {
       if (!input.rank) input.rank = LexoRank.middle().toString();
-      return ctx.prisma.column.create({ data: { ...input, rank: input.rank } });
+      const column = await ctx.prisma.column.create({
+        data: { ...input, rank: input.rank },
+      });
+      ee.emit("column.add", column);
+      return column;
     },
   })
   .mutation("update", {
@@ -36,7 +96,12 @@ export const columnsRouter = createRouter()
       rank: z.string().optional(),
     }),
     async resolve({ ctx, input }) {
-      return ctx.prisma.column.update({ where: { id: input.id }, data: input });
+      const column = await ctx.prisma.column.update({
+        where: { id: input.id },
+        data: input,
+      });
+      ee.emit("column.update", column);
+      return column;
     },
   })
   .mutation("delete", {
@@ -44,6 +109,10 @@ export const columnsRouter = createRouter()
       id: z.string(),
     }),
     async resolve({ ctx, input }) {
-      return ctx.prisma.column.delete({ where: { id: input.id } });
+      const column = await ctx.prisma.column.delete({
+        where: { id: input.id },
+      });
+      ee.emit("column.delete", column);
+      return column;
     },
   });

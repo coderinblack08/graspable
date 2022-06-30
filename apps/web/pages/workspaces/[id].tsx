@@ -54,6 +54,13 @@ const WorkspacePage: React.FC<
       );
     },
   });
+  trpc.useSubscription(["tables.onDelete", { workspaceId: id }], {
+    onNext(data) {
+      utils.setQueryData(["tables.byWorkspaceId", { workspaceId: id }], (old) =>
+        (old || []).filter((t) => t.id !== data.id)
+      );
+    },
+  });
 
   return (
     <AppShell
@@ -113,6 +120,7 @@ const WorkspacePage: React.FC<
             tabsListWrapper: {
               backgroundColor: theme.colors.dark[8],
               paddingTop: 8,
+              borderBottom: `2px solid ${theme.colors.dark[5]} !important`,
             },
             root: {
               height: "100%",
@@ -165,13 +173,7 @@ const WorkspacePage: React.FC<
                         deleteTable.mutate(
                           { tableId: table.id },
                           {
-                            onSuccess: async () => {
-                              await utils.refetchQueries([
-                                "tables.byWorkspaceId",
-                                { workspaceId: id },
-                              ]);
-                              setTab(Math.max(0, tab - 1));
-                            },
+                            onSuccess: () => setTab(Math.max(0, tab - 1)),
                           }
                         )
                       }
@@ -193,7 +195,7 @@ const WorkspacePage: React.FC<
           <Stack
             align="center"
             sx={(theme) => ({
-              color: theme.colors.gray[5],
+              color: theme.colors.dark[3],
               userSelect: "none",
             })}
           >

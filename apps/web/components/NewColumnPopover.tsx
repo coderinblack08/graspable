@@ -52,25 +52,15 @@ export const NewColumnPopover: React.FC<{
           onSubmit={form.onSubmit(async (values) => {
             const data: Partial<typeof values> = Object.assign({}, values);
             if (data.type !== "dropdown") delete data.dropdownOptions;
-            await addColumn.mutateAsync(
-              {
-                name: data.name!,
-                type: data.type!,
-                dropdownOptions: data.dropdownOptions,
-                rank: lastRank
-                  ? LexoRank.parse(lastRank).genNext().toString()
-                  : undefined,
-                tableId,
-              },
-              {
-                onSuccess: (data) => {
-                  utils.setQueryData(
-                    ["columns.byTableId", { tableId }],
-                    (old) => [...(old || []), data]
-                  );
-                },
-              }
-            );
+            await addColumn.mutateAsync({
+              name: data.name!,
+              type: data.type!,
+              dropdownOptions: data.dropdownOptions,
+              rank: lastRank
+                ? LexoRank.parse(lastRank).genNext().toString()
+                : undefined,
+              tableId,
+            });
             setOpened(false);
           })}
         >
