@@ -2,9 +2,10 @@ import { Center, Checkbox, Select, TextInput } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import React, { useEffect } from "react";
 import { useDebouncedCallback } from "use-debounce";
-import { InferQueryOutput } from "../lib/trpc";
+import { InferQueryOutput, trpc } from "../lib/trpc";
 
 export const EditableCell = (
+  workspaceId: string,
   columns?: InferQueryOutput<"columns.byTableId">
 ) => {
   const Cell: React.FC<any> = ({
@@ -13,6 +14,10 @@ export const EditableCell = (
     column: { id: columnId },
     updateMyData,
   }) => {
+    const { data: membership } = trpc.useQuery([
+      "workspace.myMembership",
+      { workspaceId },
+    ]);
     const [value, setValue] = React.useState(initialValue);
     const debounced = useDebouncedCallback(() => {
       updateMyData(rowIndex, columnId, value);
@@ -41,10 +46,14 @@ export const EditableCell = (
         return (
           <>
             <DatePicker
-              onChange={(date) => {
-                setValue(date ? date.toDateString() : "");
-                debounced();
-              }}
+              onChange={
+                membership?.role !== "viewer"
+                  ? (date) => {
+                      setValue(date ? date.toDateString() : "");
+                      debounced();
+                    }
+                  : undefined
+              }
               styles={styles}
               value={value && new Date(value)}
             />
@@ -55,10 +64,14 @@ export const EditableCell = (
           <Center style={{ height: "100%" }}>
             <Checkbox
               checked={value ? (value === "true" ? true : false) : false}
-              onChange={(event) => {
-                setValue(event.currentTarget.checked.toString());
-                debounced();
-              }}
+              onChange={
+                membership?.role !== "viewer"
+                  ? (event) => {
+                      setValue(event.currentTarget.checked.toString());
+                      debounced();
+                    }
+                  : undefined
+              }
             />
           </Center>
         );
@@ -67,10 +80,14 @@ export const EditableCell = (
           <TextInput
             type="number"
             value={value || ""}
-            onChange={(e) => {
-              setValue(e.target.value);
-              debounced();
-            }}
+            onChange={
+              membership?.role !== "viewer"
+                ? (e) => {
+                    setValue(e.target.value);
+                    debounced();
+                  }
+                : undefined
+            }
             styles={styles}
           />
         );
@@ -80,10 +97,14 @@ export const EditableCell = (
             type="url"
             styles={styles}
             value={value || ""}
-            onChange={(e) => {
-              setValue(e.target.value);
-              debounced();
-            }}
+            onChange={
+              membership?.role !== "viewer"
+                ? (e) => {
+                    setValue(e.target.value);
+                    debounced();
+                  }
+                : undefined
+            }
           />
         );
       case "dropdown":
@@ -92,10 +113,14 @@ export const EditableCell = (
             color="blue"
             styles={styles}
             value={value}
-            onChange={(value) => {
-              setValue(value);
-              debounced();
-            }}
+            onChange={
+              membership?.role !== "viewer"
+                ? (value) => {
+                    setValue(value);
+                    debounced();
+                  }
+                : undefined
+            }
             data={
               column.dropdownOptions?.map((x) => ({ label: x, value: x })) || []
             }
@@ -106,10 +131,14 @@ export const EditableCell = (
           <TextInput
             styles={styles}
             value={value || ""}
-            onChange={(e) => {
-              setValue(e.target.value);
-              debounced();
-            }}
+            onChange={
+              membership?.role !== "viewer"
+                ? (e) => {
+                    setValue(e.target.value);
+                    debounced();
+                  }
+                : undefined
+            }
           />
         );
     }

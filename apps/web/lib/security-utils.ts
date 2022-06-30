@@ -34,3 +34,18 @@ export const useMemberCheck = async (
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
 };
+
+export const useOwnerCheck = async (ctx: Context, workspaceId: string) => {
+  const membership = await ctx.prisma.member.findFirst({
+    where: {
+      userId: ctx.session!.user.id,
+      workspaceId: workspaceId,
+      role: {
+        equals: MemberRole.owner,
+      },
+    },
+  });
+  if (!membership) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+};

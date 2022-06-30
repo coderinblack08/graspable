@@ -193,6 +193,10 @@ const DataGridUI: React.FC<{
 
   const { data: sorts } = trpc.useQuery(["sorts.byTableId", { tableId }]);
   const { data: filters } = trpc.useQuery(["filters.byTableId", { tableId }]);
+  const { data: membership } = trpc.useQuery([
+    "workspace.myMembership",
+    { workspaceId },
+  ]);
 
   const RT_COLUMNS = React.useMemo(
     () =>
@@ -284,9 +288,10 @@ const DataGridUI: React.FC<{
       columns: RT_COLUMNS,
       data: records,
       defaultColumn: {
-        Cell: EditableCell(dbColumns),
+        Cell: EditableCell(workspaceId, dbColumns),
         minWidth: 100,
         maxWidth: 400,
+        disableResizing: membership?.role === "viewer",
       },
       autoResetPage: !skipPageReset,
       updateMyData,
@@ -297,40 +302,43 @@ const DataGridUI: React.FC<{
     useResizeColumns,
     useColumnOrder,
     (hooks) => {
-      hooks.visibleColumns.push((columns) => [
-        {
-          id: "selection",
-          width: "auto",
-          disableResizing: true,
-          Header: ({ getToggleAllRowsSelectedProps }) => (
-            <div>
-              <IndeterminateCheckbox {...getToggleAllRowsSelectedProps()} />
-            </div>
-          ),
-          Cell: ({ row }) => (
-            <div>
-              <IndeterminateCheckbox {...row.getToggleRowSelectedProps()} />
-            </div>
-          ),
-        },
-        ...columns,
-        {
-          id: "new-column",
-          width: 40,
-          minWidth: 40,
-          disableResizing: true,
-          Header: () => (
-            <div>
-              <NewColumnPopover
-                lastRank={dbColumns.at(-1)?.rank}
-                workspaceId={workspaceId}
-                tableId={tableId}
-              />
-            </div>
-          ),
-          Cell: () => <div></div>,
-        },
-      ]);
+      hooks.visibleColumns.push((columns) => {
+        if (membership?.role === "viewer") return columns;
+        return [
+          {
+            id: "selection",
+            width: "auto",
+            disableResizing: true,
+            Header: ({ getToggleAllRowsSelectedProps }) => (
+              <div>
+                <IndeterminateCheckbox {...getToggleAllRowsSelectedProps()} />
+              </div>
+            ),
+            Cell: ({ row }) => (
+              <div>
+                <IndeterminateCheckbox {...row.getToggleRowSelectedProps()} />
+              </div>
+            ),
+          },
+          ...columns,
+          {
+            id: "new-column",
+            width: 40,
+            minWidth: 40,
+            disableResizing: true,
+            Header: () => (
+              <div>
+                <NewColumnPopover
+                  lastRank={dbColumns.at(-1)?.rank}
+                  workspaceId={workspaceId}
+                  tableId={tableId}
+                />
+              </div>
+            ),
+            Cell: () => <div></div>,
+          },
+        ];
+      });
     }
   );
 
@@ -541,6 +549,7 @@ const DataGridUI: React.FC<{
                           {headerGroup.headers.map((column, index) => (
                             <HeaderCell
                               index={index}
+                              workspaceId={workspaceId}
                               key={column.id}
                               column={column}
                             />
@@ -613,9 +622,10 @@ const DataGridUI: React.FC<{
                           index={index}
                           draggableId={row.id}
                           isDragDisabled={
-                            filters &&
-                            sorts &&
-                            (filters?.length > 0 || sorts?.length > 0)
+                            (filters &&
+                              sorts &&
+                              (filters?.length > 0 || sorts?.length > 0)) ||
+                            membership?.role === "viewer"
                           }
                         >
                           {(provided) => {

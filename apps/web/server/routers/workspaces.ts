@@ -1,7 +1,7 @@
 import { MemberRole, Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { useMemberCheck } from "../../lib/security-utils";
+import { useMemberCheck, useOwnerCheck } from "../../lib/security-utils";
 import { createRouter } from "../createRouter";
 import { createNewTable } from "./tables";
 
@@ -22,6 +22,20 @@ export const workspaceRouter = createRouter()
         },
         data: {
           active: input.active,
+        },
+      });
+    },
+  })
+  .query("myMembership", {
+    meta: { hasAuth: true },
+    input: z.object({
+      workspaceId: z.string(),
+    }),
+    async resolve({ input, ctx }) {
+      return ctx.prisma.member.findFirst({
+        where: {
+          userId: ctx.session!.user.id,
+          ...input,
         },
       });
     },
@@ -72,6 +86,49 @@ export const workspaceRouter = createRouter()
           throw new TRPCError({ code: "CONFLICT" });
         }
       }
+    },
+  })
+  .mutation("updateMemberRole", {
+    meta: { hasAuth: true },
+    input: z.object({
+      workspaceId: z.string(),
+      userId: z.string(),
+      role: z.enum([MemberRole.viewer, MemberRole.editor]),
+    }),
+    async resolve({ ctx, input }) {
+      await useOwnerCheck(ctx, input.workspaceId);
+      const member = await ctx.prisma.member.update({
+        where: {
+          userId_workspaceId: {
+            workspaceId: input.workspaceId,
+            userId: input.userId,
+          },
+        },
+        data: {
+          role: input.role as MemberRole,
+        },
+        include: { User: true },
+      });
+      return member;
+    },
+  })
+  .mutation("deleteMember", {
+    meta: { hasAuth: true },
+    input: z.object({
+      workspaceId: z.string(),
+      userId: z.string(),
+    }),
+    async resolve({ ctx, input }) {
+      await useOwnerCheck(ctx, input.workspaceId);
+      const member = await ctx.prisma.member.delete({
+        where: {
+          userId_workspaceId: {
+            workspaceId: input.workspaceId,
+            userId: input.userId,
+          },
+        },
+      });
+      return member;
     },
   })
   .query("all", {

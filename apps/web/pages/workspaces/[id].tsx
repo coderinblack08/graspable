@@ -14,7 +14,8 @@ import { IconDotsVertical, IconMenu2 } from "@tabler/icons";
 import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import Head from "next/head";
 import Image from "next/image";
-import React from "react";
+import { useRouter } from "next/router";
+import React, { useEffect } from "react";
 import { ShareModal } from "../../components/ShareModal";
 import { TableTabContent } from "../../components/TableTabContent";
 import { WorkspaceDropdown } from "../../components/WorkspaceDropdown";
@@ -28,6 +29,10 @@ const WorkspacePage: React.FC<
   const createTable = trpc.useMutation(["tables.add"]);
   const updateTable = trpc.useMutation(["tables.update"]);
   const deleteTable = trpc.useMutation(["tables.delete"]);
+  const { data: membership, isLoading: isMembershipLoading } = trpc.useQuery([
+    "workspace.myMembership",
+    { workspaceId: id },
+  ]);
   const { data: workspace } = trpc.useQuery(["workspace.byId", { id }]);
   const { data: tables } = trpc.useQuery([
     "tables.byWorkspaceId",
@@ -62,6 +67,14 @@ const WorkspacePage: React.FC<
       );
     },
   });
+
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!membership && !isMembershipLoading) {
+      router.push("/app");
+    }
+  }, [isMembershipLoading, membership, router]);
 
   return (
     <AppShell
@@ -140,50 +153,52 @@ const WorkspacePage: React.FC<
               label={
                 <Group spacing={8}>
                   <Text weight={600}>{table.name}</Text>
-                  <Menu
-                    control={
-                      <ActionIcon
-                        component="div"
+                  {membership?.role !== "viewer" && (
+                    <Menu
+                      control={
+                        <ActionIcon
+                          component="div"
+                          onClick={(e: any) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                          color={tab === index ? "blue" : "gray"}
+                        >
+                          <IconDotsVertical size={16} />
+                        </ActionIcon>
+                      }
+                    >
+                      <Menu.Item disabled>Export CSV</Menu.Item>
+                      <Menu.Item
                         onClick={(e: any) => {
                           e.stopPropagation();
                           e.preventDefault();
-                        }}
-                        color={tab === index ? "blue" : "gray"}
-                      >
-                        <IconDotsVertical size={16} />
-                      </ActionIcon>
-                    }
-                  >
-                    <Menu.Item disabled>Export CSV</Menu.Item>
-                    <Menu.Item
-                      onClick={(e: any) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        const newTableName = prompt("New table name:");
-                        if (newTableName) {
-                          updateTable.mutate({
-                            name: newTableName,
-                            tableId: table.id,
-                          });
-                        }
-                      }}
-                    >
-                      Rename Table
-                    </Menu.Item>
-                    <Menu.Item
-                      onClick={() =>
-                        deleteTable.mutate(
-                          { tableId: table.id },
-                          {
-                            onSuccess: () => setTab(Math.max(0, tab - 1)),
+                          const newTableName = prompt("New table name:");
+                          if (newTableName) {
+                            updateTable.mutate({
+                              name: newTableName,
+                              tableId: table.id,
+                            });
                           }
-                        )
-                      }
-                      color="red"
-                    >
-                      Delete Table
-                    </Menu.Item>
-                  </Menu>
+                        }}
+                      >
+                        Rename Table
+                      </Menu.Item>
+                      <Menu.Item
+                        onClick={() =>
+                          deleteTable.mutate(
+                            { tableId: table.id },
+                            {
+                              onSuccess: () => setTab(Math.max(0, tab - 1)),
+                            }
+                          )
+                        }
+                        color="red"
+                      >
+                        Delete Table
+                      </Menu.Item>
+                    </Menu>
+                  )}
                 </Group>
               }
               key={table.id}

@@ -19,6 +19,7 @@ import { useStyles } from "./DataGrid";
 
 type HeaderCellProps = {
   column: HeaderGroup<Record<string, any>>;
+  workspaceId: string;
   index: number;
 };
 
@@ -43,11 +44,18 @@ export const HeaderCellIcon: React.FC<{
   }
 };
 
-export const HeaderCell: React.FC<HeaderCellProps> = ({ index, column }) => {
+export const HeaderCell: React.FC<HeaderCellProps> = ({
+  workspaceId,
+  index,
+  column,
+}) => {
   const { id: columnId } = column;
   const { classes } = useStyles();
   const [isHovering, hoverProps] = useHover();
-
+  const { data: membership } = trpc.useQuery([
+    "workspace.myMembership",
+    { workspaceId },
+  ]);
   const utils = trpc.useContext();
   const deleteColumn = trpc.useMutation(["columns.delete"]);
   const updateColumn = trpc.useMutation(["columns.update"]);
@@ -74,7 +82,8 @@ export const HeaderCell: React.FC<HeaderCellProps> = ({ index, column }) => {
       isDragDisabled={
         column.id === "selection" ||
         column.id === "new-column" ||
-        column.isResizing
+        column.isResizing ||
+        membership?.role === "viewer"
       }
       key={column.id}
       index={index}
@@ -118,7 +127,9 @@ export const HeaderCell: React.FC<HeaderCellProps> = ({ index, column }) => {
                       {column.render("Header")}
                     </Text>
                   </Group>
-                  {column.id !== "selection" && column.id !== "new-column" ? (
+                  {column.id !== "selection" &&
+                  column.id !== "new-column" &&
+                  membership?.role !== "viewer" ? (
                     <Menu
                       sx={{ display: isHovering ? "block" : "none" }}
                       control={
