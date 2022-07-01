@@ -1,5 +1,6 @@
 import { Cell, Column, Filter, Row, Sort, Table } from "@prisma/client";
 import { EventEmitter } from "events";
+import { Cursor } from "./routers/cursors";
 
 interface MyEvents {
   "cell.upsert": (cell: Cell) => void;
@@ -18,6 +19,8 @@ interface MyEvents {
   "column.add": (column: Column) => void;
   "column.update": (column: Column) => void;
   "column.delete": (column: Column) => void;
+  "cursor.update": (cursor: Cursor) => void;
+  "cursor.delete": (cursor: { tableId: string; cursorId: string }) => void;
 }
 
 declare interface MyEventEmitter {

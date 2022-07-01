@@ -3,6 +3,7 @@ import superjson from "superjson";
 import { createRouter } from "../createRouter";
 import { cellRouter } from "./cells";
 import { columnsRouter } from "./columns";
+import { cursorRouter } from "./cursors";
 import { filterRouter } from "./filters";
 import { rowRouter } from "./rows";
 import { sortRouter } from "./sorts";
@@ -23,6 +24,7 @@ export const appRouter = createRouter()
   .merge("rows.", rowRouter)
   .merge("cells.", cellRouter)
   .merge("filters.", filterRouter)
-  .merge("sorts.", sortRouter);
+  .merge("sorts.", sortRouter)
+  .merge("cursors.", cursorRouter);
 
 export type AppRouter = typeof appRouter;

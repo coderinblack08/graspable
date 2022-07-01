@@ -1,4 +1,4 @@
-import { Box, ScrollArea } from "@mantine/core";
+import { Box } from "@mantine/core";
 import React from "react";
 import { DataGrid } from "./DataGrid";
 

@@ -21,6 +21,7 @@ import {
 } from "@tabler/icons";
 import { LexoRank } from "lexorank";
 import cloneDeep from "lodash.clonedeep";
+import { useSession } from "next-auth/react";
 import React, { useEffect } from "react";
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import {
@@ -30,6 +31,8 @@ import {
   useRowSelect,
   useTable,
 } from "react-table";
+import { useDebouncedCallback } from "use-debounce";
+import shallow from "zustand/shallow";
 import { InferQueryOutput, trpc } from "../lib/trpc";
 import { EditableCell } from "./EditableCell";
 import { FilterPopover } from "./FilterPopover";
@@ -38,6 +41,7 @@ import { HideColumnPopover } from "./HideCoumnPopover";
 import { IndeterminateCheckbox } from "./IndeterminateCheckbox";
 import { NewColumnPopover } from "./NewColumnPopover";
 import { SortPopover } from "./SortPopover";
+import { useActiveCellStore } from "./useActiveCellStore";
 
 export const useStyles = createStyles((theme) => ({
   table: {
@@ -52,12 +56,12 @@ export const useStyles = createStyles((theme) => ({
     padding: "8px",
     fontSize: theme.fontSizes.sm,
     border: `1px solid ${theme.colors.dark[6]}`,
-    "&:focus-within": {
-      position: "relative",
-      zIndex: 50,
-      borderColor: theme.colors.blue[5],
-      boxShadow: `0 0 0 1px ${theme.colors.blue[5]}`,
-    },
+    // "&:focus-within": {
+    //   position: "relative",
+    //   zIndex: 50,
+    //   borderColor: theme.colors.blue[5],
+    //   boxShadow: `0 0 0 1px ${theme.colors.blue[5]}`,
+    // },
   },
   rowSelected: {
     backgroundColor:
@@ -101,6 +105,7 @@ export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
   const { data: rows } = trpc.useQuery(["rows.byTableId", { tableId }], {
     keepPreviousData: true,
   });
+  const { data: cursors } = trpc.useQuery(["cursors.byTableId", { tableId }]);
   const { data: columns } = trpc.useQuery(["columns.byTableId", { tableId }]);
   const { data: cells } = trpc.useQuery(["cells.byTableId", { tableId }]);
   const utils = trpc.useContext();
@@ -161,11 +166,12 @@ export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
     },
   });
 
-  if (rows && cells && columns) {
+  if (rows && cells && columns && cursors) {
     return (
       <DataGridUI
         workspaceId={workspaceId}
         tableId={tableId}
+        dbCursors={cursors}
         dbRows={rows}
         dbCells={cells}
         dbColumns={columns}
@@ -184,11 +190,13 @@ const DataGridUI: React.FC<{
   workspaceId: string;
   tableId: string;
   dbRows: InferQueryOutput<"rows.byTableId">;
+  dbCursors: InferQueryOutput<"cursors.byTableId">;
   dbColumns: InferQueryOutput<"columns.byTableId">;
   dbCells: InferQueryOutput<"cells.byTableId">;
-}> = ({ workspaceId, tableId, dbCells, dbColumns, dbRows }) => {
+}> = ({ workspaceId, tableId, dbCells, dbColumns, dbRows, dbCursors }) => {
   const { cx, classes } = useStyles();
   const theme = useMantineTheme();
+  const { data: session } = useSession();
   const [skipPageReset, setSkipPageReset] = React.useState(false);
 
   const { data: sorts } = trpc.useQuery(["sorts.byTableId", { tableId }]);
@@ -197,6 +205,10 @@ const DataGridUI: React.FC<{
     "workspace.myMembership",
     { workspaceId },
   ]);
+  const [cursorId, activeCell, setActiveCell, setCursorId] = useActiveCellStore(
+    (store) => [store.id, store.cell, store.setActiveCell, store.setId],
+    shallow
+  );
 
   const RT_COLUMNS = React.useMemo(
     () =>
@@ -288,7 +300,7 @@ const DataGridUI: React.FC<{
       columns: RT_COLUMNS,
       data: records,
       defaultColumn: {
-        Cell: EditableCell(workspaceId, dbColumns),
+        Cell: EditableCell(workspaceId, tableId, dbColumns),
         minWidth: 100,
         maxWidth: 400,
         disableResizing: membership?.role === "viewer",
@@ -348,8 +360,46 @@ const DataGridUI: React.FC<{
   const removeRows = trpc.useMutation(["rows.delete"]);
   const utils = trpc.useContext();
 
+  const upsertCursor = trpc.useMutation(["cursors.upsert"]);
+  trpc.useSubscription(["cursors.onUpdate", { tableId, cursorId }], {
+    onNext() {
+      utils.refetchQueries(["cursors.byTableId", { tableId }]);
+      // utils.setQueryData(["cursors.byTableId", { tableId }], (old) => {
+      //   if ((old || [])?.find((x) => x.id === data.id)) {
+      //     return (old || []).map((x) => (x.id === data.id ? data : x));
+      //   } else {
+      //     return [...(old || []), data];
+      //   }
+      // });
+    },
+  });
+  trpc.useSubscription(["cursors.onDelete", { tableId }], {
+    onNext() {
+      utils.refetchQueries(["cursors.byTableId", { tableId }]);
+    },
+  });
+
+  const debouncedUpdateCursor = useDebouncedCallback(
+    (activeCell: any, tableId: string, cursorId: string | null) => {
+      upsertCursor.mutate(
+        { tableId, ...activeCell, id: cursorId },
+        {
+          onSuccess: (data) => {
+            setCursorId(data.id!);
+            utils.refetchQueries(["cursors.byTableId", { tableId }]);
+          },
+        }
+      );
+    },
+    500
+  );
+
+  useEffect(() => {
+    debouncedUpdateCursor(activeCell, tableId, cursorId);
+  }, [activeCell, tableId]);
+
   trpc.useSubscription(["rows.onUpdateRank", { tableId }], {
-    onNext(data) {
+    onNext() {
       utils.refetchQueries(["rows.byTableId", { tableId }]);
       // utils.setQueryData(["rows.byTableId", { tableId }], (old) => {
       //   console.log(data);
@@ -391,7 +441,57 @@ const DataGridUI: React.FC<{
     }
   };
 
-  useHotkeys([["shift+enter", createNewRow]]);
+  useHotkeys([
+    ["shift+enter", createNewRow],
+    [
+      "ArrowLeft",
+      () => {
+        const activeColumnIndex = dbColumns.findIndex(
+          (x) => x.id === activeCell.columnId
+        );
+        setActiveCell(
+          activeCell.rowId,
+          dbColumns[Math.max(0, activeColumnIndex - 1)].id
+        );
+      },
+    ],
+    [
+      "ArrowRight",
+      () => {
+        const activeColumnIndex = dbColumns.findIndex(
+          (x) => x.id === activeCell.columnId
+        );
+        setActiveCell(
+          activeCell.rowId,
+          dbColumns[Math.min(dbColumns.length - 1, activeColumnIndex + 1)].id
+        );
+      },
+    ],
+    [
+      "ArrowDown",
+      () => {
+        const activeRowIndex = dbRows.findIndex(
+          (x) => x.id === activeCell.rowId
+        );
+        setActiveCell(
+          dbRows[Math.min(dbRows.length - 1, activeRowIndex + 1)].id,
+          activeCell.columnId
+        );
+      },
+    ],
+    [
+      "ArrowUp",
+      () => {
+        const activeRowIndex = dbRows.findIndex(
+          (x) => x.id === activeCell.rowId
+        );
+        setActiveCell(
+          dbRows[Math.max(0, activeRowIndex - 1)].id,
+          activeCell.columnId
+        );
+      },
+    ],
+  ]);
 
   const {
     setColumnOrder,
