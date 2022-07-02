@@ -5,6 +5,7 @@ import { cellRouter } from "./cells";
 import { columnsRouter } from "./columns";
 import { cursorRouter } from "./cursors";
 import { filterRouter } from "./filters";
+import { formRouter } from "./forms";
 import { rowRouter } from "./rows";
 import { sortRouter } from "./sorts";
 import { tablesRouter } from "./tables";
@@ -25,6 +26,7 @@ export const appRouter = createRouter()
   .merge("cells.", cellRouter)
   .merge("filters.", filterRouter)
   .merge("sorts.", sortRouter)
-  .merge("cursors.", cursorRouter);
+  .merge("cursors.", cursorRouter)
+  .merge("forms.", formRouter);
 
 export type AppRouter = typeof appRouter;

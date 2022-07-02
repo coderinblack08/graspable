@@ -14,12 +14,13 @@ import { IconDotsVertical, IconMenu2 } from "@tabler/icons";
 import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import Head from "next/head";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useEffect } from "react";
 import { ShareModal } from "../../components/ShareModal";
 import { TableTabContent } from "../../components/TableTabContent";
 import { WorkspaceDropdown } from "../../components/WorkspaceDropdown";
-import { trpc } from "../../lib/trpc";
+import { InferQueryOutput, trpc } from "../../lib/trpc";
 import DashboardSkeleton from "../../public/dashboard-skeleton.svg";
 
 const WorkspacePage: React.FC<
@@ -67,6 +68,11 @@ const WorkspacePage: React.FC<
       );
     },
   });
+  trpc.useSubscription(["workspace.onDeleteMember", { workspaceId: id }], {
+    onNext() {
+      window.location.reload();
+    },
+  });
 
   const router = useRouter();
 
@@ -99,9 +105,11 @@ const WorkspacePage: React.FC<
           p={8}
         >
           <Group align="center" spacing={8}>
-            <ActionIcon color="gray">
-              <IconMenu2 size={16} />
-            </ActionIcon>
+            <Link href="/app" passHref>
+              <ActionIcon color="gray" component="a">
+                <IconMenu2 size={16} />
+              </ActionIcon>
+            </Link>
             <WorkspaceDropdown includeControl workspace={workspace} />
             <Button
               color="dark"

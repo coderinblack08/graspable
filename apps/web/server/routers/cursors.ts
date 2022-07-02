@@ -5,6 +5,7 @@ import redis from "../../lib/redis";
 import { createRouter } from "../createRouter";
 import { ee } from "../ee";
 import { User } from "@prisma/client";
+import { useMemberCheck } from "../../lib/security-utils";
 
 const zodCursor = z.object({
   rowId: z.string(),
@@ -23,6 +24,7 @@ export const cursorRouter = createRouter()
     meta: { hasAuth: true },
     input: zodCursor,
     async resolve({ input, ctx }) {
+      await useMemberCheck(ctx, { tableId: input.tableId }, true);
       if (!input.id) input.id = nanoid(12);
       const data = { ...input, userId: ctx.session!.user.id };
       await redis.set(
@@ -41,7 +43,8 @@ export const cursorRouter = createRouter()
     input: z.object({
       tableId: z.string(),
     }),
-    async resolve({ input }) {
+    async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, { tableId: input.tableId }, true);
       return new Subscription<any>((emit) => {
         const onDelete = (cursor: any) => {
           if (cursor.tableId === input.tableId) {
@@ -62,6 +65,7 @@ export const cursorRouter = createRouter()
       cursorId: z.string().nullish(),
     }),
     async resolve({ ctx, input }) {
+      await useMemberCheck(ctx, { tableId: input.tableId }, true);
       return new Subscription<Cursor>((emit) => {
         const onUpdate = (cursor: Cursor) => {
           if (cursor.tableId === input.tableId) {
@@ -94,6 +98,7 @@ export const cursorRouter = createRouter()
       //     message: error.message,
       //   });
       // });
+      await useMemberCheck(ctx, { tableId: input.tableId }, true);
       const keys = await redis.keys(`cursor:${input.tableId}:*`);
       if (keys.length) {
         const values = await redis.mget(...keys);

@@ -1,8 +1,10 @@
-import { MemberRole, Prisma } from "@prisma/client";
-import { TRPCError } from "@trpc/server";
+import { Member, MemberRole, Prisma } from "@prisma/client";
+import { Subscription, TRPCError } from "@trpc/server";
 import { z } from "zod";
+import redis from "../../lib/redis";
 import { useMemberCheck, useOwnerCheck } from "../../lib/security-utils";
 import { createRouter } from "../createRouter";
+import { ee } from "../ee";
 import { createNewTable } from "./tables";
 
 export const workspaceRouter = createRouter()
@@ -113,6 +115,28 @@ export const workspaceRouter = createRouter()
       return member;
     },
   })
+  .subscription("onDeleteMember", {
+    meta: { hasAuth: true },
+    input: z.object({
+      workspaceId: z.string(),
+    }),
+    async resolve({ ctx, input }) {
+      return new Subscription<Member>((emit) => {
+        const onDelete = (member: Member) => {
+          if (
+            input.workspaceId === member.workspaceId &&
+            ctx.session?.user.id === member.userId
+          ) {
+            emit.data(member);
+          }
+        };
+        ee.on("member.delete", onDelete);
+        return () => {
+          ee.off("member.delete", onDelete);
+        };
+      });
+    },
+  })
   .mutation("deleteMember", {
     meta: { hasAuth: true },
     input: z.object({
@@ -128,6 +152,23 @@ export const workspaceRouter = createRouter()
             userId: input.userId,
           },
         },
+      });
+      ee.emit("member.delete", member);
+      const tables = await ctx.prisma.table.findMany({
+        where: { workspaceId: input.workspaceId },
+      });
+      tables.forEach(async (table) => {
+        const keys = await redis.keys(`cursor:${table.id}:*`);
+        if (keys.length > 0) {
+          const cursors = (await redis.mget(...keys)).map((cursor) =>
+            JSON.parse(cursor || "{}")
+          );
+          cursors
+            .filter((cursor) => cursor.userId === input.userId)
+            .forEach(async (cursor) => {
+              await redis.del(`cursor:${table.id}:${cursor.id}`);
+            });
+        }
       });
       return member;
     },

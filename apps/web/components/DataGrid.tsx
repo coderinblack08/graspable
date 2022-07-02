@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Box,
   Button,
   Center,
@@ -7,6 +6,7 @@ import {
   Group,
   Loader,
   ScrollArea,
+  Select,
   Tooltip,
   useMantineTheme,
 } from "@mantine/core";
@@ -16,7 +16,6 @@ import {
   IconList,
   IconPlus,
   IconRobot,
-  IconSearch,
   IconTrash,
 } from "@tabler/icons";
 import { LexoRank } from "lexorank";
@@ -36,10 +35,12 @@ import shallow from "zustand/shallow";
 import { InferQueryOutput, trpc } from "../lib/trpc";
 import { EditableCell } from "./EditableCell";
 import { FilterPopover } from "./FilterPopover";
+import { FormDrawer } from "./FormDrawer";
 import { HeaderCell } from "./HeaderCell";
 import { HideColumnPopover } from "./HideCoumnPopover";
 import { IndeterminateCheckbox } from "./IndeterminateCheckbox";
 import { NewColumnPopover } from "./NewColumnPopover";
+import { NewFormModal } from "./NewFormModal";
 import { SortPopover } from "./SortPopover";
 import { useActiveCellStore } from "./useActiveCellStore";
 
@@ -134,12 +135,14 @@ export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
     },
   });
   trpc.useSubscription(["columns.onUpdate", { tableId }], {
-    onNext(ids) {
+    onNext() {
       utils.refetchQueries(["columns.byTableId", { tableId }]);
     },
   });
   trpc.useSubscription(["rows.onDelete", { tableId }], {
     onNext(ids) {
+      console.log(ids);
+
       utils.setQueryData(["rows.byTableId", { tableId }], (old) => {
         if (!old) return [];
         return old.filter((x) => !ids.includes(x.id));
@@ -362,20 +365,23 @@ const DataGridUI: React.FC<{
 
   const upsertCursor = trpc.useMutation(["cursors.upsert"]);
   trpc.useSubscription(["cursors.onUpdate", { tableId, cursorId }], {
-    onNext() {
-      utils.refetchQueries(["cursors.byTableId", { tableId }]);
-      // utils.setQueryData(["cursors.byTableId", { tableId }], (old) => {
-      //   if ((old || [])?.find((x) => x.id === data.id)) {
-      //     return (old || []).map((x) => (x.id === data.id ? data : x));
-      //   } else {
-      //     return [...(old || []), data];
-      //   }
-      // });
+    onNext(data) {
+      // utils.refetchQueries(["cursors.byTableId", { tableId }]);
+      utils.setQueryData(["cursors.byTableId", { tableId }], (old) => {
+        if ((old || [])?.find((x) => x.id === data.id)) {
+          return (old || []).map((x) => (x.id === data.id ? data : x));
+        } else {
+          return [...(old || []), data];
+        }
+      });
     },
   });
   trpc.useSubscription(["cursors.onDelete", { tableId }], {
-    onNext() {
-      utils.refetchQueries(["cursors.byTableId", { tableId }]);
+    onNext(data) {
+      // utils.refetchQueries(["cursors.byTableId", { tableId }]);
+      utils.setQueryData(["cursors.byTableId", { tableId }], (old) => {
+        return (old || []).filter((x) => x.id !== data);
+      });
     },
   });
 
@@ -386,7 +392,7 @@ const DataGridUI: React.FC<{
         {
           onSuccess: (data) => {
             setCursorId(data.id!);
-            utils.refetchQueries(["cursors.byTableId", { tableId }]);
+            // utils.refetchQueries(["cursors.byTableId", { tableId }]);
           },
         }
       );
@@ -505,6 +511,10 @@ const DataGridUI: React.FC<{
     state,
   } = tableInstance;
 
+  // const outsideRef = useClickOutside(() => {
+  //   setActiveCell("", "");
+  // });
+
   return (
     <Box>
       <Group
@@ -516,13 +526,26 @@ const DataGridUI: React.FC<{
           borderColor: theme.colors.dark[5],
         }}
       >
-        <Group spacing={8}>
+        <Group spacing={8} align="center">
           {/* <ActionIcon color="blue" variant="outline" size="sm">
             <IconPlus size={16} />
           </ActionIcon> */}
-          <Button variant="outline" leftIcon={<IconLayout size={16} />} compact>
-            Views
-          </Button>
+          <Select
+            value="table"
+            size="xs"
+            variant="filled"
+            color="blue"
+            icon={<IconLayout size={16} />}
+            styles={{
+              input: { fontWeight: 700, fontSize: 14 },
+              wrapper: { width: 120 },
+            }}
+            data={[
+              { label: "Table", value: "table" },
+              { label: "Cards", value: "cards" },
+              { label: "Calendar", value: "calendar" },
+            ]}
+          />
           {Object.keys(state.selectedRowIds).length > 0 ? (
             <>
               <Button
@@ -560,15 +583,10 @@ const DataGridUI: React.FC<{
           )}
         </Group>
         <Group spacing={8}>
-          <Button leftIcon={<IconList size={16} />} variant="outline" compact>
-            Form
-          </Button>
+          <NewFormModal tableId={tableId} />
           <Button leftIcon={<IconRobot size={16} />} variant="outline" compact>
             Automation
           </Button>
-          <ActionIcon color="blue" variant="transparent" size="sm">
-            <IconSearch size={16} />
-          </ActionIcon>
         </Group>
       </Group>
 
@@ -577,6 +595,7 @@ const DataGridUI: React.FC<{
           <Box
             // component="table"
             className={classes.table}
+            // ref={outsideRef}
             {...getTableProps()}
           >
             <DragDropContext

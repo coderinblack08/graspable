@@ -83,7 +83,7 @@ export const rowRouter = createRouter()
       tableId: z.string(),
     }),
     async resolve({ ctx, input }) {
-      await useMemberCheck(ctx, { tableId: input.tableId }, false);
+      await useMemberCheck(ctx, { tableId: input.tableId }, true);
       return new Subscription<string[]>((emit) => {
         const onUpsert = ({
           ids,

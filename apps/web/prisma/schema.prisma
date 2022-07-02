@@ -71,20 +71,21 @@ model Cell {
 }
 
 model Column {
-  id              String     @id @default(cuid())
-  width           Int        @default(150)
-  name            String     @db.VarChar
+  id              String      @id @default(cuid())
+  width           Int         @default(150)
+  name            String      @db.VarChar
   type            ColumnType
   dropdownOptions String[]
   fileUploadPath  String?
   rank            String
   tableId         String
-  updatedAt       DateTime   @updatedAt
-  createdAt       DateTime   @default(now()) @db.Timestamp(6)
-  Table           Table      @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  updatedAt       DateTime    @updatedAt
+  createdAt       DateTime    @default(now()) @db.Timestamp(6)
+  Table           Table       @relation(fields: [tableId], references: [id], onDelete: Cascade)
   Cell            Cell[]
   Filter          Filter[]
   Sort            Sort[]
+  FormField       FormField[]
 }
 
 model Member {
@@ -96,6 +97,28 @@ model Member {
   active      Boolean    @default(true)
 
   @@id([userId, workspaceId])
+}
+
+model Form {
+  id                   String      @id @default(cuid())
+  name                 String      @db.VarChar
+  description          String
+  authenticatedOnly    Boolean     @default(false)
+  singleSubmissionOnly Boolean     @default(false)
+  tableId              String      @unique
+  Table                Table       @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  fields               FormField[]
+}
+
+model FormField {
+  id          String  @id @default(cuid())
+  label       String
+  description String?
+  required    Boolean @default(false)
+  columnId    String
+  Column      Column  @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  formId      String
+  Form        Form    @relation(fields: [formId], references: [id], onDelete: Cascade)
 }
 
 model Row {
@@ -120,6 +143,7 @@ model Table {
   Cell        Cell[]
   Filter      Filter[]
   Sort        Sort[]
+  Form        Form?
 }
 
 enum FilterOperation {

@@ -37,7 +37,7 @@ export const EditableCell = (
       (state) => [state.cell, state.setActiveCell],
       shallow
     );
-    const ref = React.useRef<HTMLDivElement>(null);
+    const ref = React.useRef<any>(null);
     const { data: cursors } = trpc.useQuery(["cursors.byTableId", { tableId }]);
     const activeCursor = useMemo(
       () =>
@@ -85,7 +85,15 @@ export const EditableCell = (
       }
     }, [toggle]);
 
-    useHotkeys([["enter", () => isActive && setToggle(true)]]);
+    useHotkeys([
+      [
+        "Enter",
+        () => {
+          if (isActive && membership?.role !== "viewer") setToggle(false);
+        },
+      ],
+    ]);
+
     const { hovered, ref: hoverRef } = useHover();
 
     return (
@@ -95,6 +103,7 @@ export const EditableCell = (
         sx={(theme) => ({
           position: "relative",
           zIndex: 50,
+
           boxShadow: isActive
             ? `0 0 0 2px ${theme.colors.blue[5]}`
             : activeCursor
@@ -112,13 +121,15 @@ export const EditableCell = (
                     hoverRef.current.getBoundingClientRect();
                   return {
                     position: "fixed",
+                    borderTopLeftRadius: 4,
+                    borderTopRightRadius: 4,
                     left: left - 2,
                     top: top - 17,
                     backgroundColor: theme.colors.red[5],
                     color: "white",
                     fontWeight: 700,
                     fontSize: 10,
-                    padding: "0px 4px",
+                    padding: "0px 6px",
                   };
                 }
                 return {};
@@ -129,10 +140,10 @@ export const EditableCell = (
           </Portal>
         ) : null}
         <Group
-          sx={{ height: "100%", userSelect: "none" }}
+          sx={{ height: "38px", userSelect: "none", padding: 8 }}
           px={12}
           hidden={!toggle || column?.type === "checkbox"}
-          onDoubleClick={toggleInput}
+          onDoubleClick={membership?.role !== "viewer" ? toggleInput : () => {}}
         >
           {(() => {
             switch (column?.type) {
@@ -165,6 +176,7 @@ export const EditableCell = (
                     onDropdownClose={() => setToggle(true)}
                     styles={styles}
                     value={value && new Date(value)}
+                    readOnly={membership?.role === "viewer"}
                   />
                 );
               case "checkbox":
@@ -182,6 +194,7 @@ export const EditableCell = (
                             }
                           : undefined
                       }
+                      readOnly={membership?.role === "viewer"}
                     />
                   </Center>
                 );
@@ -200,6 +213,7 @@ export const EditableCell = (
                           }
                         : undefined
                     }
+                    readOnly={membership?.role === "viewer"}
                     styles={styles}
                   />
                 );
@@ -219,6 +233,7 @@ export const EditableCell = (
                           }
                         : undefined
                     }
+                    readOnly={membership?.role === "viewer"}
                   />
                 );
               case "dropdown":
@@ -243,6 +258,7 @@ export const EditableCell = (
                         value: x,
                       })) || []
                     }
+                    readOnly={membership?.role === "viewer"}
                   />
                 );
               default:
@@ -260,6 +276,7 @@ export const EditableCell = (
                           }
                         : undefined
                     }
+                    readOnly={membership?.role === "viewer"}
                   />
                 );
             }
