@@ -1,15 +1,15 @@
 import {
   AppShell,
-  Box,
+  Avatar,
   Button,
   Center,
   Checkbox,
   Divider,
   Group,
   InputWrapper,
+  Modal,
   NumberInput,
   Paper,
-  ScrollArea,
   Select,
   Space,
   Stack,
@@ -19,16 +19,19 @@ import {
   useMantineTheme,
 } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
-import { Field, Form, Formik, useField } from "formik";
 import { showNotification } from "@mantine/notifications";
+import { IconCheck, IconExternalLink } from "@tabler/icons";
+import { Field, Form, Formik, useField } from "formik";
 import {
   GetServerSideProps,
   InferGetServerSidePropsType,
   NextPage,
 } from "next";
-import { InferQueryOutput, trpc } from "../../lib/trpc";
-import { IconCheck } from "@tabler/icons";
+import { useSession } from "next-auth/react";
+import Head from "next/head";
+import Link from "next/link";
 import { useState } from "react";
+import { InferQueryOutput, trpc } from "../../lib/trpc";
 
 const FormInput: React.FC<{
   label: string;
@@ -75,7 +78,11 @@ const FormInput: React.FC<{
           description={description}
           required={required}
         >
-          <Field as={Checkbox} name={column.id} />
+          <Checkbox
+            checked={value ? (value === "true" ? true : false) : false}
+            onChange={(e: any) => setValue(e.target.checked.toString())}
+            name={column.id}
+          />
         </InputWrapper>
       );
     case "dropdown":
@@ -106,6 +113,7 @@ const FormInput: React.FC<{
           type="url"
           label={label}
           placeholder="URL Input"
+          value={value || ""}
           description={description}
           required={required}
         />
@@ -118,6 +126,7 @@ const FormInput: React.FC<{
           label={label}
           error={error}
           placeholder="Text Input"
+          value={value || ""}
           description={description}
           required={required}
         />
@@ -130,11 +139,36 @@ const FormPage: NextPage<
 > = ({ id }) => {
   const theme = useMantineTheme();
   const [submitted, setSubmitted] = useState(false);
+  const { data: session } = useSession();
   const { data: form } = trpc.useQuery(["forms.byTableId", { tableId: id }]);
   const submitForm = trpc.useMutation(["forms.submit"]);
 
   return (
     <AppShell sx={{ backgroundColor: theme.colors.dark[9], height: "100vh" }}>
+      <Head>
+        <title>Form: {form?.name}</title>
+      </Head>
+      {form?.authenticatedOnly && !session?.user ? (
+        <Modal withCloseButton={false} onClose={() => {}} opened={true}>
+          <Text>This form requires you to be logged in.</Text>
+          <Link
+            href={{
+              pathname: "/auth/login",
+              query: { redirect: `/forms/${encodeURIComponent(id)}` },
+            }}
+            passHref
+          >
+            <Button
+              component="a"
+              leftIcon={<IconExternalLink size={16} />}
+              mt="md"
+              compact
+            >
+              Log In
+            </Button>
+          </Link>
+        </Modal>
+      ) : null}
       <Center my={32}>
         <Stack align="center">
           <Paper sx={{ width: 560 }} shadow="md" p="lg" radius="md">
@@ -147,7 +181,10 @@ const FormPage: NextPage<
             <Formik
               initialValues={
                 form?.fields.reduce(
-                  (acc, f) => ({ ...acc, [f.columnId]: "" }),
+                  (acc, f) => ({
+                    ...acc,
+                    [f.columnId]: f.Column.type === "checkbox" ? "false" : "",
+                  }),
                   new Object()
                 ) || {}
               }
@@ -176,6 +213,15 @@ const FormPage: NextPage<
                         });
                         setSubmitted(true);
                       },
+                      onError: (error) => {
+                        if (error.data?.code === "CONFLICT") {
+                          showNotification({
+                            color: "red",
+                            title: "Error",
+                            message: "You already submitted a response",
+                          });
+                        }
+                      },
                     }
                   );
                 }
@@ -191,6 +237,17 @@ const FormPage: NextPage<
                     </Group>
                   ) : (
                     <Stack>
+                      {form?.authenticatedOnly && session?.user ? (
+                        <Text>
+                          Submitting as{" "}
+                          <Avatar
+                            src={session.user.image}
+                            size="xs"
+                            sx={{ display: "inline-block" }}
+                          />{" "}
+                          {session.user.name}
+                        </Text>
+                      ) : null}
                       {form?.fields.map((f) => (
                         <FormInput
                           key={f.id}

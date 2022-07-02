@@ -36,15 +36,16 @@ model Session {
 }
 
 model User {
-  id            String      @id @default(cuid())
-  name          String?
-  email         String?     @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  Member        Member[]
-  Workspace     Workspace[]
+  id                      String                    @id @default(cuid())
+  name                    String?
+  email                   String?                   @unique
+  emailVerified           DateTime?
+  image                   String?
+  accounts                Account[]
+  sessions                Session[]
+  Member                  Member[]
+  Workspace               Workspace[]
+  AuthenticatedSubmission AuthenticatedSubmission[]
 }
 
 model VerificationToken {
@@ -99,15 +100,27 @@ model Member {
   @@id([userId, workspaceId])
 }
 
+model AuthenticatedSubmission {
+  id        String   @id @default(cuid())
+  userId    String
+  formId    String
+  rowId     String
+  row       Row      @relation(fields: [rowId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  form      Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+}
+
 model Form {
-  id                   String      @id @default(cuid())
-  name                 String      @db.VarChar
-  description          String
-  authenticatedOnly    Boolean     @default(false)
-  singleSubmissionOnly Boolean     @default(false)
-  tableId              String      @unique
-  Table                Table       @relation(fields: [tableId], references: [id], onDelete: Cascade)
-  fields               FormField[]
+  id                      String                    @id @default(cuid())
+  name                    String                    @db.VarChar
+  description             String
+  authenticatedOnly       Boolean                   @default(false)
+  singleSubmissionOnly    Boolean                   @default(false)
+  tableId                 String                    @unique
+  Table                   Table                     @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  fields                  FormField[]
+  AuthenticatedSubmission AuthenticatedSubmission[]
 }
 
 model FormField {
@@ -122,13 +135,14 @@ model FormField {
 }
 
 model Row {
-  id        String   @id @default(cuid())
-  tableId   String
-  rank      String
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  Table     Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
-  Cell      Cell[]
+  id                      String                    @id @default(cuid())
+  tableId                 String
+  rank                    String
+  updatedAt               DateTime                  @updatedAt
+  createdAt               DateTime                  @default(now()) @db.Timestamp(6)
+  Table                   Table                     @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  Cell                    Cell[]
+  AuthenticatedSubmission AuthenticatedSubmission[]
 }
 
 model Table {

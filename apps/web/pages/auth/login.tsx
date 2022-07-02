@@ -67,7 +67,11 @@ const LoginPage: NextPage<{
               color="dark"
               variant="default"
               leftIcon={<FaGoogle size={16} />}
-              onClick={() => signIn("google", { callbackUrl: "/app" })}
+              onClick={() =>
+                signIn("google", {
+                  callbackUrl: router.query.redirect?.toString() || "/app",
+                })
+              }
               sx={(theme) => ({ fontSize: theme.fontSizes.md })}
               size="lg"
               fullWidth
@@ -79,7 +83,11 @@ const LoginPage: NextPage<{
               variant="default"
               leftIcon={<FaGithub size={16} />}
               size="lg"
-              onClick={() => signIn("github", { callbackUrl: "/app" })}
+              onClick={() =>
+                signIn("github", {
+                  callbackUrl: router.query.redirect?.toString() || "/app",
+                })
+              }
               sx={(theme) => ({ fontSize: theme.fontSizes.md })}
               fullWidth
             >

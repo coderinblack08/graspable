@@ -49,6 +49,29 @@ export const formRouter = createRouter()
       if (!form) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
+      if (form.authenticatedOnly && !ctx.session) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Form requires authentication",
+        });
+      }
+      if (form.authenticatedOnly) {
+        if (form.singleSubmissionOnly) {
+          const existingSubmission =
+            await ctx.prisma.authenticatedSubmission.findFirst({
+              where: {
+                formId: form.id,
+                userId: ctx.session!.user.id,
+              },
+            });
+          if (existingSubmission) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "Form already submitted",
+            });
+          }
+        }
+      }
       const lastRowRank = await ctx.prisma.$queryRaw<
         { max: string }[]
       >`select max(rank) from "Row" where "tableId" = ${form.tableId}`;
@@ -67,6 +90,12 @@ export const formRouter = createRouter()
         if (typeof value === "boolean" || typeof value === "number") {
           value = value.toString();
         }
+        if (!value && field.required) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `${field.label} is required`,
+          });
+        }
         const cell = await ctx.prisma.cell.create({
           data: {
             rowId: row.id,
@@ -76,6 +105,15 @@ export const formRouter = createRouter()
           },
         });
         ee.emit("cell.upsert", cell);
+      }
+      if (form.authenticatedOnly) {
+        await ctx.prisma.authenticatedSubmission.create({
+          data: {
+            userId: ctx.session!.user.id,
+            formId: form.id,
+            rowId: row.id,
+          },
+        });
       }
       return true;
     },

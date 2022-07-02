@@ -144,11 +144,15 @@ export const NewFormModal: React.FC<NewFormModalProps> = ({ tableId }) => {
                     <Field
                       name="authenticatedOnly"
                       as={Checkbox}
+                      checked={values.authenticatedOnly}
                       label="Authenticated submissions only"
                     />
                     <Tooltip
-                      disabled={values.authenticatedOnly}
-                      label="Enable authenticated submissions only"
+                      label={
+                        values.authenticatedOnly
+                          ? "NOTE: After deleting a user-submitted row, they can submit another response"
+                          : "Enable authenticated submissions only"
+                      }
                       placement="start"
                       width="auto"
                       withArrow
@@ -156,6 +160,7 @@ export const NewFormModal: React.FC<NewFormModalProps> = ({ tableId }) => {
                       <Field
                         name="singleSubmissionOnly"
                         as={Checkbox}
+                        checked={values.singleSubmissionOnly}
                         label="Restrict submissions to one per user"
                         disabled={!values.authenticatedOnly}
                       />
