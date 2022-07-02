@@ -11,13 +11,7 @@ import {
   useMantineTheme,
 } from "@mantine/core";
 import { useHotkeys, useListState } from "@mantine/hooks";
-import {
-  IconLayout,
-  IconList,
-  IconPlus,
-  IconRobot,
-  IconTrash,
-} from "@tabler/icons";
+import { IconLayout, IconPlus, IconRobot, IconTrash } from "@tabler/icons";
 import { LexoRank } from "lexorank";
 import cloneDeep from "lodash.clonedeep";
 import { useSession } from "next-auth/react";
@@ -35,7 +29,6 @@ import shallow from "zustand/shallow";
 import { InferQueryOutput, trpc } from "../lib/trpc";
 import { EditableCell } from "./EditableCell";
 import { FilterPopover } from "./FilterPopover";
-import { FormDrawer } from "./FormDrawer";
 import { HeaderCell } from "./HeaderCell";
 import { HideColumnPopover } from "./HideCoumnPopover";
 import { IndeterminateCheckbox } from "./IndeterminateCheckbox";
@@ -106,7 +99,6 @@ export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
   const { data: rows } = trpc.useQuery(["rows.byTableId", { tableId }], {
     keepPreviousData: true,
   });
-  const { data: cursors } = trpc.useQuery(["cursors.byTableId", { tableId }]);
   const { data: columns } = trpc.useQuery(["columns.byTableId", { tableId }]);
   const { data: cells } = trpc.useQuery(["cells.byTableId", { tableId }]);
   const utils = trpc.useContext();
@@ -169,12 +161,11 @@ export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
     },
   });
 
-  if (rows && cells && columns && cursors) {
+  if (rows && cells && columns) {
     return (
       <DataGridUI
         workspaceId={workspaceId}
         tableId={tableId}
-        dbCursors={cursors}
         dbRows={rows}
         dbCells={cells}
         dbColumns={columns}
@@ -193,10 +184,9 @@ const DataGridUI: React.FC<{
   workspaceId: string;
   tableId: string;
   dbRows: InferQueryOutput<"rows.byTableId">;
-  dbCursors: InferQueryOutput<"cursors.byTableId">;
   dbColumns: InferQueryOutput<"columns.byTableId">;
   dbCells: InferQueryOutput<"cells.byTableId">;
-}> = ({ workspaceId, tableId, dbCells, dbColumns, dbRows, dbCursors }) => {
+}> = ({ workspaceId, tableId, dbCells, dbColumns, dbRows }) => {
   const { cx, classes } = useStyles();
   const theme = useMantineTheme();
   const { data: session } = useSession();

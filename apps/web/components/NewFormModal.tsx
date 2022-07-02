@@ -2,9 +2,7 @@ import {
   Accordion,
   Button,
   Checkbox,
-  Divider,
   Group,
-  Input,
   Modal,
   Stack,
   Stepper,
@@ -13,14 +11,15 @@ import {
   TextInput,
   Tooltip,
 } from "@mantine/core";
-import { toFormikValidationSchema } from "zod-formik-adapter";
+import { useClipboard } from "@mantine/hooks";
 import { IconList } from "@tabler/icons";
 import { Field, Form, Formik } from "formik";
+import merge from "lodash.merge";
 import React, { useState } from "react";
+import { toFormikValidationSchema } from "zod-formik-adapter";
 import { trpc } from "../lib/trpc";
-import { HeaderCellIcon } from "./HeaderCell";
 import { formObject } from "../lib/validation";
-import { useClipboard } from "@mantine/hooks";
+import { HeaderCellIcon } from "./HeaderCell";
 
 interface NewFormModalProps {
   tableId: string;
@@ -35,6 +34,21 @@ export const NewFormModal: React.FC<NewFormModalProps> = ({ tableId }) => {
   const [active, setActive] = useState(0);
   const utils = trpc.useContext();
   const clipboard = useClipboard({ timeout: 500 });
+
+  trpc.useSubscription(["forms.onCreate", { tableId }], {
+    onNext(data) {
+      utils.setQueryData(["forms.byTableId", { tableId }], data as any);
+    },
+  });
+
+  trpc.useSubscription(["forms.onUpdate", { tableId }], {
+    onNext(data) {
+      utils.setQueryData(
+        ["forms.byTableId", { tableId }],
+        (old) => merge(old, data) as any
+      );
+    },
+  });
 
   return (
     <>
@@ -53,13 +67,17 @@ export const NewFormModal: React.FC<NewFormModalProps> = ({ tableId }) => {
             })}
             label="Shareable Link"
             description="Send this link to anyone for them to fill out the form"
-            value={`${process.env.NEXT_PUBLIC_APP_URL}/form/${form?.id}`}
+            value={`${process.env.NEXT_PUBLIC_APP_URL}/forms/${form?.tableId}`}
             rightSectionWidth={clipboard.copied ? 76 : 64}
             rightSection={
               <Button
                 compact
                 color="dark"
-                onClick={() => clipboard.copy("Hello, world!")}
+                onClick={() =>
+                  clipboard.copy(
+                    `${process.env.NEXT_PUBLIC_APP_URL}/forms/${form?.tableId}`
+                  )
+                }
               >
                 {clipboard.copied ? "Copied" : "Copy"}
               </Button>
@@ -87,23 +105,9 @@ export const NewFormModal: React.FC<NewFormModalProps> = ({ tableId }) => {
           onSubmit={async (values) => {
             if (!form) {
               delete values.id;
-              await createForm.mutateAsync(values, {
-                onSuccess: (data) => {
-                  utils.setQueryData(
-                    ["forms.byTableId", { tableId }],
-                    data as any
-                  );
-                },
-              });
+              await createForm.mutateAsync(values);
             } else {
-              await updateForm.mutateAsync(values, {
-                onSuccess: () => {
-                  utils.setQueryData(
-                    ["forms.byTableId", { tableId }],
-                    values as any
-                  );
-                },
-              });
+              await updateForm.mutateAsync(values);
             }
           }}
           enableReinitialize

@@ -1,21 +1,21 @@
-import superjson from "superjson";
-import { Global, InputStylesParams, MantineProvider } from "@mantine/core";
+import { NotificationsProvider } from "@mantine/notifications";
+import { Global, MantineProvider } from "@mantine/core";
 import { httpBatchLink } from "@trpc/client/links/httpBatchLink";
 import { loggerLink } from "@trpc/client/links/loggerLink";
-import { wsLink, createWSClient } from "@trpc/client/links/wsLink";
+import { createWSClient, wsLink } from "@trpc/client/links/wsLink";
 import { withTRPC } from "@trpc/next";
 import { SessionProvider } from "next-auth/react";
 import type { AppProps } from "next/app";
+import { ReactQueryDevtools } from "react-query/devtools";
+import superjson from "superjson";
 import { AppRouter } from "../server/routers/_app";
 
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   return (
     <SessionProvider session={session}>
-      <Global
-        styles={{
-          "html, body": { margin: 0, height: "100%", overflow: "hidden" },
-        }}
-      />
+      {process.env.NODE_ENV !== "production" && (
+        <ReactQueryDevtools initialIsOpen={false} />
+      )}
       <MantineProvider
         withGlobalStyles
         withNormalizeCSS
@@ -30,7 +30,19 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
           // }),
         }}
       >
-        <Component {...pageProps} />
+        <Global
+          styles={(theme) => ({
+            "html, body": {
+              // margin: 0,
+              // height: "100%",
+              // overflow: "hidden",
+              backgroundColor: theme.colors.dark[9],
+            },
+          })}
+        />
+        <NotificationsProvider>
+          <Component {...pageProps} />
+        </NotificationsProvider>
       </MantineProvider>
     </SessionProvider>
   );

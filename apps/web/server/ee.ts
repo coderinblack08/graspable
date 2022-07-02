@@ -1,4 +1,14 @@
-import { Cell, Column, Filter, Member, Row, Sort, Table } from "@prisma/client";
+import {
+  Cell,
+  Column,
+  Filter,
+  Form,
+  FormField,
+  Member,
+  Row,
+  Sort,
+  Table,
+} from "@prisma/client";
 import { EventEmitter } from "events";
 import { Cursor } from "./routers/cursors";
 
@@ -22,6 +32,8 @@ interface MyEvents {
   "cursor.update": (cursor: Cursor) => void;
   "cursor.delete": (cursor: { tableId: string; cursorId: string }) => void;
   "member.delete": (member: Member) => void;
+  "form.create": (form: Form) => void;
+  "form.update": (form: Form & { fields: FormField[] }) => void;
 }
 
 declare interface MyEventEmitter {

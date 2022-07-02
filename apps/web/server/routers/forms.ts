@@ -1,7 +1,11 @@
+import { Form } from "@prisma/client";
+import { Subscription, TRPCError } from "@trpc/server";
+import { LexoRank } from "lexorank";
 import { z } from "zod";
 import { useMemberCheck } from "../../lib/security-utils";
 import { formObject } from "../../lib/validation";
 import { createRouter } from "../createRouter";
+import { ee } from "../ee";
 
 export const formRouter = createRouter()
   .query("byTableId", {
@@ -14,17 +18,109 @@ export const formRouter = createRouter()
           tableId: input.tableId,
         },
         include: {
-          fields: true,
+          fields: {
+            include: {
+              Column: true,
+            },
+          },
         },
       });
       return form;
+    },
+  })
+  .mutation("submit", {
+    input: z.object({
+      formId: z.string(),
+      data: z.any(),
+    }),
+    async resolve({ ctx, input }) {
+      const form = await ctx.prisma.form.findFirst({
+        where: {
+          id: input.formId,
+        },
+        include: {
+          fields: {
+            include: {
+              Column: true,
+            },
+          },
+        },
+      });
+      if (!form) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      const lastRowRank = await ctx.prisma.$queryRaw<
+        { max: string }[]
+      >`select max(rank) from "Row" where "tableId" = ${form.tableId}`;
+      const row = await ctx.prisma.row.create({
+        data: {
+          rank: LexoRank.parse(lastRowRank[0].max).genNext().toString(),
+          tableId: form.tableId,
+        },
+      });
+      ee.emit("row.add", row);
+      for (const field of form.fields) {
+        let value = input.data[field.columnId];
+        if (value instanceof Array) {
+          value = JSON.stringify(value);
+        }
+        if (typeof value === "boolean" || typeof value === "number") {
+          value = value.toString();
+        }
+        const cell = await ctx.prisma.cell.create({
+          data: {
+            rowId: row.id,
+            columnId: field.Column.id,
+            tableId: form.tableId,
+            value,
+          },
+        });
+        ee.emit("cell.upsert", cell);
+      }
+      return true;
+    },
+  })
+  .subscription("onCreate", {
+    input: z.object({
+      tableId: z.string(),
+    }),
+    resolve({ input }) {
+      return new Subscription<Form>((emit) => {
+        const onCreate = async (form: Form) => {
+          if (form.tableId === input.tableId) {
+            emit.data(form);
+          }
+        };
+        ee.on("form.create", onCreate);
+        return () => {
+          ee.off("form.create", onCreate);
+        };
+      });
+    },
+  })
+  .subscription("onUpdate", {
+    input: z.object({
+      tableId: z.string(),
+    }),
+    resolve({ input }) {
+      return new Subscription<Form>((emit) => {
+        const onUpdate = async (form: Form) => {
+          if (form.tableId === input.tableId) {
+            emit.data(form);
+          }
+        };
+        ee.on("form.update", onUpdate);
+        return () => {
+          ee.off("form.update", onUpdate);
+        };
+      });
     },
   })
   .mutation("create", {
     input: formObject,
     async resolve({ ctx, input }) {
       await useMemberCheck(ctx, { tableId: input.tableId }, false);
-      return ctx.prisma.form.create({
+      const form = await ctx.prisma.form.create({
         data: {
           tableId: input.tableId,
           name: input.name,
@@ -44,6 +140,8 @@ export const formRouter = createRouter()
         },
         include: { fields: true },
       });
+      ee.emit("form.create", form);
+      return form;
     },
   })
   .mutation("update", {
@@ -66,7 +164,7 @@ export const formRouter = createRouter()
           );
         }
       }
-      await ctx.prisma.$transaction([
+      const [form, ...otherFields] = await ctx.prisma.$transaction([
         ctx.prisma.form.update({
           where: { tableId: input.tableId },
           data: {
@@ -78,5 +176,9 @@ export const formRouter = createRouter()
         }),
         ...fields,
       ]);
+      ee.emit("form.update", {
+        ...form,
+        fields: otherFields,
+      });
     },
   });

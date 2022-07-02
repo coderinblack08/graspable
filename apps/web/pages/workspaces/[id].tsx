@@ -20,7 +20,7 @@ import React, { useEffect } from "react";
 import { ShareModal } from "../../components/ShareModal";
 import { TableTabContent } from "../../components/TableTabContent";
 import { WorkspaceDropdown } from "../../components/WorkspaceDropdown";
-import { InferQueryOutput, trpc } from "../../lib/trpc";
+import { trpc } from "../../lib/trpc";
 import DashboardSkeleton from "../../public/dashboard-skeleton.svg";
 
 const WorkspacePage: React.FC<

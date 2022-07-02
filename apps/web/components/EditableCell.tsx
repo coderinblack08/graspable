@@ -54,9 +54,13 @@ export const EditableCell = (
       [activeCell, columnId, rowId]
     );
     const [value, setValue] = React.useState(initialValue);
+    const [prev, setPrev] = React.useState(initialValue);
     const [toggle, setToggle] = React.useState(true);
     const debounced = useDebouncedCallback(() => {
-      updateMyData(rowIndex, columnId, value);
+      if (value !== prev) {
+        updateMyData(rowIndex, columnId, value);
+        setPrev(value);
+      }
       console.log("INFO: data-grid synched to database");
     }, 800);
 
@@ -259,6 +263,7 @@ export const EditableCell = (
                       })) || []
                     }
                     readOnly={membership?.role === "viewer"}
+                    allowDeselect
                   />
                 );
               default:
