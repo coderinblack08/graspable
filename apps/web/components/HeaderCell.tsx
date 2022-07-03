@@ -131,6 +131,7 @@ export const HeaderCell: React.FC<HeaderCellProps> = ({
                   column.id !== "new-column" &&
                   membership?.role !== "viewer" ? (
                     <Menu
+                      transition="rotate-right"
                       sx={{ display: isHovering ? "block" : "none" }}
                       control={
                         <ActionIcon size="xs" variant="light">

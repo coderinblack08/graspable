@@ -41,7 +41,6 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({ compact }) => {
             <UnstyledButton
               sx={{
                 display: "block",
-                width: "100%",
                 padding: theme.spacing.xs,
                 borderRadius: theme.radius.sm,
                 color:
@@ -56,16 +55,18 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({ compact }) => {
                 },
               }}
             >
-              <Group>
-                <Avatar src={session.user.image} color="gray" />
-                <Box sx={{ flex: 1 }}>
-                  <Text size="sm" weight={500}>
-                    {session.user.name}
-                  </Text>
-                  <Text color="dimmed" size="xs">
-                    {session.user.email}
-                  </Text>
-                </Box>
+              <Group position="apart">
+                <Group>
+                  <Avatar src={session.user.image} color="gray" />
+                  <Box sx={{ flex: 1 }}>
+                    <Text size="sm" weight={500}>
+                      {session.user.name}
+                    </Text>
+                    <Text color="dimmed" size="xs">
+                      {session.user.email}
+                    </Text>
+                  </Box>
+                </Group>
                 <IconChevronRight color={theme.colors.gray[6]} size={18} />
               </Group>
             </UnstyledButton>

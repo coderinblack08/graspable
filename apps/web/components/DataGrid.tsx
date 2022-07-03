@@ -353,46 +353,42 @@ const DataGridUI: React.FC<{
   const removeRows = trpc.useMutation(["rows.delete"]);
   const utils = trpc.useContext();
 
-  const upsertCursor = trpc.useMutation(["cursors.upsert"]);
-  trpc.useSubscription(["cursors.onUpdate", { tableId, cursorId }], {
-    onNext(data) {
-      // utils.refetchQueries(["cursors.byTableId", { tableId }]);
+  const updateCursor = trpc.useMutation(["cursors.update"]);
+  trpc.useSubscription(["cursors.onCreate", { tableId }], {
+    onNext(cursor) {
       utils.setQueryData(["cursors.byTableId", { tableId }], (old) => {
-        if ((old || [])?.find((x) => x.id === data.id)) {
-          return (old || []).map((x) => (x.id === data.id ? data : x));
-        } else {
-          return [...(old || []), data];
+        if (cursor.userId === session?.user.id) {
+          setCursorId(cursor.id);
         }
+        return [...(old || []), cursor];
+      });
+    },
+  });
+  trpc.useSubscription(["cursors.onUpdate", { tableId }], {
+    onNext(cursor) {
+      utils.setQueryData(["cursors.byTableId", { tableId }], (old) => {
+        return (old || [])?.map((x) => (x.id === cursor.id ? cursor : x));
       });
     },
   });
   trpc.useSubscription(["cursors.onDelete", { tableId }], {
     onNext(data) {
-      // utils.refetchQueries(["cursors.byTableId", { tableId }]);
       utils.setQueryData(["cursors.byTableId", { tableId }], (old) => {
-        return (old || []).filter((x) => x.id !== data);
+        return (old || []).filter((x) => x.id !== data.id);
       });
     },
   });
 
   const debouncedUpdateCursor = useDebouncedCallback(
     (activeCell: any, tableId: string, cursorId: string | null) => {
-      upsertCursor.mutate(
-        { tableId, ...activeCell, id: cursorId },
-        {
-          onSuccess: (data) => {
-            setCursorId(data.id!);
-            // utils.refetchQueries(["cursors.byTableId", { tableId }]);
-          },
-        }
-      );
+      updateCursor.mutate({ tableId, ...activeCell, id: cursorId });
     },
     500
   );
 
   useEffect(() => {
     debouncedUpdateCursor(activeCell, tableId, cursorId);
-  }, [activeCell, tableId]);
+  }, [activeCell, cursorId, tableId]);
 
   trpc.useSubscription(["rows.onUpdateRank", { tableId }], {
     onNext() {
@@ -501,9 +497,7 @@ const DataGridUI: React.FC<{
     state,
   } = tableInstance;
 
-  // const outsideRef = useClickOutside(() => {
-  //   setActiveCell("", "");
-  // });
+  const { data: cursors } = trpc.useQuery(["cursors.byTableId", { tableId }]);
 
   return (
     <Box>
@@ -517,10 +511,9 @@ const DataGridUI: React.FC<{
         }}
       >
         <Group spacing={8} align="center">
-          {/* <ActionIcon color="blue" variant="outline" size="sm">
-            <IconPlus size={16} />
-          </ActionIcon> */}
-          <Select
+          {JSON.stringify(cursors?.length)}
+
+          {/* <Select
             value="table"
             size="xs"
             variant="filled"
@@ -535,7 +528,7 @@ const DataGridUI: React.FC<{
               { label: "Cards", value: "cards" },
               { label: "Calendar", value: "calendar" },
             ]}
-          />
+          /> */}
           {Object.keys(state.selectedRowIds).length > 0 ? (
             <>
               <Button

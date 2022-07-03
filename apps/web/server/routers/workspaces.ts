@@ -100,6 +100,9 @@ export const workspaceRouter = createRouter()
     }),
     async resolve({ ctx, input }) {
       await useOwnerCheck(ctx, input.workspaceId);
+      if (input.userId === ctx.session?.user.id) {
+        throw new TRPCError({ code: "BAD_REQUEST" });
+      }
       const member = await ctx.prisma.member.update({
         where: {
           userId_workspaceId: {

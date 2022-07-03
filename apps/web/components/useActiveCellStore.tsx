@@ -1,19 +1,21 @@
 import create from "zustand";
-import { combine } from "zustand/middleware";
 
-export const useActiveCellStore = create(
-  combine(
-    {
-      cell: {
-        rowId: "",
-        columnId: "",
-      },
-      id: null as string | null,
-    },
-    (set) => ({
-      setActiveCell: (rowId: string, columnId: string) =>
-        set((state) => ({ cell: { rowId, columnId } })),
-      setId: (id: string | null) => set((state) => ({ id })),
-    })
-  )
-);
+type NString = string | null;
+export const useActiveCellStore = create<{
+  id: NString;
+  cell: {
+    columnId: NString;
+    rowId: NString;
+  };
+  setActiveCell: (rowId: NString, columnId: NString) => void;
+  setId: (id: NString) => void;
+}>((set) => ({
+  id: null,
+  cell: {
+    columnId: null,
+    rowId: null,
+  },
+  setActiveCell: (rowId, columnId) =>
+    set((state) => ({ cell: { rowId, columnId } })),
+  setId: (id) => set((state) => ({ id })),
+}));

@@ -1,6 +1,7 @@
 import {
   Cell,
   Column,
+  Cursor,
   Filter,
   Form,
   FormField,
@@ -8,9 +9,9 @@ import {
   Row,
   Sort,
   Table,
+  User,
 } from "@prisma/client";
 import { EventEmitter } from "events";
-import { Cursor } from "./routers/cursors";
 
 interface MyEvents {
   "cell.upsert": (cell: Cell) => void;
@@ -29,8 +30,9 @@ interface MyEvents {
   "column.add": (column: Column) => void;
   "column.update": (column: Column) => void;
   "column.delete": (column: Column) => void;
-  "cursor.update": (cursor: Cursor) => void;
-  "cursor.delete": (cursor: { tableId: string; cursorId: string }) => void;
+  "cursor.update": (cursor: Cursor & { user: User }) => void;
+  "cursor.create": (cursor: Cursor & { user: User }) => void;
+  "cursor.delete": (cursor: Cursor & { user?: User }) => void;
   "member.delete": (member: Member) => void;
   "form.create": (form: Form) => void;
   "form.update": (form: Form & { fields: FormField[] }) => void;

@@ -46,6 +46,7 @@ model User {
   Member                  Member[]
   Workspace               Workspace[]
   AuthenticatedSubmission AuthenticatedSubmission[]
+  Cursor                  Cursor[]
 }
 
 model VerificationToken {
@@ -87,6 +88,7 @@ model Column {
   Filter          Filter[]
   Sort            Sort[]
   FormField       FormField[]
+  Cursor          Cursor[]
 }
 
 model Member {
@@ -143,6 +145,7 @@ model Row {
   Table                   Table                     @relation(fields: [tableId], references: [id], onDelete: Cascade)
   Cell                    Cell[]
   AuthenticatedSubmission AuthenticatedSubmission[]
+  Cursor                  Cursor[]
 }
 
 model Table {
@@ -158,6 +161,7 @@ model Table {
   Filter      Filter[]
   Sort        Sort[]
   Form        Form?
+  Cursor      Cursor[]
 }
 
 enum FilterOperation {
@@ -193,6 +197,18 @@ model Sort {
   direction SortDirection?
   Column    Column?        @relation(fields: [columnId], references: [id], onDelete: Cascade)
   Table     Table          @relation(fields: [tableId], references: [id], onDelete: Cascade)
+}
+
+model Cursor {
+  id       String  @id @default(cuid())
+  rowId    String?
+  row      Row?    @relation(fields: [rowId], references: [id], onDelete: Cascade)
+  columnId String?
+  column   Column? @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  tableId  String
+  table    Table   @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Workspace {

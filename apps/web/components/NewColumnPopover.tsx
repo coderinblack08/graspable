@@ -19,7 +19,6 @@ export const NewColumnPopover: React.FC<{
   tableId: string;
 }> = ({ tableId, lastRank }) => {
   const addColumn = trpc.useMutation(["columns.add"]);
-  const utils = trpc.useContext();
   const [opened, setOpened] = React.useState(false);
   const [msData, setMsData] = React.useState<any[]>([]);
   const form = useForm({
