@@ -1,6 +1,7 @@
 import { createRouter } from "../createRouter";
 import { z } from "zod";
 import { ee } from "../ee";
+import sanitizeHtml from "sanitize-html";
 import { Cell } from "@prisma/client";
 import { Subscription } from "@trpc/server";
 import { useMemberCheck } from "../../lib/security-utils";
@@ -49,11 +50,17 @@ export const cellRouter = createRouter()
     }),
     async resolve({ ctx, input }) {
       await useMemberCheck(ctx, input, false);
+      const column = await ctx.prisma.column.findFirst({
+        where: { id: input.columnId },
+      });
       if (input.value instanceof Array) {
         input.value = JSON.stringify(input.value);
       }
       if (typeof input.value === "boolean" || typeof input.value === "number") {
         input.value = input.value.toString();
+      }
+      if (column?.type === "richtext") {
+        input.value = sanitizeHtml(input.value || "");
       }
       const update: Record<string, any> = { value: input.value };
       const cell = await ctx.prisma.cell.upsert({

@@ -3,6 +3,7 @@ import {
   Center,
   Checkbox,
   Group,
+  Modal,
   Portal,
   Select,
   TextInput,
@@ -15,7 +16,14 @@ import React, { useEffect, useMemo } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import shallow from "zustand/shallow";
 import { InferQueryOutput, trpc } from "../lib/trpc";
+import { RichTextEditor } from "./RichTextEditor";
 import { useActiveCellStore } from "./useActiveCellStore";
+
+function getTextFromHTMLString(html: string) {
+  const div = document.createElement("div");
+  div.innerHTML = html;
+  return div.textContent || "";
+}
 
 export const EditableCell = (
   workspaceId: string,
@@ -78,8 +86,13 @@ export const EditableCell = (
       },
     };
 
+    const [richTextModalOpened, setRichTextModalOpened] = React.useState(false);
     function toggleInput() {
-      setToggle(false);
+      if (column?.type === "richtext") {
+        setRichTextModalOpened(true);
+      } else {
+        setToggle(false);
+      }
     }
 
     useEffect(() => {
@@ -93,7 +106,13 @@ export const EditableCell = (
       [
         "Enter",
         () => {
-          if (isActive && membership?.role !== "viewer") setToggle(false);
+          if (
+            document.activeElement === document.body &&
+            !richTextModalOpened &&
+            isActive &&
+            membership?.role !== "viewer"
+          )
+            setToggle(false);
         },
       ],
     ]);
@@ -116,6 +135,19 @@ export const EditableCell = (
         })}
         onClick={() => setActiveCell(rowId, columnId)}
       >
+        <Modal
+          size="lg"
+          opened={richTextModalOpened}
+          onClose={() => setRichTextModalOpened(false)}
+        >
+          <RichTextEditor
+            onChange={(text) => {
+              setValue(text);
+              debounced();
+            }}
+            value={value}
+          />
+        </Modal>
         {activeCursor && hovered ? (
           <Portal zIndex={50}>
             <Box
@@ -153,6 +185,8 @@ export const EditableCell = (
             switch (column?.type) {
               case "date":
                 return value ? format(new Date(value), "MMMM d, yyyy") : "";
+              case "richtext":
+                return getTextFromHTMLString(value);
               default:
                 return value;
             }

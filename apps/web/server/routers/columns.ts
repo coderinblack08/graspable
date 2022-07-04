@@ -90,6 +90,18 @@ export const columnsRouter = createRouter()
       const column = await ctx.prisma.column.create({
         data: { ...input, rank: input.rank },
       });
+      const form = await ctx.prisma.form.findFirst({
+        where: { tableId: column.tableId },
+      });
+      if (form) {
+        await ctx.prisma.formField.create({
+          data: {
+            columnId: column.id,
+            label: column.name,
+            formId: form.id,
+          },
+        });
+      }
       ee.emit("column.add", column);
       return column;
     },
@@ -132,6 +144,10 @@ export const columnsRouter = createRouter()
       const oldColumn = await ctx.prisma.column.delete({
         where: { id: input.id },
       });
+      try {
+        await ctx.prisma
+          .$executeRaw`delete from "FormField" where "columnId" = ${input.id};`;
+      } catch (error) {}
       ee.emit("column.delete", oldColumn);
       return oldColumn;
     },

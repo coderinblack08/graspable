@@ -31,6 +31,7 @@ import { useSession } from "next-auth/react";
 import Head from "next/head";
 import Link from "next/link";
 import { useState } from "react";
+import { RichTextEditor } from "../../components/RichTextEditor";
 import { InferQueryOutput, trpc } from "../../lib/trpc";
 
 const FormInput: React.FC<{
@@ -69,12 +70,22 @@ const FormInput: React.FC<{
           required={required}
         />
       );
+    case "richtext":
+      return (
+        <InputWrapper
+          error={error}
+          label={label}
+          description={description}
+          required={required}
+        >
+          <RichTextEditor value={value} onChange={(v) => setValue(v)} />
+        </InputWrapper>
+      );
     case "checkbox":
       return (
         <InputWrapper
           error={error}
           label={label}
-          placeholder="Number Input"
           description={description}
           required={required}
         >
@@ -171,7 +182,7 @@ const FormPage: NextPage<
       ) : null}
       <Center my={32}>
         <Stack align="center">
-          <Paper sx={{ width: 560 }} shadow="md" p="lg" radius="md">
+          <Paper sx={{ width: 580 }} shadow="md" p="lg" radius="md">
             <Title order={2}>{form?.name}</Title>
             <Text sx={{ fontSize: 16 }} color="dimmed">
               {form?.description}

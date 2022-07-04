@@ -225,6 +225,7 @@ model Workspace {
 
 enum ColumnType {
   text
+  richtext
   url
   number
   dropdown

@@ -19,11 +19,14 @@ export const formRouter = createRouter()
         },
         include: {
           fields: {
-            include: {
-              Column: true,
-            },
+            include: { Column: true },
           },
         },
+      });
+      form?.fields.sort((a, b) => {
+        const aRank = LexoRank.parse(a.Column.rank);
+        const bRank = LexoRank.parse(b.Column.rank);
+        return aRank.compareTo(bRank);
       });
       return form;
     },

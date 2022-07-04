@@ -7,6 +7,7 @@ import {
   IconExternalLink,
   IconHash,
   IconLetterA,
+  IconLetterCaseToggle,
   IconList,
   IconTrash,
 } from "@tabler/icons";
@@ -39,6 +40,8 @@ export const HeaderCellIcon: React.FC<{
       return <IconLetterA size={16} />;
     case "url":
       return <IconExternalLink size={16} />;
+    case "richtext":
+      return <IconLetterCaseToggle size={16} />;
     default:
       return null;
   }

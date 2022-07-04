@@ -27,6 +27,7 @@ export const NewColumnPopover: React.FC<{
       type: "" as
         | "number"
         | "text"
+        | "richtext"
         | "url"
         | "dropdown"
         | "tags"
@@ -77,6 +78,7 @@ export const NewColumnPopover: React.FC<{
               placeholder="Pick one a column type"
               data={[
                 { value: "text", label: "Text" },
+                { value: "richtext", label: "Richtext" },
                 { value: "number", label: "Number" },
                 { value: "dropdown", label: "Dropdown" },
                 { value: "checkbox", label: "Checkbox" },

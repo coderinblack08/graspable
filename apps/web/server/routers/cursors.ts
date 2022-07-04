@@ -101,14 +101,15 @@ export const cursorRouter = createRouter()
         };
         ee.on("cursor.update", onUpdate);
         return () => {
-          console.log("call unsubscribe");
-
           ctx.prisma.cursor
             .delete({
               where: { id: cursorId },
             })
             .then((cursor) => {
               ee.emit("cursor.delete", cursor);
+              ee.off("cursor.update", onUpdate);
+            })
+            .catch(() => {
               ee.off("cursor.update", onUpdate);
             });
         };

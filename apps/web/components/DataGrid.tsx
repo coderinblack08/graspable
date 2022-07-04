@@ -1,3 +1,4 @@
+import { useModals } from "@mantine/modals";
 import {
   Box,
   Button,
@@ -6,12 +7,11 @@ import {
   Group,
   Loader,
   ScrollArea,
-  Select,
   Tooltip,
   useMantineTheme,
 } from "@mantine/core";
 import { useHotkeys, useListState } from "@mantine/hooks";
-import { IconLayout, IconPlus, IconRobot, IconTrash } from "@tabler/icons";
+import { IconPlus, IconRobot, IconTrash } from "@tabler/icons";
 import { LexoRank } from "lexorank";
 import cloneDeep from "lodash.clonedeep";
 import { useSession } from "next-auth/react";
@@ -433,57 +433,62 @@ const DataGridUI: React.FC<{
     }
   };
 
-  useHotkeys([
-    ["shift+enter", createNewRow],
-    [
-      "ArrowLeft",
-      () => {
-        const activeColumnIndex = dbColumns.findIndex(
-          (x) => x.id === activeCell.columnId
-        );
-        setActiveCell(
-          activeCell.rowId,
-          dbColumns[Math.max(0, activeColumnIndex - 1)].id
-        );
-      },
-    ],
-    [
-      "ArrowRight",
-      () => {
-        const activeColumnIndex = dbColumns.findIndex(
-          (x) => x.id === activeCell.columnId
-        );
-        setActiveCell(
-          activeCell.rowId,
-          dbColumns[Math.min(dbColumns.length - 1, activeColumnIndex + 1)].id
-        );
-      },
-    ],
-    [
-      "ArrowDown",
-      () => {
-        const activeRowIndex = dbRows.findIndex(
-          (x) => x.id === activeCell.rowId
-        );
-        setActiveCell(
-          dbRows[Math.min(dbRows.length - 1, activeRowIndex + 1)].id,
-          activeCell.columnId
-        );
-      },
-    ],
-    [
-      "ArrowUp",
-      () => {
-        const activeRowIndex = dbRows.findIndex(
-          (x) => x.id === activeCell.rowId
-        );
-        setActiveCell(
-          dbRows[Math.max(0, activeRowIndex - 1)].id,
-          activeCell.columnId
-        );
-      },
-    ],
-  ]);
+  useHotkeys(
+    document.activeElement === document.body
+      ? [
+          ["shift+enter", createNewRow],
+          [
+            "ArrowLeft",
+            () => {
+              const activeColumnIndex = dbColumns.findIndex(
+                (x) => x.id === activeCell.columnId
+              );
+              setActiveCell(
+                activeCell.rowId,
+                dbColumns[Math.max(0, activeColumnIndex - 1)].id
+              );
+            },
+          ],
+          [
+            "ArrowRight",
+            () => {
+              const activeColumnIndex = dbColumns.findIndex(
+                (x) => x.id === activeCell.columnId
+              );
+              setActiveCell(
+                activeCell.rowId,
+                dbColumns[Math.min(dbColumns.length - 1, activeColumnIndex + 1)]
+                  .id
+              );
+            },
+          ],
+          [
+            "ArrowDown",
+            () => {
+              const activeRowIndex = dbRows.findIndex(
+                (x) => x.id === activeCell.rowId
+              );
+              setActiveCell(
+                dbRows[Math.min(dbRows.length - 1, activeRowIndex + 1)].id,
+                activeCell.columnId
+              );
+            },
+          ],
+          [
+            "ArrowUp",
+            () => {
+              const activeRowIndex = dbRows.findIndex(
+                (x) => x.id === activeCell.rowId
+              );
+              setActiveCell(
+                dbRows[Math.max(0, activeRowIndex - 1)].id,
+                activeCell.columnId
+              );
+            },
+          ],
+        ]
+      : []
+  );
 
   const {
     setColumnOrder,
