@@ -6,7 +6,7 @@
     "build": "next build",
     "dev": "concurrently \"npm:dev:*\"",
     "dev:next": "next dev",
-    "dev:wss": "cross-env PORT=3001 nodemon --watch ./server --ext .ts,.tsx,js,jsx --exec \"ts-node --project tsconfig.server.json --files server/wssDevServer.ts\"",
+    "dev:wss": "cross-env PORT=3001 ts-node-dev --transpile-only --respawn --inspect --watch ./server --project tsconfig.server.json --files server/wssDevServer.ts",
     "start": "next start",
     "lint": "next lint"
   },
@@ -85,8 +85,9 @@
     "cross-env": "^7.0.3",
     "eslint": "7.32.0",
     "next-transpile-modules": "9.0.0",
-    "nodemon": "^2.0.16",
+    "nodemon": "^2.0.12",
     "prisma": "^3.15.1",
+    "ts-node-dev": "^2.0.0",
     "tsconfig": "*",
     "typescript": "^4.5.3"
   }

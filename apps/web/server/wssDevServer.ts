@@ -30,5 +30,8 @@ console.log("📡 WebSocket Server listening on ws://localhost:3001");
 process.on("SIGTERM", () => {
   console.log("SIGTERM");
   handler.broadcastReconnectNotification();
-  wss.close();
+  wss.close(async () => {
+    if (prisma) await prisma.$executeRaw`delete from "Cursor"`;
+    process.exit();
+  });
 });

@@ -497,8 +497,6 @@ const DataGridUI: React.FC<{
     state,
   } = tableInstance;
 
-  const { data: cursors } = trpc.useQuery(["cursors.byTableId", { tableId }]);
-
   return (
     <Box>
       <Group
@@ -511,8 +509,6 @@ const DataGridUI: React.FC<{
         }}
       >
         <Group spacing={8} align="center">
-          {JSON.stringify(cursors?.length)}
-
           {/* <Select
             value="table"
             size="xs"
