@@ -1,6 +1,6 @@
 import { Box } from "@mantine/core";
 import React from "react";
-import { DataGrid } from "./DataGrid";
+import { DataDisplay } from "./DataDisplay";
 
 interface TableTabContentProps {
   workspaceId: string;
@@ -17,7 +17,7 @@ export const TableTabContent: React.FC<TableTabContentProps> = ({
         height: "100%",
       })}
     >
-      <DataGrid workspaceId={workspaceId} tableId={tableId} />
+      <DataDisplay workspaceId={workspaceId} tableId={tableId} />
     </Box>
   );
 };

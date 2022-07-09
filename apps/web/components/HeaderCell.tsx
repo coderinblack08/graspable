@@ -16,7 +16,7 @@ import { Draggable } from "react-beautiful-dnd";
 import { HeaderGroup } from "react-table";
 import useHover from "react-use-hover";
 import { InferQueryOutput, trpc } from "../lib/trpc";
-import { useStyles } from "./DataGrid";
+import { useStyles } from "./DataDisplay";
 
 type HeaderCellProps = {
   column: HeaderGroup<Record<string, any>>;

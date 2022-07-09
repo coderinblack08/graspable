@@ -112,7 +112,7 @@ export const EditableCell = (
             isActive &&
             membership?.role !== "viewer"
           )
-            setToggle(false);
+            toggleInput();
         },
       ],
     ]);
@@ -126,7 +126,6 @@ export const EditableCell = (
         sx={(theme) => ({
           position: "relative",
           zIndex: 50,
-
           boxShadow: isActive
             ? `0 0 0 2px ${theme.colors.blue[5]}`
             : activeCursor
@@ -176,7 +175,14 @@ export const EditableCell = (
           </Portal>
         ) : null}
         <Group
-          sx={{ height: "38px", userSelect: "none", padding: 8 }}
+          sx={{
+            height: "38px",
+            userSelect: "none",
+            padding: 8,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
           px={12}
           hidden={!toggle || column?.type === "checkbox"}
           onDoubleClick={membership?.role !== "viewer" ? toggleInput : () => {}}

@@ -10,6 +10,7 @@ export const rowRouter = createRouter()
   .query("byTableId", {
     input: z.object({
       tableId: z.string(),
+      viewId: z.string(),
     }),
     async resolve({ ctx, input }) {
       await useMemberCheck(ctx, { tableId: input.tableId }, true);
@@ -45,12 +46,12 @@ export const rowRouter = createRouter()
       }
       const filters = (
         await ctx.prisma.filter.findMany({
-          where: { tableId: input.tableId },
+          where: { viewId: input.viewId },
         })
       ).filter((f) => f.columnId && f.operation);
       const sorts = (
         await ctx.prisma.sort.findMany({
-          where: { tableId: input.tableId },
+          where: { viewId: input.viewId },
         })
       ).filter((f) => f.columnId && f.direction);
       return ctx.prisma.$queryRawUnsafe<Row[]>(

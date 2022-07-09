@@ -1,33 +1,16 @@
-import {
-  ActionIcon,
-  AppShell,
-  Button,
-  Center,
-  Group,
-  Header,
-  Menu,
-  Stack,
-  Tabs,
-  Text,
-} from "@mantine/core";
-import { IconDotsVertical, IconMenu2 } from "@tabler/icons";
+import { ActionIcon, Group, Menu, Tabs, Text } from "@mantine/core";
+import { IconDotsVertical } from "@tabler/icons";
 import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import Head from "next/head";
-import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { useEffect } from "react";
-import { ShareModal } from "../../components/ShareModal";
-import { TableTabContent } from "../../components/TableTabContent";
-import { WorkspaceDropdown } from "../../components/WorkspaceDropdown";
-import { trpc } from "../../lib/trpc";
-import DashboardSkeleton from "../../public/dashboard-skeleton.svg";
+import React, { useEffect, useMemo } from "react";
+import { TableTabContent } from "../../../../components/TableTabContent";
+import { WorkspaceLayout } from "../../../../layouts/WorkspaceLayout";
+import { trpc } from "../../../../lib/trpc";
 
-const WorkspacePage: React.FC<
+const TablePage: React.FC<
   InferGetServerSidePropsType<typeof getServerSideProps>
-> = ({ id }) => {
-  const [tab, setTab] = React.useState(0);
-  const createTable = trpc.useMutation(["tables.add"]);
+> = ({ id, tid }) => {
   const updateTable = trpc.useMutation(["tables.update"]);
   const deleteTable = trpc.useMutation(["tables.delete"]);
   const { data: membership, isLoading: isMembershipLoading } = trpc.useQuery([
@@ -75,6 +58,10 @@ const WorkspacePage: React.FC<
   });
 
   const router = useRouter();
+  const tableIndex = useMemo(
+    () => tables?.findIndex((t) => t.id === tid),
+    [tables, tid]
+  );
 
   useEffect(() => {
     if (!membership && !isMembershipLoading) {
@@ -83,56 +70,7 @@ const WorkspacePage: React.FC<
   }, [isMembershipLoading, membership, router]);
 
   return (
-    <AppShell
-      padding={0}
-      styles={(theme) => ({
-        root: {
-          display: "flex",
-          flexDirection: "column",
-          backgroundColor: theme.colors.dark[8],
-          overflow: "auto",
-          height: "100vh",
-        },
-        body: { height: "100%" },
-      })}
-      header={
-        <Header
-          height="auto"
-          sx={(theme) => ({
-            borderColor: "transparent",
-            backgroundColor: theme.colors.dark[8],
-          })}
-          p={8}
-        >
-          <Group align="center" spacing={8}>
-            <Link href="/app" passHref>
-              <ActionIcon color="gray" component="a">
-                <IconMenu2 size={16} />
-              </ActionIcon>
-            </Link>
-            <WorkspaceDropdown includeControl workspace={workspace} />
-            <Button
-              color="dark"
-              variant="default"
-              compact
-              onClick={() =>
-                createTable.mutate(
-                  { workspaceId: id },
-                  {
-                    onSuccess: () => {
-                      if (tables) setTab(tables.length);
-                    },
-                  }
-                )
-              }
-            >
-              New Table
-            </Button>
-            <ShareModal workspaceId={id} />
-          </Group>
-        </Header>
-      }
-    >
+    <WorkspaceLayout workspace={workspace}>
       <Head>
         <title>Workspace: {workspace?.name}</title>
       </Head>
@@ -152,10 +90,12 @@ const WorkspacePage: React.FC<
             },
             body: { height: "100%" },
           })}
-          active={tab}
-          onTabChange={(index) => setTab(index)}
+          active={tableIndex}
+          onTabChange={(index) =>
+            router.push(`/workspaces/${id}/tables/${tables[index].id}`)
+          }
         >
-          {tables?.map((table, index) => (
+          {tables?.map((table) => (
             <Tabs.Tab
               sx={{ transition: "none" }}
               label={
@@ -163,6 +103,7 @@ const WorkspacePage: React.FC<
                   <Text weight={600}>{table.name}</Text>
                   {membership?.role !== "viewer" && (
                     <Menu
+                      transition="rotate-right"
                       control={
                         <ActionIcon
                           component="div"
@@ -170,7 +111,7 @@ const WorkspacePage: React.FC<
                             e.stopPropagation();
                             e.preventDefault();
                           }}
-                          color={tab === index ? "blue" : "gray"}
+                          color={table.id === tid ? "blue" : "gray"}
                         >
                           <IconDotsVertical size={16} />
                         </ActionIcon>
@@ -197,7 +138,13 @@ const WorkspacePage: React.FC<
                           deleteTable.mutate(
                             { tableId: table.id },
                             {
-                              onSuccess: () => setTab(Math.max(0, tab - 1)),
+                              onSuccess: () =>
+                                router.push(
+                                  `/workspaces/${id}/tables/${
+                                    tables[Math.max(0, (tableIndex || 0) - 1)]
+                                      .id
+                                  }`
+                                ),
                             }
                           )
                         }
@@ -211,35 +158,21 @@ const WorkspacePage: React.FC<
               }
               key={table.id}
             >
-              <TableTabContent tableId={table.id} workspaceId={id} />
+              {table.id === tid ? (
+                <TableTabContent tableId={tid} workspaceId={id} />
+              ) : null}
             </Tabs.Tab>
           ))}
         </Tabs>
-      ) : (
-        <Center sx={{ height: "100%" }}>
-          <Stack
-            align="center"
-            sx={(theme) => ({
-              color: theme.colors.dark[3],
-              userSelect: "none",
-            })}
-          >
-            <Image
-              src={DashboardSkeleton}
-              alt="Dashboard skeleton placeholder"
-            />
-            Press new table in the upper left to begin
-          </Stack>
-        </Center>
-      )}
-    </AppShell>
+      ) : null}
+    </WorkspaceLayout>
   );
 };
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   return {
-    props: { id: context.query.id },
+    props: { id: context.query.id, tid: context.query.tid },
   };
 };
 
-export default WorkspacePage;
+export default TablePage;

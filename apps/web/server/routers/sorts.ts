@@ -6,28 +6,28 @@ import { Subscription } from "@trpc/server";
 import { useMemberCheck } from "../../lib/security-utils";
 
 export const sortRouter = createRouter()
-  .query("byTableId", {
+  .query("byViewId", {
     input: z.object({
-      tableId: z.string(),
+      viewId: z.string(),
     }),
     async resolve({ ctx, input }) {
       await useMemberCheck(ctx, input, true);
       return ctx.prisma.sort.findMany({
         where: {
-          tableId: input.tableId,
+          viewId: input.viewId,
         },
       });
     },
   })
   .subscription("onAdd", {
     input: z.object({
-      tableId: z.string(),
+      viewId: z.string(),
     }),
     async resolve({ ctx, input }) {
       await useMemberCheck(ctx, input, true);
       return new Subscription<Sort>((emit) => {
         const onInsert = (sort: Sort) => {
-          if (sort.tableId === input.tableId) {
+          if (sort.viewId === input.viewId) {
             emit.data(sort);
           }
         };
@@ -40,13 +40,13 @@ export const sortRouter = createRouter()
   })
   .subscription("onUpdate", {
     input: z.object({
-      tableId: z.string(),
+      viewId: z.string(),
     }),
     async resolve({ ctx, input }) {
       await useMemberCheck(ctx, input, true);
       return new Subscription<Sort>((emit) => {
         const onUpdate = (sort: Sort) => {
-          if (sort.tableId === input.tableId) {
+          if (sort.viewId === input.viewId) {
             emit.data(sort);
           }
         };
@@ -59,13 +59,13 @@ export const sortRouter = createRouter()
   })
   .subscription("onDelete", {
     input: z.object({
-      tableId: z.string(),
+      viewId: z.string(),
     }),
     async resolve({ ctx, input }) {
       await useMemberCheck(ctx, input, true);
       return new Subscription<Sort>((emit) => {
         const onDelete = (sort: Sort) => {
-          if (sort.tableId === input.tableId) {
+          if (sort.viewId === input.viewId) {
             emit.data(sort);
           }
         };
@@ -78,12 +78,12 @@ export const sortRouter = createRouter()
   })
   .mutation("add", {
     input: z.object({
-      tableId: z.string(),
+      viewId: z.string(),
       columnId: z.string().nullable(),
       direction: z.nativeEnum(SortDirection).nullable(),
     }),
     async resolve({ ctx, input }) {
-      await useMemberCheck(ctx, { tableId: input.tableId }, false);
+      await useMemberCheck(ctx, { viewId: input.viewId }, false);
       const sort = await ctx.prisma.sort.create({ data: input });
       ee.emit("sort.add", sort);
       return sort;
@@ -92,12 +92,12 @@ export const sortRouter = createRouter()
   .mutation("update", {
     input: z.object({
       id: z.string(),
-      tableId: z.string(),
+      viewId: z.string(),
       columnId: z.string().nullable(),
       direction: z.nativeEnum(SortDirection).nullable(),
     }),
     async resolve({ ctx, input }) {
-      await useMemberCheck(ctx, { tableId: input.tableId }, false);
+      await useMemberCheck(ctx, { viewId: input.viewId }, false);
       const sort = await ctx.prisma.sort.update({
         where: { id: input.id },
         data: input,
@@ -109,10 +109,10 @@ export const sortRouter = createRouter()
   .mutation("delete", {
     input: z.object({
       id: z.string(),
-      tableId: z.string(),
+      viewId: z.string(),
     }),
     async resolve({ ctx, input }) {
-      await useMemberCheck(ctx, { tableId: input.tableId }, false);
+      await useMemberCheck(ctx, { viewId: input.viewId }, false);
       const sort = await ctx.prisma.sort.delete({
         where: {
           id: input.id,

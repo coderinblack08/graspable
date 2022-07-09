@@ -21,7 +21,7 @@ export interface Sort {
 }
 
 const SortRow: React.FC<{
-  sort: InferQueryOutput<"sorts.byTableId">[0];
+  sort: InferQueryOutput<"sorts.byViewId">[0];
   columns: InferQueryOutput<"columns.byTableId">;
   tableId: string;
   interactive: boolean;
@@ -69,7 +69,7 @@ const SortRow: React.FC<{
                 variant="light"
                 onClick={() => {
                   deleteSort.mutate({
-                    tableId: sort.tableId,
+                    viewId: sort.viewId,
                     id: sort.id,
                   });
                 }}
@@ -90,37 +90,38 @@ export const SortPopover: React.FC<{
   columns: InferQueryOutput<"columns.byTableId">;
   tableId: string;
   workspaceId: string;
-}> = ({ columns, workspaceId, tableId }) => {
+  viewId: string;
+}> = ({ columns, viewId, workspaceId, tableId }) => {
   const [opened, setOpened] = React.useState(false);
   const addSort = trpc.useMutation(["sorts.add"]);
   const utils = trpc.useContext();
-  const { data: sorts } = trpc.useQuery(["sorts.byTableId", { tableId }]);
+  const { data: sorts } = trpc.useQuery(["sorts.byViewId", { viewId }]);
   const { data: membership } = trpc.useQuery([
     "workspace.myMembership",
     { workspaceId },
   ]);
 
-  trpc.useSubscription(["sorts.onAdd", { tableId }], {
+  trpc.useSubscription(["sorts.onAdd", { viewId }], {
     onNext(data) {
-      utils.setQueryData(["sorts.byTableId", { tableId }], (old) =>
+      utils.setQueryData(["sorts.byViewId", { viewId }], (old) =>
         old ? [...old, data] : [data]
       );
     },
   });
-  trpc.useSubscription(["sorts.onUpdate", { tableId }], {
+  trpc.useSubscription(["sorts.onUpdate", { viewId }], {
     onNext(data) {
-      utils.setQueryData(["sorts.byTableId", { tableId }], (old) =>
+      utils.setQueryData(["sorts.byViewId", { viewId }], (old) =>
         (old || [])?.map((x) => (x.id === data.id ? data : x))
       );
-      utils.refetchQueries(["rows.byTableId", { tableId }]);
+      utils.refetchQueries(["rows.byTableId", { tableId, viewId }]);
     },
   });
-  trpc.useSubscription(["sorts.onDelete", { tableId }], {
+  trpc.useSubscription(["sorts.onDelete", { viewId }], {
     onNext(data) {
-      utils.setQueryData(["sorts.byTableId", { tableId }], (old) =>
+      utils.setQueryData(["sorts.byViewId", { viewId }], (old) =>
         (old || []).filter((f) => f.id !== data.id)
       );
-      utils.refetchQueries(["rows.byTableId", { tableId }]);
+      utils.refetchQueries(["rows.byTableId", { tableId, viewId }]);
     },
   });
 
@@ -167,7 +168,7 @@ export const SortPopover: React.FC<{
           color="dark"
           leftIcon={<IconPlus size={16} />}
           onClick={() =>
-            addSort.mutate({ tableId, columnId: null, direction: "asc" })
+            addSort.mutate({ viewId, columnId: null, direction: "asc" })
           }
           disabled={membership?.role === "viewer"}
           size="xs"

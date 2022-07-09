@@ -245,7 +245,7 @@ export const workspaceRouter = createRouter()
     meta: { hasAuth: true },
     input: z.object({ id: z.string() }),
     async resolve({ ctx, input }) {
-      await useMemberCheck(ctx, { workspaceId: input.id }, false);
+      await useOwnerCheck(ctx, input.id);
       return ctx.prisma.workspace.update({
         where: { id: input.id },
         data: { deleted: true },

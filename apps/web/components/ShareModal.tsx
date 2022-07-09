@@ -116,7 +116,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({ workspaceId }) => {
               <Group spacing={8}>
                 <Select
                   variant="default"
-                  disabled={membership?.role !== "owner"}
+                  disabled={
+                    membership?.role !== "owner" || member.role === "owner"
+                  }
                   onChange={(value) => {
                     updateMemberRole.mutate(
                       {

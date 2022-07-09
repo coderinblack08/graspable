@@ -1,17 +1,29 @@
-import { useModals } from "@mantine/modals";
 import {
   Box,
   Button,
   Center,
   createStyles,
+  Divider,
   Group,
   Loader,
   ScrollArea,
+  Stack,
+  Text,
+  ThemeIcon,
   Tooltip,
+  UnstyledButton,
   useMantineTheme,
 } from "@mantine/core";
 import { useHotkeys, useListState } from "@mantine/hooks";
-import { IconPlus, IconRobot, IconTrash } from "@tabler/icons";
+import {
+  IconLayoutKanban,
+  IconLayoutList,
+  IconPlus,
+  IconRobot,
+  IconTable,
+  IconTrash,
+} from "@tabler/icons";
+import { atom, useAtom } from "jotai";
 import { LexoRank } from "lexorank";
 import cloneDeep from "lodash.clonedeep";
 import { useSession } from "next-auth/react";
@@ -26,7 +38,9 @@ import {
 } from "react-table";
 import { useDebouncedCallback } from "use-debounce";
 import shallow from "zustand/shallow";
+import { useCustomSubscription } from "../lib/custom-use-subscription";
 import { InferQueryOutput, trpc } from "../lib/trpc";
+import { ApiPopover } from "./ApiPopover";
 import { EditableCell } from "./EditableCell";
 import { FilterPopover } from "./FilterPopover";
 import { HeaderCell } from "./HeaderCell";
@@ -34,8 +48,11 @@ import { HideColumnPopover } from "./HideCoumnPopover";
 import { IndeterminateCheckbox } from "./IndeterminateCheckbox";
 import { NewColumnPopover } from "./NewColumnPopover";
 import { NewFormModal } from "./NewFormModal";
+import { NewViewModal } from "./NewViewModal";
 import { SortPopover } from "./SortPopover";
 import { useActiveCellStore } from "./useActiveCellStore";
+
+export const viewIdAtom = atom<string>("");
 
 export const useStyles = createStyles((theme) => ({
   table: {
@@ -90,22 +107,28 @@ export const useStyles = createStyles((theme) => ({
   },
 }));
 
-interface DataGridProps {
+interface DataDisplayProps {
   workspaceId: string;
   tableId: string;
 }
 
-export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
-  const { data: rows } = trpc.useQuery(["rows.byTableId", { tableId }], {
-    keepPreviousData: true,
-  });
+export const DataDisplay: React.FC<DataDisplayProps> = ({
+  workspaceId,
+  tableId,
+}) => {
+  const [viewId] = useAtom(viewIdAtom);
+  const { data: rows } = trpc.useQuery(
+    ["rows.byTableId", { tableId, viewId }],
+    {
+      keepPreviousData: true,
+    }
+  );
+  const { data: views } = trpc.useQuery(["views.byTableId", { tableId }]);
   const { data: columns } = trpc.useQuery(["columns.byTableId", { tableId }]);
   const { data: cells } = trpc.useQuery(["cells.byTableId", { tableId }]);
   const utils = trpc.useContext();
   trpc.useSubscription(["cells.onUpsert", { tableId }], {
     onNext(data) {
-      // upsert on cell might affect the rows, so we need to re-query them
-      // ...
       utils.setQueryData(["cells.byTableId", { tableId }], (old) => {
         if (!old) return [];
         const existingCell = old.find((x) => x.id === data.id);
@@ -117,30 +140,32 @@ export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
       });
     },
   });
-  trpc.useSubscription(["rows.onAdd", { tableId }], {
-    onNext(data) {
-      utils.refetchQueries(["rows.byTableId", { tableId }]);
-      // utils.setQueryData(["rows.byTableId", { tableId }], (old) => {
-      //   if (!old) return [];
-      //   return [...old, data];
-      // });
+  useCustomSubscription(
+    ["rows.onAdd", { tableId }],
+    {
+      onNext() {
+        utils.refetchQueries(["rows.byTableId", { tableId, viewId }]);
+      },
     },
-  });
+    [tableId, viewId]
+  );
   trpc.useSubscription(["columns.onUpdate", { tableId }], {
     onNext() {
       utils.refetchQueries(["columns.byTableId", { tableId }]);
     },
   });
-  trpc.useSubscription(["rows.onDelete", { tableId }], {
-    onNext(ids) {
-      console.log(ids);
-
-      utils.setQueryData(["rows.byTableId", { tableId }], (old) => {
-        if (!old) return [];
-        return old.filter((x) => !ids.includes(x.id));
-      });
+  useCustomSubscription(
+    ["rows.onDelete", { tableId }],
+    {
+      onNext(ids) {
+        utils.setQueryData(["rows.byTableId", { tableId, viewId }], (old) => {
+          if (!old) return [];
+          return old.filter((x) => !ids.includes(x.id));
+        });
+      },
     },
-  });
+    [tableId, viewId]
+  );
 
   trpc.useSubscription(["columns.onAdd", { tableId }], {
     onNext(data) {
@@ -161,7 +186,7 @@ export const DataGrid: React.FC<DataGridProps> = ({ workspaceId, tableId }) => {
     },
   });
 
-  if (rows && cells && columns) {
+  if (rows && cells && columns && views) {
     return (
       <DataGridUI
         workspaceId={workspaceId}
@@ -189,11 +214,12 @@ const DataGridUI: React.FC<{
 }> = ({ workspaceId, tableId, dbCells, dbColumns, dbRows }) => {
   const { cx, classes } = useStyles();
   const theme = useMantineTheme();
+  const [viewId, setViewId] = useAtom(viewIdAtom);
   const { data: session } = useSession();
   const [skipPageReset, setSkipPageReset] = React.useState(false);
-
-  const { data: sorts } = trpc.useQuery(["sorts.byTableId", { tableId }]);
-  const { data: filters } = trpc.useQuery(["filters.byTableId", { tableId }]);
+  const { data: views } = trpc.useQuery(["views.byTableId", { tableId }]);
+  const { data: sorts } = trpc.useQuery(["sorts.byViewId", { viewId }]);
+  const { data: filters } = trpc.useQuery(["filters.byViewId", { viewId }]);
   const { data: membership } = trpc.useQuery([
     "workspace.myMembership",
     { workspaceId },
@@ -202,6 +228,12 @@ const DataGridUI: React.FC<{
     (store) => [store.id, store.cell, store.setActiveCell, store.setId],
     shallow
   );
+
+  useEffect(() => {
+    if (views && views.length > 0) {
+      setViewId(views[0].id);
+    }
+  }, [setViewId, views]);
 
   const RT_COLUMNS = React.useMemo(
     () =>
@@ -390,16 +422,20 @@ const DataGridUI: React.FC<{
     debouncedUpdateCursor(activeCell, tableId, cursorId);
   }, [activeCell, cursorId, tableId]);
 
-  trpc.useSubscription(["rows.onUpdateRank", { tableId }], {
-    onNext() {
-      utils.refetchQueries(["rows.byTableId", { tableId }]);
-      // utils.setQueryData(["rows.byTableId", { tableId }], (old) => {
-      //   console.log(data);
-      //   old = (old || []).map((x) => (x.id === data.id ? data : x));
-      //   return (old || [])?.sort((a, b) => a.rank - b.rank);
-      // });
+  useCustomSubscription(
+    ["rows.onUpdateRank", { tableId }],
+    {
+      onNext() {
+        utils.refetchQueries(["rows.byTableId", { tableId, viewId }]);
+        // utils.setQueryData(["rows.byTableId", { tableId }], (old) => {
+        //   console.log(data);
+        //   old = (old || []).map((x) => (x.id === data.id ? data : x));
+        //   return (old || [])?.sort((a, b) => a.rank - b.rank);
+        // });
+      },
     },
-  });
+    [tableId, viewId]
+  );
 
   const createNewRow = async () => {
     const rank = dbRows.length
@@ -503,7 +539,7 @@ const DataGridUI: React.FC<{
   } = tableInstance;
 
   return (
-    <Box>
+    <>
       <Group
         position="apart"
         p={8}
@@ -550,14 +586,13 @@ const DataGridUI: React.FC<{
           ) : (
             <>
               <FilterPopover
+                viewId={viewId}
                 workspaceId={workspaceId}
                 tableId={tableId}
                 columns={dbColumns}
               />
-              {/* <Button leftIcon={<IconFrame size={16} />} compact>
-                Group
-              </Button> */}
               <SortPopover
+                viewId={viewId}
                 workspaceId={workspaceId}
                 tableId={tableId}
                 columns={dbColumns}
@@ -571,244 +606,302 @@ const DataGridUI: React.FC<{
           <Button leftIcon={<IconRobot size={16} />} variant="outline" compact>
             Automation
           </Button>
+          <ApiPopover />
         </Group>
       </Group>
-
-      <ScrollArea scrollbarSize={0}>
-        <Box mt={-2}>
-          <Box
-            // component="table"
-            className={classes.table}
-            // ref={outsideRef}
-            {...getTableProps()}
-          >
-            <DragDropContext
-              onDragStart={() => {
-                currentColOrder.current = flatHeaders.map((o) => o.id);
-              }}
-              onDragUpdate={({ source, destination, draggableId }, b) => {
-                const colOrder = [...(currentColOrder.current || [])];
-                const sIndex = source.index;
-                const dIndex = destination && destination.index;
-                if (typeof sIndex === "number" && typeof dIndex === "number") {
-                  colOrder.splice(sIndex, 1);
-                  colOrder.splice(dIndex, 0, draggableId);
-                  setColumnOrder(colOrder);
-                }
-              }}
-              onDragEnd={({ source, destination }) => {
-                if (
-                  source &&
-                  destination &&
-                  source.index !== destination.index
-                ) {
+      <Box sx={{ display: "flex", height: "100%" }}>
+        <ScrollArea
+          sx={{
+            width: 260,
+            flexShrink: 0,
+            borderRight: "2px solid",
+            borderColor: theme.colors.dark[6],
+            backgroundColor: theme.colors.dark[8],
+            h: "100%",
+          }}
+        >
+          <Stack p="xs" spacing={8}>
+            {views?.map((view) => (
+              <UnstyledButton
+                key={view.id}
+                onClick={() => setViewId(view.id)}
+                p="6px"
+                sx={{
+                  display: "block",
+                  width: "100%",
+                  borderRadius: theme.radius.sm,
+                  backgroundColor:
+                    view.id === viewId
+                      ? theme.fn.rgba(theme.colors[theme.primaryColor][7], 0.2)
+                      : "transparent",
+                }}
+              >
+                <Group spacing={10}>
+                  <ThemeIcon
+                    size="md"
+                    color={view.id === viewId ? "blue" : "gray"}
+                  >
+                    {view.type === "table" ? (
+                      <IconTable size={16} />
+                    ) : view.type === "kanban" ? (
+                      <IconLayoutKanban size={16} />
+                    ) : (
+                      <IconLayoutList size={16} />
+                    )}
+                  </ThemeIcon>
+                  <Text
+                    weight={500}
+                    color={view.id === viewId ? theme.colors.blue[2] : "dimmed"}
+                    size="md"
+                  >
+                    {view.name}
+                  </Text>
+                </Group>
+              </UnstyledButton>
+            ))}
+            <Divider sx={{ borderColor: theme.colors.dark[5] }} size="sm" />
+            <NewViewModal tableId={tableId} />
+          </Stack>
+        </ScrollArea>
+        <ScrollArea scrollbarSize={0} sx={{ width: "100%" }}>
+          <Box mt={-2} ml={-2}>
+            <Box
+              // component="table"
+              className={classes.table}
+              // ref={outsideRef}
+              {...getTableProps()}
+            >
+              <DragDropContext
+                onDragStart={() => {
+                  currentColOrder.current = flatHeaders.map((o) => o.id);
+                }}
+                onDragUpdate={({ source, destination, draggableId }, b) => {
                   const colOrder = [...(currentColOrder.current || [])];
                   const sIndex = source.index;
-                  const dIndex = destination.index;
-                  if (dIndex === 0 || dIndex === colOrder.length - 1) return;
-                  const rank = getNewRank(
-                    colOrder.map((col) => ({
-                      rank: dbColumns?.find((c) => c.id === col)?.rank,
-                    })),
-                    sIndex,
-                    dIndex,
-                    true
-                  );
-                  updateColumn.mutate(
-                    {
-                      id: colOrder[sIndex],
-                      rank: rank.toString(),
-                    },
-                    {
-                      onSuccess: () => {
-                        utils.setQueryData(
-                          ["columns.byTableId", { tableId }],
-                          (old) => {
-                            if (!old) return [];
-                            const cloned = cloneDeep(old).filter(Boolean);
-                            const item = old[sIndex - 1];
-
-                            cloned.splice(sIndex - 1, 1);
-                            cloned.splice(dIndex - 1, 0, item);
-
-                            const returnValue = cloned.map((column) =>
-                              column.id === colOrder[sIndex]
-                                ? { ...column, rank: rank.toString() }
-                                : column
-                            );
-
-                            return returnValue;
-                          }
-                        );
+                  const dIndex = destination && destination.index;
+                  if (
+                    typeof sIndex === "number" &&
+                    typeof dIndex === "number"
+                  ) {
+                    colOrder.splice(sIndex, 1);
+                    colOrder.splice(dIndex, 0, draggableId);
+                    setColumnOrder(colOrder);
+                  }
+                }}
+                onDragEnd={({ source, destination }) => {
+                  if (
+                    source &&
+                    destination &&
+                    source.index !== destination.index
+                  ) {
+                    const colOrder = [...(currentColOrder.current || [])];
+                    const sIndex = source.index;
+                    const dIndex = destination.index;
+                    if (dIndex === 0 || dIndex === colOrder.length - 1) return;
+                    const rank = getNewRank(
+                      colOrder.map((col) => ({
+                        rank: dbColumns?.find((c) => c.id === col)?.rank,
+                      })),
+                      sIndex,
+                      dIndex,
+                      true
+                    );
+                    updateColumn.mutate(
+                      {
+                        id: colOrder[sIndex],
+                        rank: rank.toString(),
                       },
-                    }
-                  );
-                }
-              }}
-            >
-              <Droppable droppableId="column-list" direction="horizontal">
-                {(provided) => (
-                  <>
-                    <Box {...provided.droppableProps} ref={provided.innerRef}>
-                      {headerGroups.map((headerGroup) => (
-                        <Box
-                          {...headerGroup.getHeaderGroupProps()}
-                          sx={(theme) => ({
-                            backgroundColor: theme.colors.dark[8],
-                          })}
-                        >
-                          {headerGroup.headers.map((column, index) => (
-                            <HeaderCell
-                              index={index}
-                              workspaceId={workspaceId}
-                              key={column.id}
-                              column={column}
-                            />
-                          ))}
-                          {provided.placeholder}
-                        </Box>
-                      ))}
-                    </Box>
-                  </>
-                )}
-              </Droppable>
-            </DragDropContext>
-            <DragDropContext
-              onDragEnd={async ({ destination, source }) => {
-                if (
-                  source &&
-                  destination &&
-                  source.index !== destination.index
-                ) {
-                  const recordsCopy = cloneDeep(records);
-                  handlers.reorder({
-                    from: source.index,
-                    to: destination.index,
-                  });
-                  const id = recordsCopy[source.index].id;
-                  const rank = getNewRank(
-                    recordsCopy,
-                    source.index,
-                    destination.index
-                  ).toString();
-                  await updateRowRank.mutateAsync(
-                    { id, rank },
-                    {
-                      onSuccess: () => {
-                        // utils.refetchQueries(rowsQueryKey);
-                        utils.setQueryData(
-                          ["rows.byTableId", { tableId }],
-                          (old) => {
-                            if (!old) return [];
-                            const cloned = [...old];
-                            const item = old[source.index];
+                      {
+                        onSuccess: () => {
+                          utils.setQueryData(
+                            ["columns.byTableId", { tableId }],
+                            (old) => {
+                              if (!old) return [];
+                              const cloned = cloneDeep(old).filter(Boolean);
+                              const item = old[sIndex - 1];
 
-                            cloned.splice(source.index, 1);
-                            cloned.splice(destination.index, 0, item);
+                              cloned.splice(sIndex - 1, 1);
+                              cloned.splice(dIndex - 1, 0, item);
 
-                            return cloned.map((row) =>
-                              row.id === id ? { ...row, rank } : row
-                            );
-                          }
-                        );
-                      },
-                    }
-                  );
-                }
-                console.log("INFO: Reordering stored");
-              }}
-            >
-              <Droppable droppableId="row-list" direction="vertical">
-                {(provided) => (
-                  <Box
-                    {...provided.droppableProps}
-                    ref={provided.innerRef}
-                    {...getTableBodyProps()}
-                  >
-                    {rows.map((row, index) => {
-                      prepareRow(row);
-                      return (
-                        <Draggable
-                          key={row.id}
-                          index={index}
-                          draggableId={row.id}
-                          isDragDisabled={
-                            (filters &&
-                              sorts &&
-                              (filters?.length > 0 || sorts?.length > 0)) ||
-                            membership?.role === "viewer"
-                          }
-                        >
-                          {(provided) => {
-                            return (
-                              <Box
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                              >
+                              const returnValue = cloned.map((column) =>
+                                column.id === colOrder[sIndex]
+                                  ? { ...column, rank: rank.toString() }
+                                  : column
+                              );
+
+                              return returnValue;
+                            }
+                          );
+                        },
+                      }
+                    );
+                  }
+                }}
+              >
+                <Droppable droppableId="column-list" direction="horizontal">
+                  {(provided) => (
+                    <>
+                      <Box {...provided.droppableProps} ref={provided.innerRef}>
+                        {headerGroups.map((headerGroup) => (
+                          <Box
+                            {...headerGroup.getHeaderGroupProps()}
+                            sx={(theme) => ({
+                              backgroundColor: theme.colors.dark[8],
+                            })}
+                          >
+                            {headerGroup.headers.map((column, index) => (
+                              <HeaderCell
+                                index={index}
+                                workspaceId={workspaceId}
+                                key={column.id}
+                                column={column}
+                              />
+                            ))}
+                            {provided.placeholder}
+                          </Box>
+                        ))}
+                      </Box>
+                    </>
+                  )}
+                </Droppable>
+              </DragDropContext>
+              <DragDropContext
+                onDragEnd={async ({ destination, source }) => {
+                  if (
+                    source &&
+                    destination &&
+                    source.index !== destination.index
+                  ) {
+                    const recordsCopy = cloneDeep(records);
+                    handlers.reorder({
+                      from: source.index,
+                      to: destination.index,
+                    });
+                    const id = recordsCopy[source.index].id;
+                    const rank = getNewRank(
+                      recordsCopy,
+                      source.index,
+                      destination.index
+                    ).toString();
+                    await updateRowRank.mutateAsync(
+                      { id, rank },
+                      {
+                        onSuccess: () => {
+                          // utils.refetchQueries(rowsQueryKey);
+                          utils.setQueryData(
+                            ["rows.byTableId", { tableId, viewId }],
+                            (old) => {
+                              if (!old) return [];
+                              const cloned = [...old];
+                              const item = old[source.index];
+
+                              cloned.splice(source.index, 1);
+                              cloned.splice(destination.index, 0, item);
+
+                              return cloned.map((row) =>
+                                row.id === id ? { ...row, rank } : row
+                              );
+                            }
+                          );
+                        },
+                      }
+                    );
+                  }
+                  console.log("INFO: Reordering stored");
+                }}
+              >
+                <Droppable droppableId="row-list" direction="vertical">
+                  {(provided) => (
+                    <Box
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      {...getTableBodyProps()}
+                    >
+                      {rows.map((row, index) => {
+                        prepareRow(row);
+                        return (
+                          <Draggable
+                            key={row.id}
+                            index={index}
+                            draggableId={row.id}
+                            isDragDisabled={
+                              (filters &&
+                                sorts &&
+                                (filters?.length > 0 || sorts?.length > 0)) ||
+                              membership?.role === "viewer"
+                            }
+                          >
+                            {(provided) => {
+                              return (
                                 <Box
-                                  {...row.getRowProps()}
-                                  className={cx(classes.rowUnselected, {
-                                    [classes.rowSelected]:
-                                      row.id in state.selectedRowIds,
-                                  })}
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
                                 >
-                                  {row.cells.map((cell) => {
-                                    if (cell.column.id === "selection") {
+                                  <Box
+                                    {...row.getRowProps()}
+                                    className={cx(classes.rowUnselected, {
+                                      [classes.rowSelected]:
+                                        row.id in state.selectedRowIds,
+                                    })}
+                                  >
+                                    {row.cells.map((cell) => {
+                                      if (cell.column.id === "selection") {
+                                        return (
+                                          <Box
+                                            className={classes.cell}
+                                            {...cell.getCellProps()}
+                                            {...provided.dragHandleProps}
+                                          >
+                                            {cell.render("Cell")}
+                                          </Box>
+                                        );
+                                      }
                                       return (
                                         <Box
                                           className={classes.cell}
+                                          sx={{
+                                            padding: 0,
+                                            width: cell.column.width,
+                                          }}
                                           {...cell.getCellProps()}
-                                          {...provided.dragHandleProps}
                                         >
                                           {cell.render("Cell")}
                                         </Box>
                                       );
-                                    }
-                                    return (
-                                      <Box
-                                        className={classes.cell}
-                                        sx={{
-                                          padding: 0,
-                                          width: cell.column.width,
-                                        }}
-                                        {...cell.getCellProps()}
-                                      >
-                                        {cell.render("Cell")}
-                                      </Box>
-                                    );
-                                  })}
+                                    })}
+                                  </Box>
                                 </Box>
-                              </Box>
-                            );
-                          }}
-                        </Draggable>
-                      );
-                    })}
-                    {provided.placeholder}
-                  </Box>
-                )}
-              </Droppable>
-            </DragDropContext>
-          </Box>
-          <Group spacing="sm" p="sm" align="center">
-            <Tooltip withArrow label="shift + enter" position="bottom">
-              <Button
-                loading={addRow.isLoading}
-                variant="default"
-                color="dark"
-                leftIcon={<IconPlus size={16} />}
-                onClick={createNewRow}
-                compact
-              >
-                New Row
+                              );
+                            }}
+                          </Draggable>
+                        );
+                      })}
+                      {provided.placeholder}
+                    </Box>
+                  )}
+                </Droppable>
+              </DragDropContext>
+            </Box>
+            <Group spacing="sm" p="sm" align="center">
+              <Tooltip withArrow label="shift + enter" position="bottom">
+                <Button
+                  loading={addRow.isLoading}
+                  variant="default"
+                  color="dark"
+                  leftIcon={<IconPlus size={16} />}
+                  onClick={createNewRow}
+                  compact
+                >
+                  New Row
+                </Button>
+              </Tooltip>
+              <Button color="dark" variant="default" compact disabled>
+                Load More
               </Button>
-            </Tooltip>
-            <Button color="dark" variant="default" compact disabled>
-              Load More
-            </Button>
-          </Group>
-        </Box>
-      </ScrollArea>
-    </Box>
+            </Group>
+          </Box>
+        </ScrollArea>
+      </Box>
+    </>
   );
 };

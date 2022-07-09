@@ -14,6 +14,12 @@ export const createNewTable = async (
     data: {
       name: "Untitled Table",
       workspaceId,
+      View: {
+        create: {
+          name: "Table View",
+          type: "table",
+        },
+      },
     },
   });
   let firstRank = LexoRank.middle();

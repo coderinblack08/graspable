@@ -13,6 +13,7 @@ import {
   Title,
   useMantineTheme,
 } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import {
   IconDatabase,
   IconLayout,
@@ -36,6 +37,10 @@ const AppPage: NextPage = () => {
   const theme = useMantineTheme();
   const { data: session } = useSession();
   const { data: workspaces } = trpc.useQuery(["workspace.all"]);
+  const mediumScreen = useMediaQuery(
+    `(min-width: ${theme.breakpoints.md}px)`,
+    false
+  );
 
   return (
     <AppShell
@@ -106,7 +111,7 @@ const AppPage: NextPage = () => {
         <title>Graspable</title>
       </Head>
       <NewWorkspaceModal />
-      <SimpleGrid cols={2} my="md">
+      <SimpleGrid cols={mediumScreen ? 2 : 1} my="md">
         {workspaces?.map((workspace) => (
           <Link
             href="/workspaces/[id]"

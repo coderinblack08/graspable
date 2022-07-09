@@ -42,6 +42,7 @@ function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
               },
               ".ProseMirror": {
                 padding: `0px ${theme.spacing.sm}px !important`,
+                minHeight: 120,
                 "> * + *": {
                   marginTop: "0.75em",
                 },
@@ -182,11 +183,11 @@ export default withTRPC<AppRouter>({
       url,
       links: [
         // adds pretty logs to your console in development and logs errors in production
-        loggerLink({
-          enabled: (opts) =>
-            (process.env.NODE_ENV === "development" && process.browser) ||
-            (opts.direction === "down" && opts.result instanceof Error),
-        }),
+        // loggerLink({
+        //   enabled: (opts) =>
+        //     (process.env.NODE_ENV === "development" && process.browser) ||
+        //     (opts.direction === "down" && opts.result instanceof Error),
+        // }),
         getEndingLink(),
       ],
       transformer: superjson,

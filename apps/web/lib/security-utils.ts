@@ -4,18 +4,34 @@ import { Context } from "../server/context";
 
 export const useMemberCheck = async (
   ctx: Context,
-  { workspaceId, tableId }: { workspaceId?: string; tableId?: string },
+  {
+    workspaceId,
+    tableId,
+    viewId,
+  }: { workspaceId?: string; tableId?: string; viewId?: string },
   viewersIncluded = true
 ) => {
   if (!ctx.session) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+  if (viewId) {
+    const view = await ctx.prisma.view.findFirst({
+      where: { id: viewId },
+    });
+    if (!view) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "View doesn't exist" });
+    }
+    tableId = view.tableId;
   }
   if (tableId) {
     const table = await ctx.prisma.table.findFirst({
       where: { id: tableId },
     });
     if (!table) {
-      throw new TRPCError({ code: "NOT_FOUND" });
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Table doesn't exist",
+      });
     }
     workspaceId = table.workspaceId;
   }

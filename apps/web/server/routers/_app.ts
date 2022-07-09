@@ -9,6 +9,7 @@ import { formRouter } from "./forms";
 import { rowRouter } from "./rows";
 import { sortRouter } from "./sorts";
 import { tablesRouter } from "./tables";
+import { viewRouter } from "./views";
 import { workspaceRouter } from "./workspaces";
 
 export const appRouter = createRouter()
@@ -27,6 +28,7 @@ export const appRouter = createRouter()
   .merge("filters.", filterRouter)
   .merge("sorts.", sortRouter)
   .merge("cursors.", cursorRouter)
-  .merge("forms.", formRouter);
+  .merge("forms.", formRouter)
+  .merge("views.", viewRouter);
 
 export type AppRouter = typeof appRouter;

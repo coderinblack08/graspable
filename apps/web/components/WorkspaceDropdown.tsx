@@ -1,4 +1,12 @@
-import { ActionIcon, Group, Menu, Title, UnstyledButton } from "@mantine/core";
+import {
+  ActionIcon,
+  Group,
+  Menu,
+  Text,
+  Title,
+  UnstyledButton,
+} from "@mantine/core";
+import { useModals } from "@mantine/modals";
 import { IconDots, IconEdit, IconTrash } from "@tabler/icons";
 import { useRouter } from "next/router";
 import React from "react";
@@ -16,6 +24,7 @@ export const WorkspaceDropdown: React.FC<WorkspaceDropdownProps> = ({
 }) => {
   const router = useRouter();
   const utils = trpc.useContext();
+  const modals = useModals();
   const updateWorkspace = trpc.useMutation(["workspace.update"]);
   const deleteWorkspace = trpc.useMutation(["workspace.delete"]);
 
@@ -25,7 +34,7 @@ export const WorkspaceDropdown: React.FC<WorkspaceDropdownProps> = ({
       control={
         includeControl ? (
           <UnstyledButton>
-            <Group spacing={8}>
+            <Group spacing={4}>
               <Title order={6} sx={{ fontWeight: 500 }}>
                 {workspace?.name}
               </Title>
@@ -89,16 +98,33 @@ export const WorkspaceDropdown: React.FC<WorkspaceDropdownProps> = ({
         color="red"
         icon={<IconTrash size={14} />}
         onClick={() => {
-          deleteWorkspace.mutate(
-            { id: workspace!.id },
-            {
-              onSuccess: () => {
-                utils.invalidateQueries(["workspace.all"]);
-
-                router.push("/app");
-              },
-            }
-          );
+          modals.openConfirmModal({
+            title: "Delete workspace",
+            centered: true,
+            children: (
+              <Text size="sm">
+                Are you sure you want to delete this workspace? This action is
+                destructive and you will have to contact support to restore your
+                data.
+              </Text>
+            ),
+            labels: {
+              confirm: "Delete workspace",
+              cancel: "No don't delete it",
+            },
+            confirmProps: { color: "red" },
+            onConfirm: () => {
+              deleteWorkspace.mutate(
+                { id: workspace!.id },
+                {
+                  onSuccess: () => {
+                    utils.invalidateQueries(["workspace.all"]);
+                    router.push("/app");
+                  },
+                }
+              );
+            },
+          });
         }}
       >
         Delete workspace

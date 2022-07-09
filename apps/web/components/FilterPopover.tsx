@@ -30,8 +30,9 @@ export interface Filter {
 
 interface FilterPopoverProps {
   columns: InferQueryOutput<"columns.byTableId">;
-  tableId: string;
+  viewId: string;
   workspaceId: string;
+  tableId: string;
 }
 
 const FilterValueInput: React.FC<{
@@ -72,11 +73,11 @@ const FilterValueInput: React.FC<{
 };
 
 const FilterRow: React.FC<{
-  filter: InferQueryOutput<"filters.byTableId">[0];
+  filter: InferQueryOutput<"filters.byViewId">[0];
   columns: InferQueryOutput<"columns.byTableId">;
-  tableId: string;
+  viewId: string;
   interactive: boolean;
-}> = ({ filter, columns, tableId, interactive = true }) => {
+}> = ({ filter, columns, viewId, interactive = true }) => {
   const deleteFilter = trpc.useMutation(["filters.delete"]);
   const updateFilter = trpc.useMutation(["filters.update"]);
   const columnsDict = React.useMemo(() => {
@@ -170,7 +171,7 @@ const FilterRow: React.FC<{
                 variant="light"
                 onClick={() => {
                   deleteFilter.mutate({
-                    tableId: filter.tableId,
+                    viewId: filter.viewId,
                     id: filter.id,
                   });
                 }}
@@ -189,10 +190,11 @@ const FilterRow: React.FC<{
 
 export const FilterPopover: React.FC<FilterPopoverProps> = ({
   columns,
+  viewId,
   tableId,
   workspaceId,
 }) => {
-  const { data: filters } = trpc.useQuery(["filters.byTableId", { tableId }]);
+  const { data: filters } = trpc.useQuery(["filters.byViewId", { viewId }]);
   const addFilter = trpc.useMutation(["filters.add"]);
   const { data: membership } = trpc.useQuery([
     "workspace.myMembership",
@@ -202,93 +204,89 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({
   const utils = trpc.useContext();
   const [opened, setOpened] = React.useState(false);
 
-  trpc.useSubscription(["filters.onAdd", { tableId }], {
+  trpc.useSubscription(["filters.onAdd", { viewId }], {
     onNext(data) {
-      utils.setQueryData(["filters.byTableId", { tableId }], (old) =>
+      utils.setQueryData(["filters.byViewId", { viewId }], (old) =>
         old ? [...old, data] : [data]
       );
     },
   });
-  trpc.useSubscription(["filters.onUpdate", { tableId }], {
+  trpc.useSubscription(["filters.onUpdate", { viewId }], {
     onNext(data) {
-      utils.setQueryData(["filters.byTableId", { tableId }], (old) =>
+      utils.setQueryData(["filters.byViewId", { viewId }], (old) =>
         (old || [])?.map((x) => (x.id === data.id ? data : x))
       );
-      utils.refetchQueries(["rows.byTableId", { tableId }]);
+      utils.refetchQueries(["rows.byTableId", { tableId, viewId }]);
     },
   });
-  trpc.useSubscription(["filters.onDelete", { tableId }], {
+  trpc.useSubscription(["filters.onDelete", { viewId }], {
     onNext(data) {
-      utils.setQueryData(["filters.byTableId", { tableId }], (old) =>
+      utils.setQueryData(["filters.byViewId", { viewId }], (old) =>
         (old || []).filter((f) => f.id !== data.id)
       );
-      utils.refetchQueries(["rows.byTableId", { tableId }]);
+      utils.refetchQueries(["rows.byTableId", { tableId, viewId }]);
     },
   });
 
-  if (filters) {
-    return (
-      <Popover
-        styles={{
-          inner: { padding: 0 },
-          body: { width: "100%" },
-        }}
-        opened={opened}
-        onClose={() => setOpened(false)}
-        target={
+  return (
+    <Popover
+      styles={{
+        inner: { padding: 0 },
+        body: { width: "100%" },
+      }}
+      opened={opened}
+      onClose={() => setOpened(false)}
+      target={
+        <Button
+          onClick={() => setOpened(true)}
+          leftIcon={<IconFilter size={16} />}
+          rightIcon={
+            filters?.length ? (
+              <Badge size="xs" variant="outline">
+                {filters?.length}
+              </Badge>
+            ) : undefined
+          }
+          compact
+        >
+          Filter
+        </Button>
+      }
+      width={560}
+      position="bottom"
+    >
+      <Box>
+        <Stack spacing={8} p="sm" pt={filters?.length ? "sm" : 0}>
+          {filters?.map((item) => (
+            <FilterRow
+              interactive={membership?.role !== "viewer"}
+              viewId={viewId}
+              key={item.id}
+              filter={item}
+              columns={columns}
+            />
+          ))}
+        </Stack>
+        <Box mx="xs" mb="xs">
           <Button
-            onClick={() => setOpened(true)}
-            leftIcon={<IconFilter size={16} />}
-            rightIcon={
-              filters.length ? (
-                <Badge size="xs" variant="outline">
-                  {filters.length}
-                </Badge>
-              ) : undefined
-            }
-            compact
+            color="dark"
+            leftIcon={<IconPlus size={16} />}
+            size="xs"
+            onClick={() => {
+              addFilter.mutate({
+                viewId,
+                columnId: null,
+                operation: null,
+                value: null,
+              });
+            }}
+            fullWidth
+            disabled={membership?.role === "viewer"}
           >
-            Filter
+            Add Condition
           </Button>
-        }
-        width={560}
-        position="bottom"
-      >
-        <Box>
-          <Stack spacing={8} p="sm" pt={filters.length ? "sm" : 0}>
-            {filters.map((item) => (
-              <FilterRow
-                interactive={membership?.role !== "viewer"}
-                tableId={tableId}
-                key={item.id}
-                filter={item}
-                columns={columns}
-              />
-            ))}
-          </Stack>
-          <Box mx="xs" mb="xs">
-            <Button
-              color="dark"
-              leftIcon={<IconPlus size={16} />}
-              size="xs"
-              onClick={() => {
-                addFilter.mutate({
-                  tableId,
-                  columnId: null,
-                  operation: null,
-                  value: null,
-                });
-              }}
-              fullWidth
-              disabled={membership?.role === "viewer"}
-            >
-              Add Condition
-            </Button>
-          </Box>
         </Box>
-      </Popover>
-    );
-  }
-
-  return null;
+      </Box>
+    </Popover>
+  );
 };
