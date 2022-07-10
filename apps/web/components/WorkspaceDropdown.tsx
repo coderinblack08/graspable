@@ -119,7 +119,7 @@ export const WorkspaceDropdown: React.FC<WorkspaceDropdownProps> = ({
                 {
                   onSuccess: () => {
                     utils.invalidateQueries(["workspace.all"]);
-                    router.push("/app");
+                    router.push("/dashboard");
                   },
                 }
               );

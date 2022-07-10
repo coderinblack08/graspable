@@ -1,3 +1,4 @@
+import useWindowFocus from "use-window-focus";
 import {
   Box,
   Center,
@@ -9,15 +10,15 @@ import {
   TextInput,
 } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
-import { useHotkeys, useHover } from "@mantine/hooks";
+import { useHover } from "@mantine/hooks";
 import { format } from "date-fns";
+import { useAtom } from "jotai";
 import { useSession } from "next-auth/react";
-import React, { useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { useDebouncedCallback } from "use-debounce";
-import shallow from "zustand/shallow";
 import { InferQueryOutput, trpc } from "../lib/trpc";
 import { RichTextEditor } from "./RichTextEditor";
-import { useActiveCellStore } from "./useActiveCellStore";
+import { activeCellAtom } from "./useActiveCellStore";
 
 function getTextFromHTMLString(html: string) {
   const div = document.createElement("div");
@@ -28,7 +29,8 @@ function getTextFromHTMLString(html: string) {
 export const EditableCell = (
   workspaceId: string,
   tableId: string,
-  columns?: InferQueryOutput<"columns.byTableId">
+  columns: InferQueryOutput<"columns.byTableId">,
+  rows: InferQueryOutput<"rows.byTableId">
 ) => {
   const Cell: React.FC<any> = ({
     value: initialValue,
@@ -41,10 +43,7 @@ export const EditableCell = (
       "workspace.myMembership",
       { workspaceId },
     ]);
-    const [activeCell, setActiveCell] = useActiveCellStore(
-      (state) => [state.cell, state.setActiveCell],
-      shallow
-    );
+    const [activeCell, setActiveCell] = useAtom(activeCellAtom);
     const ref = React.useRef<any>(null);
     const { data: cursors } = trpc.useQuery(["cursors.byTableId", { tableId }]);
     const activeCursor = useMemo(
@@ -58,9 +57,12 @@ export const EditableCell = (
       [cursors, rowId, columnId, session?.user?.id]
     );
     const isActive = useMemo(
-      () => activeCell.columnId === columnId && activeCell.rowId === rowId,
+      () =>
+        activeCell.cell.columnId === columnId &&
+        activeCell.cell.rowId === rowId,
       [activeCell, columnId, rowId]
     );
+    const windowFocused = useWindowFocus();
     const [value, setValue] = React.useState(initialValue);
     const [prev, setPrev] = React.useState(initialValue);
     const [toggle, setToggle] = React.useState(true);
@@ -89,11 +91,23 @@ export const EditableCell = (
     const [richTextModalOpened, setRichTextModalOpened] = React.useState(false);
     function toggleInput() {
       if (column?.type === "richtext") {
-        setRichTextModalOpened(true);
+        setRichTextModalOpened(!richTextModalOpened);
       } else {
-        setToggle(false);
+        setToggle(!toggle);
       }
     }
+
+    const debouncedUpdateActiveCell = useCallback(
+      (activeCell: { columnId: string; rowId: string }) => {
+        setTimeout(() => {
+          setActiveCell((base) => {
+            base.cell = activeCell;
+            return base;
+          });
+        }, 0);
+      },
+      [setActiveCell]
+    );
 
     useEffect(() => {
       if (!toggle) {
@@ -102,42 +116,291 @@ export const EditableCell = (
       }
     }, [toggle]);
 
-    useHotkeys([
-      [
-        "Enter",
-        () => {
-          if (
-            document.activeElement === document.body &&
-            !richTextModalOpened &&
-            isActive &&
-            membership?.role !== "viewer"
-          )
-            toggleInput();
-        },
-      ],
-    ]);
-
     const { hovered, ref: hoverRef } = useHover();
+    const [selectMenuOpened, setSelectMenuOpened] = React.useState(false);
+
+    function handleArrowDown() {
+      const activeColumnIndex = columns.findIndex((x) => x.id === columnId);
+      const ref = hoverRef.current.parentElement?.parentElement?.parentElement
+        ?.nextElementSibling?.children[0].children[
+        activeColumnIndex + (membership?.role === "viewer" ? 0 : 1)
+      ].children[0] as any;
+      if (ref) ref.focus();
+      const activeRowIndex = rows.findIndex((x) => x.id === rowId);
+
+      debouncedUpdateActiveCell({
+        columnId,
+        rowId: rows[Math.min(rows.length - 1, activeRowIndex + 1)].id,
+      });
+
+      if (rows.length - 1 === activeRowIndex) {
+        hoverRef.current.focus();
+      }
+    }
+
+    let CellInput;
+
+    switch (column?.type) {
+      case "date":
+        if (value && Object.hasOwn(value, "seconds")) {
+          setValue(value.toDate());
+        }
+        CellInput = (
+          <DatePicker
+            ref={ref}
+            clearable={false}
+            dropdownType="modal"
+            onChange={(date) => {
+              setValue(date ? date.toDateString() : "");
+              setToggle(true);
+              debounced();
+            }}
+            onDropdownOpen={() => {
+              setSelectMenuOpened(true);
+            }}
+            onDropdownClose={() => {
+              setToggle(true);
+              hoverRef.current.focus();
+              setSelectMenuOpened(false);
+            }}
+            styles={{
+              dropdownWrapper: {
+                zIndex: 100,
+              },
+              input: {
+                backgroundColor: "transparent",
+              },
+            }}
+            value={value && new Date(value)}
+            readOnly={membership?.role === "viewer"}
+          />
+        );
+        break;
+      case "checkbox":
+        CellInput = (
+          <Center style={{ height: "100%" }}>
+            <Checkbox
+              checked={value ? (value === "true" ? true : false) : false}
+              onChange={
+                membership?.role !== "viewer"
+                  ? (event) => {
+                      setValue(event.currentTarget.checked.toString());
+                      debounced();
+                    }
+                  : undefined
+              }
+              readOnly={membership?.role === "viewer"}
+            />
+          </Center>
+        );
+        break;
+      case "number":
+        CellInput = (
+          <TextInput
+            type="number"
+            ref={ref}
+            onBlur={() => setToggle(true)}
+            value={value || ""}
+            onChange={
+              membership?.role !== "viewer"
+                ? (e) => {
+                    setValue(e.target.value);
+                    debounced();
+                  }
+                : undefined
+            }
+            readOnly={membership?.role === "viewer"}
+            styles={styles}
+          />
+        );
+        break;
+      case "url":
+        CellInput = (
+          <TextInput
+            type="url"
+            ref={ref}
+            onBlur={() => setToggle(true)}
+            styles={styles}
+            value={value || ""}
+            onChange={
+              membership?.role !== "viewer"
+                ? (e) => {
+                    setValue(e.target.value);
+                    debounced();
+                  }
+                : undefined
+            }
+            readOnly={membership?.role === "viewer"}
+          />
+        );
+        break;
+      case "dropdown":
+        CellInput = (
+          <>
+            <Select
+              onDropdownOpen={() => {
+                setSelectMenuOpened(true);
+              }}
+              onDropdownClose={() => {
+                setSelectMenuOpened(false);
+              }}
+              color="blue"
+              transition="slide-up"
+              transitionDuration={80}
+              transitionTimingFunction="ease"
+              styles={styles}
+              value={value}
+              ref={ref}
+              onBlur={() => setToggle(true)}
+              onChange={
+                membership?.role !== "viewer"
+                  ? (value) => {
+                      setValue(value);
+                      debounced();
+                    }
+                  : undefined
+              }
+              data={
+                column.dropdownOptions?.map((x) => ({
+                  label: x,
+                  value: x,
+                })) || []
+              }
+              readOnly={membership?.role === "viewer"}
+            />{" "}
+          </>
+        );
+        break;
+      default:
+        CellInput = (
+          <TextInput
+            styles={styles}
+            value={value || ""}
+            ref={ref}
+            onBlur={() => setToggle(true)}
+            onChange={
+              membership?.role !== "viewer"
+                ? (e) => {
+                    setValue(e.target.value);
+                    debounced();
+                  }
+                : undefined
+            }
+            readOnly={membership?.role === "viewer"}
+          />
+        );
+        break;
+    }
 
     return (
       <Box
         ref={hoverRef}
+        tabIndex={0}
+        className="data-grid-cell"
+        onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+          if (
+            richTextModalOpened ||
+            (selectMenuOpened && column?.type === "date")
+          )
+            return;
+          if (isActive && e.key === "Enter") {
+            if (column?.type === "checkbox") {
+              if (value === "true") {
+                setValue("false");
+              } else {
+                setValue("true");
+              }
+              debounced();
+            }
+            if (column?.type === "checkbox" || !toggle) {
+              handleArrowDown();
+              setSelectMenuOpened(false);
+            }
+            toggleInput();
+            e.preventDefault();
+          }
+          if (selectMenuOpened) return;
+          if (
+            e.key === "Backspace" &&
+            document.activeElement === hoverRef.current
+          ) {
+            setValue("");
+            debounced();
+          }
+          if (e.key === "ArrowLeft" && columns) {
+            const ref = hoverRef.current.parentElement?.previousElementSibling
+              ?.children[0] as any;
+            if (ref) ref.focus();
+            const activeColumnIndex = columns.findIndex(
+              (x) => x.id === columnId
+            );
+            debouncedUpdateActiveCell({
+              columnId: columns[Math.max(0, activeColumnIndex - 1)].id,
+              rowId,
+            });
+            e.preventDefault();
+          }
+          if (e.key === "ArrowRight" && columns) {
+            const ref = hoverRef.current.parentElement?.nextElementSibling
+              ?.children[0] as any;
+            if (ref) ref.focus();
+            const activeColumnIndex = columns.findIndex(
+              (x) => x.id === columnId
+            );
+            debouncedUpdateActiveCell({
+              columnId:
+                columns[Math.min(columns.length - 1, activeColumnIndex + 1)].id,
+              rowId,
+            });
+            e.preventDefault();
+          }
+          if (e.key === "ArrowUp" && columns && rows) {
+            const activeColumnIndex = columns.findIndex(
+              (x) => x.id === columnId
+            );
+            const ref = hoverRef.current.parentElement?.parentElement
+              ?.parentElement?.previousElementSibling?.children[0].children[
+              activeColumnIndex + (membership?.role === "viewer" ? 0 : 1)
+            ].children[0] as any;
+            if (ref) ref.focus();
+            const activeRowIndex = rows.findIndex((x) => x.id === rowId);
+            debouncedUpdateActiveCell({
+              columnId,
+              rowId: rows[Math.max(0, activeRowIndex - 1)].id,
+            });
+            e.preventDefault();
+          }
+          if (e.key === "ArrowDown" && columns && rows) {
+            handleArrowDown();
+            e.preventDefault();
+          }
+        }}
         style={{ height: "100%" }}
         sx={(theme) => ({
           position: "relative",
           zIndex: 50,
-          boxShadow: isActive
-            ? `0 0 0 2px ${theme.colors.blue[5]}`
-            : activeCursor
+          boxShadow: activeCursor
             ? `0 0 0 2px ${theme.colors.red[5]}`
+            : isActive && !windowFocused
+            ? `0 0 0 2px ${theme.colors.blue[5]}`
             : "none",
+          "&:focus, &:focus-within": {
+            outline: "none",
+            boxShadow: `0 0 0 2px ${theme.colors.blue[5]}`,
+          },
         })}
-        onClick={() => setActiveCell(rowId, columnId)}
+        onClick={() =>
+          setActiveCell((base) => {
+            base.cell = { columnId, rowId };
+            return base;
+          })
+        }
       >
         <Modal
           size="lg"
           opened={richTextModalOpened}
           onClose={() => setRichTextModalOpened(false)}
+          withCloseButton={false}
         >
           <RichTextEditor
             onChange={(text) => {
@@ -202,130 +465,7 @@ export const EditableCell = (
           hidden={column?.type !== "checkbox" && toggle}
           sx={{ height: "100%" }}
         >
-          {(() => {
-            switch (column?.type) {
-              case "date":
-                if (value && Object.hasOwn(value, "seconds")) {
-                  setValue(value.toDate());
-                }
-                return (
-                  <DatePicker
-                    ref={ref}
-                    dropdownType="modal"
-                    onChange={(date) => {
-                      setValue(date ? date.toDateString() : "");
-                      setToggle(true);
-                      debounced();
-                    }}
-                    onDropdownClose={() => setToggle(true)}
-                    styles={styles}
-                    value={value && new Date(value)}
-                    readOnly={membership?.role === "viewer"}
-                  />
-                );
-              case "checkbox":
-                return (
-                  <Center style={{ height: "100%" }}>
-                    <Checkbox
-                      checked={
-                        value ? (value === "true" ? true : false) : false
-                      }
-                      onChange={
-                        membership?.role !== "viewer"
-                          ? (event) => {
-                              setValue(event.currentTarget.checked.toString());
-                              debounced();
-                            }
-                          : undefined
-                      }
-                      readOnly={membership?.role === "viewer"}
-                    />
-                  </Center>
-                );
-              case "number":
-                return (
-                  <TextInput
-                    type="number"
-                    ref={ref}
-                    onBlur={() => setToggle(true)}
-                    value={value || ""}
-                    onChange={
-                      membership?.role !== "viewer"
-                        ? (e) => {
-                            setValue(e.target.value);
-                            debounced();
-                          }
-                        : undefined
-                    }
-                    readOnly={membership?.role === "viewer"}
-                    styles={styles}
-                  />
-                );
-              case "url":
-                return (
-                  <TextInput
-                    type="url"
-                    ref={ref}
-                    onBlur={() => setToggle(true)}
-                    styles={styles}
-                    value={value || ""}
-                    onChange={
-                      membership?.role !== "viewer"
-                        ? (e) => {
-                            setValue(e.target.value);
-                            debounced();
-                          }
-                        : undefined
-                    }
-                    readOnly={membership?.role === "viewer"}
-                  />
-                );
-              case "dropdown":
-                return (
-                  <Select
-                    color="blue"
-                    styles={styles}
-                    value={value}
-                    ref={ref}
-                    onBlur={() => setToggle(true)}
-                    onChange={
-                      membership?.role !== "viewer"
-                        ? (value) => {
-                            setValue(value);
-                            debounced();
-                          }
-                        : undefined
-                    }
-                    data={
-                      column.dropdownOptions?.map((x) => ({
-                        label: x,
-                        value: x,
-                      })) || []
-                    }
-                    readOnly={membership?.role === "viewer"}
-                    allowDeselect
-                  />
-                );
-              default:
-                return (
-                  <TextInput
-                    styles={styles}
-                    value={value || ""}
-                    ref={ref}
-                    onBlur={() => setToggle(true)}
-                    onChange={
-                      membership?.role !== "viewer"
-                        ? (e) => {
-                            setValue(e.target.value);
-                            debounced();
-                          }
-                        : undefined
-                    }
-                    readOnly={membership?.role === "viewer"}
-                  />
-                );
-            }
-          })()}
+          {CellInput}
         </Box>
       </Box>
     );

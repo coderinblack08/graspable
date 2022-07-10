@@ -14,9 +14,9 @@ import { ModalsProvider } from "@mantine/modals";
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   return (
     <SessionProvider session={session}>
-      {process.env.NODE_ENV !== "production" && (
+      {/* {process.env.NODE_ENV !== "production" && (
         <ReactQueryDevtools initialIsOpen={false} />
-      )}
+      )} */}
       <MantineProvider
         withGlobalStyles
         withNormalizeCSS
@@ -182,12 +182,11 @@ export default withTRPC<AppRouter>({
     return {
       url,
       links: [
-        // adds pretty logs to your console in development and logs errors in production
-        // loggerLink({
-        //   enabled: (opts) =>
-        //     (process.env.NODE_ENV === "development" && process.browser) ||
-        //     (opts.direction === "down" && opts.result instanceof Error),
-        // }),
+        loggerLink({
+          enabled: (opts) =>
+            (process.env.NODE_ENV === "development" && process.browser) ||
+            (opts.direction === "down" && opts.result instanceof Error),
+        }),
         getEndingLink(),
       ],
       transformer: superjson,

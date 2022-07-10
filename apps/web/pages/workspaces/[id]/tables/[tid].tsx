@@ -65,14 +65,14 @@ const TablePage: React.FC<
 
   useEffect(() => {
     if (!membership && !isMembershipLoading) {
-      router.push("/app");
+      router.push("/dashboard");
     }
   }, [isMembershipLoading, membership, router]);
 
   return (
     <WorkspaceLayout workspace={workspace}>
       <Head>
-        <title>Workspace: {workspace?.name}</title>
+        <title>Workspace - {workspace?.name}</title>
       </Head>
       {tables && tables.length ? (
         <Tabs

@@ -1,3 +1,4 @@
+import { useClickAway } from "react-use";
 import {
   Box,
   Button,
@@ -14,7 +15,7 @@ import {
   UnstyledButton,
   useMantineTheme,
 } from "@mantine/core";
-import { useHotkeys, useListState } from "@mantine/hooks";
+import { useListState } from "@mantine/hooks";
 import {
   IconLayoutKanban,
   IconLayoutList,
@@ -37,9 +38,9 @@ import {
   useTable,
 } from "react-table";
 import { useDebouncedCallback } from "use-debounce";
-import shallow from "zustand/shallow";
 import { useCustomSubscription } from "../lib/custom-use-subscription";
 import { InferQueryOutput, trpc } from "../lib/trpc";
+import { useActiveElement } from "../lib/use-active-element";
 import { ApiPopover } from "./ApiPopover";
 import { EditableCell } from "./EditableCell";
 import { FilterPopover } from "./FilterPopover";
@@ -50,7 +51,7 @@ import { NewColumnPopover } from "./NewColumnPopover";
 import { NewFormModal } from "./NewFormModal";
 import { NewViewModal } from "./NewViewModal";
 import { SortPopover } from "./SortPopover";
-import { useActiveCellStore } from "./useActiveCellStore";
+import { activeCellAtom } from "./useActiveCellStore";
 
 export const viewIdAtom = atom<string>("");
 
@@ -224,10 +225,8 @@ const DataGridUI: React.FC<{
     "workspace.myMembership",
     { workspaceId },
   ]);
-  const [cursorId, activeCell, setActiveCell, setCursorId] = useActiveCellStore(
-    (store) => [store.id, store.cell, store.setActiveCell, store.setId],
-    shallow
-  );
+
+  const [activeCell, setActiveCell] = useAtom(activeCellAtom);
 
   useEffect(() => {
     if (views && views.length > 0) {
@@ -325,7 +324,7 @@ const DataGridUI: React.FC<{
       columns: RT_COLUMNS,
       data: records,
       defaultColumn: {
-        Cell: EditableCell(workspaceId, tableId, dbColumns),
+        Cell: EditableCell(workspaceId, tableId, dbColumns, dbRows),
         minWidth: 100,
         maxWidth: 400,
         disableResizing: membership?.role === "viewer",
@@ -386,16 +385,42 @@ const DataGridUI: React.FC<{
   const utils = trpc.useContext();
 
   const updateCursor = trpc.useMutation(["cursors.update"]);
-  trpc.useSubscription(["cursors.onCreate", { tableId }], {
-    onNext(cursor) {
-      utils.setQueryData(["cursors.byTableId", { tableId }], (old) => {
-        if (cursor.userId === session?.user.id) {
-          setCursorId(cursor.id);
-        }
-        return [...(old || []), cursor];
-      });
+  const debouncedUpdateCursor = useDebouncedCallback(
+    (
+      activeCell: { columnId: string; rowId: string },
+      tableId: string,
+      cursorId: string | null
+    ) => {
+      if (cursorId) {
+        updateCursor.mutate({ tableId, ...activeCell, id: cursorId });
+      }
     },
-  });
+    1000
+  );
+
+  useEffect(() => {
+    if (activeCell.id) {
+      debouncedUpdateCursor(activeCell.cell as any, tableId, activeCell.id);
+    }
+  }, [activeCell.cell, activeCell.id, tableId]);
+
+  useCustomSubscription(
+    ["cursors.onCreate", { tableId }],
+    {
+      onNext(cursor) {
+        utils.setQueryData(["cursors.byTableId", { tableId }], (old) => {
+          if (cursor.userId === session?.user.id) {
+            setActiveCell((base) => {
+              base.id = cursor.id;
+              return base;
+            });
+          }
+          return [...(old || []), cursor];
+        });
+      },
+    },
+    [session, setActiveCell]
+  );
   trpc.useSubscription(["cursors.onUpdate", { tableId }], {
     onNext(cursor) {
       utils.setQueryData(["cursors.byTableId", { tableId }], (old) => {
@@ -411,16 +436,18 @@ const DataGridUI: React.FC<{
     },
   });
 
-  const debouncedUpdateCursor = useDebouncedCallback(
-    (activeCell: any, tableId: string, cursorId: string | null) => {
-      updateCursor.mutate({ tableId, ...activeCell, id: cursorId });
-    },
-    500
-  );
+  // const debouncedUpdateCursor = useDebouncedCallback(
+  //   (activeCell: any, tableId: string, cursorId: string | null) => {
+  //     if (activeCell.columnId && activeCell.rowId && cursorId) {
+  //       updateCursor.mutate({ tableId, ...activeCell, id: cursorId });
+  //     }
+  //   },
+  //   500
+  // );
 
-  useEffect(() => {
-    debouncedUpdateCursor(activeCell, tableId, cursorId);
-  }, [activeCell, cursorId, tableId]);
+  // useEffect(() => {
+  //   debouncedUpdateCursor(activeCell.cell, tableId, activeCell.id);
+  // }, [activeCell.cell, activeCell.id, tableId]);
 
   useCustomSubscription(
     ["rows.onUpdateRank", { tableId }],
@@ -469,62 +496,62 @@ const DataGridUI: React.FC<{
     }
   };
 
-  useHotkeys(
-    document.activeElement === document.body
-      ? [
-          ["shift+enter", createNewRow],
-          [
-            "ArrowLeft",
-            () => {
-              const activeColumnIndex = dbColumns.findIndex(
-                (x) => x.id === activeCell.columnId
-              );
-              setActiveCell(
-                activeCell.rowId,
-                dbColumns[Math.max(0, activeColumnIndex - 1)].id
-              );
-            },
-          ],
-          [
-            "ArrowRight",
-            () => {
-              const activeColumnIndex = dbColumns.findIndex(
-                (x) => x.id === activeCell.columnId
-              );
-              setActiveCell(
-                activeCell.rowId,
-                dbColumns[Math.min(dbColumns.length - 1, activeColumnIndex + 1)]
-                  .id
-              );
-            },
-          ],
-          [
-            "ArrowDown",
-            () => {
-              const activeRowIndex = dbRows.findIndex(
-                (x) => x.id === activeCell.rowId
-              );
-              setActiveCell(
-                dbRows[Math.min(dbRows.length - 1, activeRowIndex + 1)].id,
-                activeCell.columnId
-              );
-            },
-          ],
-          [
-            "ArrowUp",
-            () => {
-              const activeRowIndex = dbRows.findIndex(
-                (x) => x.id === activeCell.rowId
-              );
-              setActiveCell(
-                dbRows[Math.max(0, activeRowIndex - 1)].id,
-                activeCell.columnId
-              );
-            },
-          ],
-        ]
-      : []
-  );
+  // useHotkeys(
+  //   document.activeElement?.className.includes("data-grid-cell")
+  //     ? [
+  //         ["shift+enter", createNewRow],
+  //         [
+  //           "ArrowLeft",
+  //           () => {
+  //             const activeColumnIndex = dbColumns.findIndex(
+  //               (x) => x.id === activeCell.columnId
+  //             );
+  //             setActiveCell(
+  //               activeCell.rowId,
+  //               dbColumns[Math.max(0, activeColumnIndex - 1)].id
+  //             );
+  //           },
+  //         ],
+  //         [
+  //           "ArrowRight",
+  //           () => {
+  //             const activeColumnIndex = dbColumns.findIndex(
+  //               (x) => x.id === activeCell.columnId
+  //             );
+  //             setActiveCell(
+  //               activeCell.rowId,
+  //               dbColumns[Math.min(dbColumns.length - 1, activeColumnIndex + 1)]
+  //                 .id
+  //             );
+  //           },
+  //         ],
+  //         [
+  //           "ArrowDown",
+  //           () => {
+  //             const activeRowIndex = dbRows.findIndex(
+  //               (x) => x.id === activeCell.rowId
+  //             );
+  //             setActiveCell(
+  //               dbRows[Math.min(dbRows.length - 1, activeRowIndex + 1)].id,
+  //               activeCell.columnId
+  //             );
+  //           },
+  //         ],
+  //         [
+  //           "ArrowUp",
+  //           () => {
+  //             const activeRowIndex = dbRows.findIndex(
+  //               (x) => x.id === activeCell.rowId
+  //             );
+  //             setActiveCell(
+  //               dbRows[Math.max(0, activeRowIndex - 1)].id,
+  //               activeCell.columnId
+  //             );
+  //           },
+  //         ],
+  //       ]
+  //     : []
+  // );
 
   const {
     setColumnOrder,
@@ -537,6 +564,16 @@ const DataGridUI: React.FC<{
     prepareRow,
     state,
   } = tableInstance;
+
+  const tableRef = React.useRef<HTMLDivElement>(null);
+  useClickAway(tableRef, () => {
+    if (activeCell.cell.columnId && activeCell.cell.rowId) {
+      setActiveCell((base) => {
+        base.cell = { columnId: null, rowId: null };
+        return base;
+      });
+    }
+  });
 
   return (
     <>
@@ -665,12 +702,7 @@ const DataGridUI: React.FC<{
         </ScrollArea>
         <ScrollArea scrollbarSize={0} sx={{ width: "100%" }}>
           <Box mt={-2} ml={-2}>
-            <Box
-              // component="table"
-              className={classes.table}
-              // ref={outsideRef}
-              {...getTableProps()}
-            >
+            <Box ref={tableRef} className={classes.table} {...getTableProps()}>
               <DragDropContext
                 onDragStart={() => {
                   currentColOrder.current = flatHeaders.map((o) => o.id);
@@ -739,30 +771,35 @@ const DataGridUI: React.FC<{
                 }}
               >
                 <Droppable droppableId="column-list" direction="horizontal">
-                  {(provided) => (
-                    <>
-                      <Box {...provided.droppableProps} ref={provided.innerRef}>
-                        {headerGroups.map((headerGroup) => (
-                          <Box
-                            {...headerGroup.getHeaderGroupProps()}
-                            sx={(theme) => ({
-                              backgroundColor: theme.colors.dark[8],
-                            })}
-                          >
-                            {headerGroup.headers.map((column, index) => (
-                              <HeaderCell
-                                index={index}
-                                workspaceId={workspaceId}
-                                key={column.id}
-                                column={column}
-                              />
-                            ))}
-                            {provided.placeholder}
-                          </Box>
-                        ))}
-                      </Box>
-                    </>
-                  )}
+                  {(provided) => {
+                    return (
+                      <>
+                        <Box
+                          {...provided.droppableProps}
+                          ref={provided.innerRef}
+                        >
+                          {headerGroups.map((headerGroup) => (
+                            <Box
+                              {...headerGroup.getHeaderGroupProps()}
+                              sx={(theme) => ({
+                                backgroundColor: theme.colors.dark[8],
+                              })}
+                            >
+                              {headerGroup.headers.map((column, index) => (
+                                <HeaderCell
+                                  index={index}
+                                  workspaceId={workspaceId}
+                                  key={column.id}
+                                  column={column}
+                                />
+                              ))}
+                              {provided.placeholder}
+                            </Box>
+                          ))}
+                        </Box>
+                      </>
+                    );
+                  }}
                 </Droppable>
               </DragDropContext>
               <DragDropContext

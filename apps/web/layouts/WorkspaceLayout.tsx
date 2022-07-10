@@ -41,33 +41,37 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
           })}
           p={8}
         >
-          <Group align="center" spacing={8}>
-            <Link href="/app" passHref>
-              <ActionIcon color="gray" component="a">
-                <IconMenu2 size={16} />
-              </ActionIcon>
-            </Link>
-            <WorkspaceDropdown includeControl workspace={workspace} />
-            <Button
-              color="dark"
-              variant="default"
-              compact
-              onClick={() =>
-                createTable.mutate(
-                  { workspaceId: workspace?.id || "" },
-                  {
-                    onSuccess: (data) => {
-                      router.push(
-                        `/workspaces/${workspace?.id}/tables/${data.id}`
-                      );
-                    },
-                  }
-                )
-              }
-            >
-              New Table
-            </Button>
-            <ShareModal workspaceId={workspace?.id || ""} />
+          <Group spacing={12}>
+            <Group align="center" spacing={8}>
+              <Link href="/dashboard" passHref>
+                <ActionIcon color="gray" component="a">
+                  <IconMenu2 size={16} />
+                </ActionIcon>
+              </Link>
+              <WorkspaceDropdown includeControl workspace={workspace} />
+            </Group>
+            <Group spacing={8}>
+              <Button
+                color="dark"
+                variant="default"
+                compact
+                onClick={() =>
+                  createTable.mutate(
+                    { workspaceId: workspace?.id || "" },
+                    {
+                      onSuccess: (data) => {
+                        router.push(
+                          `/workspaces/${workspace?.id}/tables/${data.id}`
+                        );
+                      },
+                    }
+                  )
+                }
+              >
+                New Table
+              </Button>
+              <ShareModal workspaceId={workspace?.id || ""} />
+            </Group>
           </Group>
         </Header>
       }

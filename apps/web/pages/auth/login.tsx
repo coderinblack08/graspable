@@ -35,7 +35,7 @@ const LoginPage: NextPage<{
   return (
     <AppShell
       header={
-        <Header height="auto" p="md">
+        <Header height="auto" p="md" sx={{ backgroundColor: "transparent" }}>
           <Group position="apart" align="center">
             <Title order={5}>Graspable</Title>
             <Box>
@@ -69,7 +69,8 @@ const LoginPage: NextPage<{
               leftIcon={<FaGoogle size={16} />}
               onClick={() =>
                 signIn("google", {
-                  callbackUrl: router.query.redirect?.toString() || "/app",
+                  callbackUrl:
+                    router.query.redirect?.toString() || "/dashboard",
                 })
               }
               sx={(theme) => ({ fontSize: theme.fontSizes.md })}
@@ -85,7 +86,8 @@ const LoginPage: NextPage<{
               size="lg"
               onClick={() =>
                 signIn("github", {
-                  callbackUrl: router.query.redirect?.toString() || "/app",
+                  callbackUrl:
+                    router.query.redirect?.toString() || "/dashboard",
                 })
               }
               sx={(theme) => ({ fontSize: theme.fontSizes.md })}
@@ -97,7 +99,14 @@ const LoginPage: NextPage<{
         )}
         <Text>
           By clicking continue, you agree to our{" "}
-          <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+          <Text component="a" color="blue" href="#">
+            Terms of Service
+          </Text>{" "}
+          and{" "}
+          <Text component="a" color="blue" href="#">
+            Privacy Policy
+          </Text>
+          .
         </Text>
       </Stack>
     </AppShell>

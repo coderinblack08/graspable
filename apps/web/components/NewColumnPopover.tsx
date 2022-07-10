@@ -9,9 +9,12 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { IconPlus } from "@tabler/icons";
+import { atom, useAtom } from "jotai";
 import { LexoRank } from "lexorank";
 import React from "react";
 import { trpc } from "../lib/trpc";
+
+const openedAtom = atom(false);
 
 export const NewColumnPopover: React.FC<{
   lastRank?: string;
@@ -19,7 +22,7 @@ export const NewColumnPopover: React.FC<{
   tableId: string;
 }> = ({ tableId, lastRank }) => {
   const addColumn = trpc.useMutation(["columns.add"]);
-  const [opened, setOpened] = React.useState(false);
+  const [opened, setOpened] = useAtom(openedAtom);
   const [msData, setMsData] = React.useState<any[]>([]);
   const form = useForm({
     initialValues: {
@@ -40,7 +43,7 @@ export const NewColumnPopover: React.FC<{
 
   return (
     <>
-      <ActionIcon onClick={() => setOpened((o) => !o)} size="sm">
+      <ActionIcon onClick={() => setOpened(true)} size="sm">
         <IconPlus size={16} />
       </ActionIcon>
       <Modal

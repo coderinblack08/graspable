@@ -108,7 +108,7 @@ const AppPage: NextPage = () => {
       }
     >
       <Head>
-        <title>Graspable</title>
+        <title>Graspable - Dashboard</title>
       </Head>
       <NewWorkspaceModal />
       <SimpleGrid cols={mediumScreen ? 2 : 1} my="md">

@@ -1,21 +1,12 @@
-import create from "zustand";
+import { atomWithImmer } from "jotai/immer";
 
-type NString = string | null;
-export const useActiveCellStore = create<{
-  id: NString;
+export const activeCellAtom = atomWithImmer<{
+  id: string | null;
   cell: {
-    columnId: NString;
-    rowId: NString;
+    columnId: string | null;
+    rowId: string | null;
   };
-  setActiveCell: (rowId: NString, columnId: NString) => void;
-  setId: (id: NString) => void;
-}>((set) => ({
+}>({
   id: null,
-  cell: {
-    columnId: null,
-    rowId: null,
-  },
-  setActiveCell: (rowId, columnId) =>
-    set((state) => ({ cell: { rowId, columnId } })),
-  setId: (id) => set((state) => ({ id })),
-}));
+  cell: { columnId: null, rowId: null },
+});

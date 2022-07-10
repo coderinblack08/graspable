@@ -44,6 +44,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
+    autofocus: true,
     content: value,
   });
   const theme = useMantineTheme();
