@@ -327,6 +327,15 @@ export const EditableCell = (
             setValue("");
             debounced();
           }
+          if (
+            e.key === "Escape" &&
+            // document.activeElement === hoverRef.current.children[0] &&
+            ["text", "number", "url"].includes(column?.type!)
+          ) {
+            toggleInput();
+            hoverRef.current.focus();
+            e.preventDefault();
+          }
           if (e.key === "ArrowLeft" && columns) {
             const ref = hoverRef.current.parentElement?.previousElementSibling
               ?.children[0] as any;
@@ -374,6 +383,19 @@ export const EditableCell = (
             handleArrowDown();
             e.preventDefault();
           }
+          // function isPrintable(char: string) {
+          //   return !/[\x00-\x08\x0E-\x1F\x80-\xFF]/.test(char);
+          // }
+          // if (
+          //   isPrintable(String.fromCharCode(e.keyCode)) &&
+          //   document.activeElement === hoverRef.current &&
+          //   ["text", "number", "url"].includes(column?.type!)
+          // ) {
+          //   setValue(String.fromCharCode(e.keyCode));
+          //   toggleInput();
+          //   debounced();
+          //   e.preventDefault();
+          // }
         }}
         style={{ height: "100%" }}
         sx={(theme) => ({
