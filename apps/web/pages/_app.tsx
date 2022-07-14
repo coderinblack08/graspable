@@ -10,6 +10,7 @@ import { ReactQueryDevtools } from "react-query/devtools";
 import superjson from "superjson";
 import { AppRouter } from "../server/routers/_app";
 import { ModalsProvider } from "@mantine/modals";
+import { OperationResponse } from "@trpc/client";
 
 function MyApp({ Component, pageProps: { session, ...pageProps } }: AppProps) {
   return (
@@ -183,9 +184,15 @@ export default withTRPC<AppRouter>({
       url,
       links: [
         loggerLink({
-          enabled: (opts) =>
-            (process.env.NODE_ENV === "development" && process.browser) ||
-            (opts.direction === "down" && opts.result instanceof Error),
+          enabled: (opts) => {
+            return (
+              (process.env.NODE_ENV === "development" &&
+                process.browser &&
+                opts.direction === "down" &&
+                (opts as any).type !== "subscription") ||
+              (opts.direction === "down" && opts.result instanceof Error)
+            );
+          },
         }),
         getEndingLink(),
       ],

@@ -1,4 +1,3 @@
-import { useClickAway } from "react-use";
 import {
   Box,
   Button,
@@ -7,6 +6,7 @@ import {
   Divider,
   Group,
   Loader,
+  LoadingOverlay,
   ScrollArea,
   Stack,
   Text,
@@ -28,7 +28,7 @@ import { atom, useAtom } from "jotai";
 import { LexoRank } from "lexorank";
 import cloneDeep from "lodash.clonedeep";
 import { useSession } from "next-auth/react";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import {
   useBlockLayout,
@@ -37,12 +37,13 @@ import {
   useRowSelect,
   useTable,
 } from "react-table";
+import { useClickAway } from "react-use";
 import { useDebouncedCallback } from "use-debounce";
+import { DebouncedState } from "use-debounce/dist/useDebouncedCallback";
 import { useCustomSubscription } from "../lib/custom-use-subscription";
 import { InferQueryOutput, trpc } from "../lib/trpc";
-import { useActiveElement } from "../lib/use-active-element";
 import { ApiPopover } from "./ApiPopover";
-import { EditableCell } from "./EditableCell";
+import { Cell } from "./EditableCell";
 import { FilterPopover } from "./FilterPopover";
 import { HeaderCell } from "./HeaderCell";
 import { HideColumnPopover } from "./HideCoumnPopover";
@@ -54,6 +55,22 @@ import { SortPopover } from "./SortPopover";
 import { activeCellAtom } from "./useActiveCellStore";
 
 export const viewIdAtom = atom<string>("");
+
+export const TableContext = React.createContext<{
+  workspaceId: string;
+  tableId: string;
+  columns: InferQueryOutput<"columns.byTableId">;
+  rows: InferQueryOutput<"rows.byTableId">;
+  debouncedUpdateActiveCell: DebouncedState<
+    (activeCell: { columnId: string; rowId: string }) => void
+  > | null;
+}>({
+  workspaceId: "",
+  tableId: "",
+  columns: [],
+  rows: [],
+  debouncedUpdateActiveCell: null,
+});
 
 export const useStyles = createStyles((theme) => ({
   table: {
@@ -117,7 +134,7 @@ export const DataDisplay: React.FC<DataDisplayProps> = ({
   workspaceId,
   tableId,
 }) => {
-  const [viewId] = useAtom(viewIdAtom);
+  const [viewId, setViewId] = useAtom(viewIdAtom);
   const { data: rows } = trpc.useQuery(
     ["rows.byTableId", { tableId, viewId }],
     {
@@ -128,6 +145,11 @@ export const DataDisplay: React.FC<DataDisplayProps> = ({
   const { data: columns } = trpc.useQuery(["columns.byTableId", { tableId }]);
   const { data: cells } = trpc.useQuery(["cells.byTableId", { tableId }]);
   const utils = trpc.useContext();
+  useEffect(() => {
+    if (!viewId && views && views.length > 0) {
+      setViewId(views[0].id);
+    }
+  }, [setViewId, viewId, views]);
   trpc.useSubscription(["cells.onUpsert", { tableId }], {
     onNext(data) {
       utils.setQueryData(["cells.byTableId", { tableId }], (old) => {
@@ -217,6 +239,7 @@ const DataGridUI: React.FC<{
   const theme = useMantineTheme();
   const [viewId, setViewId] = useAtom(viewIdAtom);
   const { data: session } = useSession();
+  const [loading, setLoading] = useState(true);
   const [skipPageReset, setSkipPageReset] = React.useState(false);
   const { data: views } = trpc.useQuery(["views.byTableId", { tableId }]);
   const { data: sorts } = trpc.useQuery(["sorts.byViewId", { viewId }]);
@@ -227,12 +250,6 @@ const DataGridUI: React.FC<{
   ]);
 
   const [activeCell, setActiveCell] = useAtom(activeCellAtom);
-
-  useEffect(() => {
-    if (views && views.length > 0) {
-      setViewId(views[0].id);
-    }
-  }, [setViewId, views]);
 
   const RT_COLUMNS = React.useMemo(
     () =>
@@ -283,27 +300,7 @@ const DataGridUI: React.FC<{
     handlers.apply((row, index) => {
       const rowId = records[rowIndex].id;
       if (index === rowIndex) {
-        createCell.mutate(
-          { tableId, rowId, columnId, value },
-          {
-            onSuccess: (data) => {
-              // utils.refetchQueries(["cells.byTableId", { tableId }]);
-              utils.setQueryData(["cells.byTableId", { tableId }], (old) => {
-                let found = false;
-                old = (old || []).map((x) => {
-                  found = true;
-                  return x.rowId === rowId && x.columnId === columnId
-                    ? { ...x, value }
-                    : x;
-                });
-                if (!found) {
-                  old.push(data);
-                }
-                return old;
-              });
-            },
-          }
-        );
+        createCell.mutate({ tableId, rowId, columnId, value });
         return {
           ...row,
           [columnId]: value,
@@ -317,14 +314,43 @@ const DataGridUI: React.FC<{
     setSkipPageReset(false);
   }, [records]);
 
-  const currentColOrder = React.useRef<any[]>();
+  const debouncedUpdateActiveCell = useDebouncedCallback(
+    (activeCell: { columnId: string; rowId: string }) => {
+      setActiveCell((base) => {
+        base.cell = activeCell;
+        return base;
+      });
+    },
+    500
+  );
 
+  const TableContextProvider = React.useCallback(
+    ({ children }: { children: React.ReactNode }) => {
+      return (
+        <TableContext.Provider
+          value={{
+            workspaceId,
+            tableId,
+            columns: dbColumns,
+            rows: dbRows,
+            debouncedUpdateActiveCell,
+          }}
+        >
+          {children}
+        </TableContext.Provider>
+      );
+    },
+    [workspaceId, tableId, dbColumns, dbRows, debouncedUpdateActiveCell]
+  );
+
+  const currentColOrder = React.useRef<any[]>();
+  // debounce doesn't work within the EditableCell function because it returns a component and it gets rerendered and the callback gets destroyed
   const tableInstance = useTable(
     {
       columns: RT_COLUMNS,
       data: records,
       defaultColumn: {
-        Cell: EditableCell(workspaceId, tableId, dbColumns, dbRows),
+        Cell,
         minWidth: 100,
         maxWidth: 400,
         disableResizing: membership?.role === "viewer",
@@ -411,12 +437,12 @@ const DataGridUI: React.FC<{
         utils.setQueryData(["cursors.byTableId", { tableId }], (old) => {
           if (cursor.userId === session?.user.id) {
             setActiveCell((base) => {
-              base.id = cursor.id;
-              return base;
+              return { ...base, id: cursor.id };
             });
           }
           return [...(old || []), cursor];
         });
+        setLoading(false);
       },
     },
     [session, setActiveCell]
@@ -424,6 +450,11 @@ const DataGridUI: React.FC<{
   trpc.useSubscription(["cursors.onUpdate", { tableId }], {
     onNext(cursor) {
       utils.setQueryData(["cursors.byTableId", { tableId }], (old) => {
+        if (cursor.userId === session?.user.id) {
+          return (old || []).map((c) =>
+            c.id === cursor.id ? { ...cursor, ...activeCell.cell } : c
+          );
+        }
         return (old || [])?.map((x) => (x.id === cursor.id ? cursor : x));
       });
     },
@@ -576,7 +607,8 @@ const DataGridUI: React.FC<{
   });
 
   return (
-    <>
+    <TableContextProvider>
+      <LoadingOverlay visible={loading} />
       <Group
         position="apart"
         p={8}
@@ -939,6 +971,6 @@ const DataGridUI: React.FC<{
           </Box>
         </ScrollArea>
       </Box>
-    </>
+    </TableContextProvider>
   );
 };

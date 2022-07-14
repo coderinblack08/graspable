@@ -27,10 +27,12 @@ interface NewFormModalProps {
 
 export const NewFormModal: React.FC<NewFormModalProps> = ({ tableId }) => {
   const { data: columns } = trpc.useQuery(["columns.byTableId", { tableId }]);
-  const { data: form } = trpc.useQuery(["forms.byTableId", { tableId }]);
   const createForm = trpc.useMutation(["forms.create"]);
   const updateForm = trpc.useMutation(["forms.update"]);
   const [opened, setOpened] = useState(false);
+  const { data: form } = trpc.useQuery(["forms.byTableId", { tableId }], {
+    enabled: opened,
+  });
   const [active, setActive] = useState(0);
   const utils = trpc.useContext();
   const clipboard = useClipboard({ timeout: 500 });
@@ -177,6 +179,13 @@ export const NewFormModal: React.FC<NewFormModalProps> = ({ tableId }) => {
                       return (
                         <Accordion.Item
                           key={column.id}
+                          styles={{
+                            control: {
+                              "&:hover": {
+                                backgroundColor: "transparent",
+                              },
+                            },
+                          }}
                           label={
                             <Group spacing={8}>
                               <HeaderCellIcon type={column.type} />
