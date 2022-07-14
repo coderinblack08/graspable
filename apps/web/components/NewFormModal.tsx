@@ -26,11 +26,13 @@ interface NewFormModalProps {
 }
 
 export const NewFormModal: React.FC<NewFormModalProps> = ({ tableId }) => {
-  const { data: columns } = trpc.useQuery(["columns.byTableId", { tableId }]);
   const createForm = trpc.useMutation(["forms.create"]);
   const updateForm = trpc.useMutation(["forms.update"]);
   const [opened, setOpened] = useState(false);
   const { data: form } = trpc.useQuery(["forms.byTableId", { tableId }], {
+    enabled: opened,
+  });
+  const { data: columns } = trpc.useQuery(["columns.byTableId", { tableId }], {
     enabled: opened,
   });
   const [active, setActive] = useState(0);

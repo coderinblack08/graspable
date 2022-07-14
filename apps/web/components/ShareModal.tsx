@@ -26,15 +26,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({ workspaceId }) => {
   const updateMemberRole = trpc.useMutation(["workspace.updateMemberRole"]);
   const { data: membership } = trpc.useQuery(
     ["workspace.myMembership", { workspaceId }],
-    {
-      enabled: opened,
-    }
+    { enabled: opened }
   );
   const { data: members } = trpc.useQuery(
     ["workspace.getMembers", { workspaceId }],
-    {
-      enabled: opened,
-    }
+    { enabled: opened }
   );
   const utils = trpc.useContext();
 

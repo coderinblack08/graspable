@@ -21,7 +21,18 @@ import { TableContext } from "./DataDisplay";
 import { RichTextEditor } from "./RichTextEditor";
 import { activeCellAtom } from "./useActiveCellStore";
 
-function getTextFromHTMLString(html: string) {
+export function getDisplayText(value: any, type: string) {
+  switch (type) {
+    case "date":
+      return value ? format(new Date(value), "MMMM d, yyyy") : "";
+    case "richtext":
+      return getTextFromHTMLString(value);
+    default:
+      return value;
+  }
+}
+
+export function getTextFromHTMLString(html: string) {
   const div = document.createElement("div");
   div.innerHTML = html;
   return div.textContent || "";
@@ -473,16 +484,7 @@ export const Cell: React.FC<any> = ({
         hidden={!toggle || column?.type === "checkbox"}
         onDoubleClick={membership?.role !== "viewer" ? toggleInput : () => {}}
       >
-        {(() => {
-          switch (column?.type) {
-            case "date":
-              return value ? format(new Date(value), "MMMM d, yyyy") : "";
-            case "richtext":
-              return getTextFromHTMLString(value);
-            default:
-              return value;
-          }
-        })()}
+        {getDisplayText(value, column?.type!)}
       </Group>
       <Box
         hidden={column?.type !== "checkbox" && toggle}

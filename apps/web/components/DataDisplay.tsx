@@ -1,6 +1,8 @@
 import {
+  Badge,
   Box,
   Button,
+  Card,
   Center,
   createStyles,
   Divider,
@@ -8,6 +10,7 @@ import {
   Loader,
   LoadingOverlay,
   ScrollArea,
+  SimpleGrid,
   Stack,
   Text,
   ThemeIcon,
@@ -28,7 +31,8 @@ import { atom, useAtom } from "jotai";
 import { LexoRank } from "lexorank";
 import cloneDeep from "lodash.clonedeep";
 import { useSession } from "next-auth/react";
-import React, { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import React, { useEffect, useMemo, useState } from "react";
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import {
   useBlockLayout,
@@ -43,9 +47,9 @@ import { DebouncedState } from "use-debounce/dist/useDebouncedCallback";
 import { useCustomSubscription } from "../lib/custom-use-subscription";
 import { InferQueryOutput, trpc } from "../lib/trpc";
 import { ApiPopover } from "./ApiPopover";
-import { Cell } from "./EditableCell";
+import { Cell, getDisplayText } from "./EditableCell";
 import { FilterPopover } from "./FilterPopover";
-import { HeaderCell } from "./HeaderCell";
+import { HeaderCell, HeaderCellIcon } from "./HeaderCell";
 import { HideColumnPopover } from "./HideCoumnPopover";
 import { IndeterminateCheckbox } from "./IndeterminateCheckbox";
 import { NewColumnPopover } from "./NewColumnPopover";
@@ -145,11 +149,16 @@ export const DataDisplay: React.FC<DataDisplayProps> = ({
   const { data: columns } = trpc.useQuery(["columns.byTableId", { tableId }]);
   const { data: cells } = trpc.useQuery(["cells.byTableId", { tableId }]);
   const utils = trpc.useContext();
+  const router = useRouter();
   useEffect(() => {
     if (!viewId && views && views.length > 0) {
-      setViewId(views[0].id);
+      if (router.query.viewId) {
+        setViewId(router.query.viewId.toString());
+      } else {
+        setViewId(views[0].id);
+      }
     }
-  }, [setViewId, viewId, views]);
+  }, [router.query.viewId, setViewId, viewId, views]);
   trpc.useSubscription(["cells.onUpsert", { tableId }], {
     onNext(data) {
       utils.setQueryData(["cells.byTableId", { tableId }], (old) => {
@@ -209,16 +218,32 @@ export const DataDisplay: React.FC<DataDisplayProps> = ({
     },
   });
 
-  if (rows && cells && columns && views) {
-    return (
-      <DataGridUI
-        workspaceId={workspaceId}
-        tableId={tableId}
-        dbRows={rows}
-        dbCells={cells}
-        dbColumns={columns}
-      />
-    );
+  if (rows && cells && columns && views && viewId) {
+    const view = views.find((x) => x.id === viewId);
+    if (view?.type === "table") {
+      return (
+        <DataGridUI
+          workspaceId={workspaceId}
+          tableId={tableId}
+          dbRows={rows}
+          dbViews={views}
+          dbCells={cells}
+          dbColumns={columns}
+        />
+      );
+    }
+    if (view?.type === "kanban") {
+      return (
+        <DataKanbanUI
+          workspaceId={workspaceId}
+          tableId={tableId}
+          dbRows={rows}
+          dbViews={views}
+          dbCells={cells}
+          dbColumns={columns}
+        />
+      );
+    }
   }
 
   return (
@@ -228,20 +253,187 @@ export const DataDisplay: React.FC<DataDisplayProps> = ({
   );
 };
 
+const DataViewLayout: React.FC<{
+  tableId: string;
+  workspaceId: string;
+  views: InferQueryOutput<"views.byTableId">;
+}> = ({ views, tableId, workspaceId, children }) => {
+  const [viewId, setViewId] = useAtom(viewIdAtom);
+  const theme = useMantineTheme();
+  const router = useRouter();
+
+  return (
+    <Box sx={{ display: "flex", height: "100%" }}>
+      <ScrollArea
+        sx={{
+          width: 260,
+          flexShrink: 0,
+          borderRight: "2px solid",
+          borderColor: theme.colors.dark[6],
+          backgroundColor: theme.colors.dark[8],
+          h: "100%",
+        }}
+      >
+        <Stack p="xs" spacing={8}>
+          {views?.map((view) => (
+            <UnstyledButton
+              key={view.id}
+              onClick={() => {
+                setViewId(view.id);
+                router.push({
+                  pathname: "/workspaces/[id]/tables/[tid]",
+                  query: {
+                    id: workspaceId,
+                    tid: tableId,
+                    viewId: view.id,
+                  },
+                });
+              }}
+              p="6px"
+              sx={{
+                display: "block",
+                width: "100%",
+                borderRadius: theme.radius.sm,
+                backgroundColor:
+                  view.id === viewId
+                    ? theme.fn.rgba(theme.colors[theme.primaryColor][7], 0.2)
+                    : "transparent",
+              }}
+            >
+              <Group spacing={10}>
+                <ThemeIcon
+                  size="md"
+                  color={view.id === viewId ? "blue" : "gray"}
+                >
+                  {view.type === "table" ? (
+                    <IconTable size={16} />
+                  ) : view.type === "kanban" ? (
+                    <IconLayoutKanban size={16} />
+                  ) : (
+                    <IconLayoutList size={16} />
+                  )}
+                </ThemeIcon>
+                <Text
+                  weight={500}
+                  color={view.id === viewId ? theme.colors.blue[2] : "dimmed"}
+                  size="md"
+                >
+                  {view.name}
+                </Text>
+              </Group>
+            </UnstyledButton>
+          ))}
+          <Divider sx={{ borderColor: theme.colors.dark[5] }} size="sm" />
+          <NewViewModal tableId={tableId} />
+        </Stack>
+      </ScrollArea>
+      <ScrollArea scrollbarSize={0} sx={{ width: "100%" }}>
+        {children}
+      </ScrollArea>
+    </Box>
+  );
+};
+
+const DataKanbanUI: React.FC<{
+  workspaceId: string;
+  tableId: string;
+  dbRows: InferQueryOutput<"rows.byTableId">;
+  dbViews: InferQueryOutput<"views.byTableId">;
+  dbColumns: InferQueryOutput<"columns.byTableId">;
+  dbCells: InferQueryOutput<"cells.byTableId">;
+}> = ({ workspaceId, tableId, dbViews, dbCells, dbColumns, dbRows }) => {
+  const [viewId] = useAtom(viewIdAtom);
+  const view = useMemo(
+    () => dbViews.find((x) => x.id === viewId),
+    [viewId, dbViews]
+  );
+  const kanbanColumn = useMemo(
+    () => dbColumns.find((x) => x.id === view?.kanbanOnColumnId),
+    [dbColumns, view]
+  );
+  const RT_COLUMN = useMemo(
+    () =>
+      dbColumns.reduce((acc, c) => {
+        acc[c.id] = c;
+        return acc;
+      }, {} as Record<string, InferQueryOutput<"columns.byTableId">[0]>),
+    [dbColumns]
+  );
+  const RT_DATA = React.useMemo(() => {
+    return dbRows?.map((row) => {
+      return {
+        ...row,
+        cells: dbCells?.filter((x) => x.rowId === row.id),
+      };
+    });
+  }, [dbRows, dbCells]);
+  return (
+    <DataViewLayout tableId={tableId} views={dbViews} workspaceId={workspaceId}>
+      <Group m="md" align="start" noWrap>
+        {["", ...(kanbanColumn?.dropdownOptions || [])].map((option) => (
+          <Card
+            key={option}
+            sx={(theme) => ({
+              backgroundColor: theme.colors.dark[7],
+              width: "24rem",
+            })}
+          >
+            {option ? (
+              <Badge>{option}</Badge>
+            ) : (
+              <Badge color="red">Empty</Badge>
+            )}
+            <Stack mt="sm" sx={{ maxHeight: "100%" }}>
+              {RT_DATA.filter(
+                (row) =>
+                  (row.cells.find((c) => c.columnId === view?.kanbanOnColumnId)
+                    ?.value || "") === option
+              ).map((row) => (
+                <Card
+                  key={row.id}
+                  sx={(theme) => ({ backgroundColor: theme.colors.dark[9] })}
+                  radius="md"
+                >
+                  {row.cells.map((cell) => {
+                    const column = RT_COLUMN[cell.columnId];
+                    const value = getDisplayText(cell.value, column.type);
+                    return (
+                      <Stack>
+                        <Group>
+                          <HeaderCellIcon type={column.type} />
+                          {value ? (
+                            <Text weight={500}>{value}</Text>
+                          ) : (
+                            <Text color="dimmed">Empty</Text>
+                          )}
+                        </Group>
+                      </Stack>
+                    );
+                  })}
+                </Card>
+              ))}
+            </Stack>
+          </Card>
+        ))}
+      </Group>
+    </DataViewLayout>
+  );
+};
+
 const DataGridUI: React.FC<{
   workspaceId: string;
   tableId: string;
   dbRows: InferQueryOutput<"rows.byTableId">;
+  dbViews: InferQueryOutput<"views.byTableId">;
   dbColumns: InferQueryOutput<"columns.byTableId">;
   dbCells: InferQueryOutput<"cells.byTableId">;
-}> = ({ workspaceId, tableId, dbCells, dbColumns, dbRows }) => {
+}> = ({ workspaceId, tableId, dbViews, dbCells, dbColumns, dbRows }) => {
   const { cx, classes } = useStyles();
   const theme = useMantineTheme();
   const [viewId, setViewId] = useAtom(viewIdAtom);
   const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
   const [skipPageReset, setSkipPageReset] = React.useState(false);
-  const { data: views } = trpc.useQuery(["views.byTableId", { tableId }]);
   const { data: sorts } = trpc.useQuery(["sorts.byViewId", { viewId }]);
   const { data: filters } = trpc.useQuery(["filters.byViewId", { viewId }]);
   const { data: membership } = trpc.useQuery([
@@ -678,299 +870,242 @@ const DataGridUI: React.FC<{
           <ApiPopover />
         </Group>
       </Group>
-      <Box sx={{ display: "flex", height: "100%" }}>
-        <ScrollArea
-          sx={{
-            width: 260,
-            flexShrink: 0,
-            borderRight: "2px solid",
-            borderColor: theme.colors.dark[6],
-            backgroundColor: theme.colors.dark[8],
-            h: "100%",
-          }}
-        >
-          <Stack p="xs" spacing={8}>
-            {views?.map((view) => (
-              <UnstyledButton
-                key={view.id}
-                onClick={() => setViewId(view.id)}
-                p="6px"
-                sx={{
-                  display: "block",
-                  width: "100%",
-                  borderRadius: theme.radius.sm,
-                  backgroundColor:
-                    view.id === viewId
-                      ? theme.fn.rgba(theme.colors[theme.primaryColor][7], 0.2)
-                      : "transparent",
-                }}
-              >
-                <Group spacing={10}>
-                  <ThemeIcon
-                    size="md"
-                    color={view.id === viewId ? "blue" : "gray"}
-                  >
-                    {view.type === "table" ? (
-                      <IconTable size={16} />
-                    ) : view.type === "kanban" ? (
-                      <IconLayoutKanban size={16} />
-                    ) : (
-                      <IconLayoutList size={16} />
-                    )}
-                  </ThemeIcon>
-                  <Text
-                    weight={500}
-                    color={view.id === viewId ? theme.colors.blue[2] : "dimmed"}
-                    size="md"
-                  >
-                    {view.name}
-                  </Text>
-                </Group>
-              </UnstyledButton>
-            ))}
-            <Divider sx={{ borderColor: theme.colors.dark[5] }} size="sm" />
-            <NewViewModal tableId={tableId} />
-          </Stack>
-        </ScrollArea>
-        <ScrollArea scrollbarSize={0} sx={{ width: "100%" }}>
-          <Box mt={-2} ml={-2}>
-            <Box ref={tableRef} className={classes.table} {...getTableProps()}>
-              <DragDropContext
-                onDragStart={() => {
-                  currentColOrder.current = flatHeaders.map((o) => o.id);
-                }}
-                onDragUpdate={({ source, destination, draggableId }, b) => {
+      <DataViewLayout
+        tableId={tableId}
+        views={dbViews}
+        workspaceId={workspaceId}
+      >
+        <Box mt={-2} ml={-2}>
+          <Box ref={tableRef} className={classes.table} {...getTableProps()}>
+            <DragDropContext
+              onDragStart={() => {
+                currentColOrder.current = flatHeaders.map((o) => o.id);
+              }}
+              onDragUpdate={({ source, destination, draggableId }, b) => {
+                const colOrder = [...(currentColOrder.current || [])];
+                const sIndex = source.index;
+                const dIndex = destination && destination.index;
+                if (typeof sIndex === "number" && typeof dIndex === "number") {
+                  colOrder.splice(sIndex, 1);
+                  colOrder.splice(dIndex, 0, draggableId);
+                  setColumnOrder(colOrder);
+                }
+              }}
+              onDragEnd={({ source, destination }) => {
+                if (
+                  source &&
+                  destination &&
+                  source.index !== destination.index
+                ) {
                   const colOrder = [...(currentColOrder.current || [])];
                   const sIndex = source.index;
-                  const dIndex = destination && destination.index;
-                  if (
-                    typeof sIndex === "number" &&
-                    typeof dIndex === "number"
-                  ) {
-                    colOrder.splice(sIndex, 1);
-                    colOrder.splice(dIndex, 0, draggableId);
-                    setColumnOrder(colOrder);
-                  }
-                }}
-                onDragEnd={({ source, destination }) => {
-                  if (
-                    source &&
-                    destination &&
-                    source.index !== destination.index
-                  ) {
-                    const colOrder = [...(currentColOrder.current || [])];
-                    const sIndex = source.index;
-                    const dIndex = destination.index;
-                    if (dIndex === 0 || dIndex === colOrder.length - 1) return;
-                    const rank = getNewRank(
-                      colOrder.map((col) => ({
-                        rank: dbColumns?.find((c) => c.id === col)?.rank,
-                      })),
-                      sIndex,
-                      dIndex,
-                      true
-                    );
-                    updateColumn.mutate(
-                      {
-                        id: colOrder[sIndex],
-                        rank: rank.toString(),
+                  const dIndex = destination.index;
+                  if (dIndex === 0 || dIndex === colOrder.length - 1) return;
+                  const rank = getNewRank(
+                    colOrder.map((col) => ({
+                      rank: dbColumns?.find((c) => c.id === col)?.rank,
+                    })),
+                    sIndex,
+                    dIndex,
+                    true
+                  );
+                  updateColumn.mutate(
+                    {
+                      id: colOrder[sIndex],
+                      rank: rank.toString(),
+                    },
+                    {
+                      onSuccess: () => {
+                        utils.setQueryData(
+                          ["columns.byTableId", { tableId }],
+                          (old) => {
+                            if (!old) return [];
+                            const cloned = cloneDeep(old).filter(Boolean);
+                            const item = old[sIndex - 1];
+
+                            cloned.splice(sIndex - 1, 1);
+                            cloned.splice(dIndex - 1, 0, item);
+
+                            const returnValue = cloned.map((column) =>
+                              column.id === colOrder[sIndex]
+                                ? { ...column, rank: rank.toString() }
+                                : column
+                            );
+
+                            return returnValue;
+                          }
+                        );
                       },
-                      {
-                        onSuccess: () => {
-                          utils.setQueryData(
-                            ["columns.byTableId", { tableId }],
-                            (old) => {
-                              if (!old) return [];
-                              const cloned = cloneDeep(old).filter(Boolean);
-                              const item = old[sIndex - 1];
-
-                              cloned.splice(sIndex - 1, 1);
-                              cloned.splice(dIndex - 1, 0, item);
-
-                              const returnValue = cloned.map((column) =>
-                                column.id === colOrder[sIndex]
-                                  ? { ...column, rank: rank.toString() }
-                                  : column
-                              );
-
-                              return returnValue;
-                            }
-                          );
-                        },
-                      }
-                    );
-                  }
-                }}
-              >
-                <Droppable droppableId="column-list" direction="horizontal">
-                  {(provided) => {
-                    return (
-                      <>
-                        <Box
-                          {...provided.droppableProps}
-                          ref={provided.innerRef}
-                        >
-                          {headerGroups.map((headerGroup) => (
-                            <Box
-                              {...headerGroup.getHeaderGroupProps()}
-                              sx={(theme) => ({
-                                backgroundColor: theme.colors.dark[8],
-                              })}
-                            >
-                              {headerGroup.headers.map((column, index) => (
-                                <HeaderCell
-                                  index={index}
-                                  workspaceId={workspaceId}
-                                  key={column.id}
-                                  column={column}
-                                />
-                              ))}
-                              {provided.placeholder}
-                            </Box>
-                          ))}
-                        </Box>
-                      </>
-                    );
-                  }}
-                </Droppable>
-              </DragDropContext>
-              <DragDropContext
-                onDragEnd={async ({ destination, source }) => {
-                  if (
-                    source &&
-                    destination &&
-                    source.index !== destination.index
-                  ) {
-                    const recordsCopy = cloneDeep(records);
-                    handlers.reorder({
-                      from: source.index,
-                      to: destination.index,
-                    });
-                    const id = recordsCopy[source.index].id;
-                    const rank = getNewRank(
-                      recordsCopy,
-                      source.index,
-                      destination.index
-                    ).toString();
-                    await updateRowRank.mutateAsync(
-                      { id, rank },
-                      {
-                        onSuccess: () => {
-                          // utils.refetchQueries(rowsQueryKey);
-                          utils.setQueryData(
-                            ["rows.byTableId", { tableId, viewId }],
-                            (old) => {
-                              if (!old) return [];
-                              const cloned = [...old];
-                              const item = old[source.index];
-
-                              cloned.splice(source.index, 1);
-                              cloned.splice(destination.index, 0, item);
-
-                              return cloned.map((row) =>
-                                row.id === id ? { ...row, rank } : row
-                              );
-                            }
-                          );
-                        },
-                      }
-                    );
-                  }
-                  console.log("INFO: Reordering stored");
-                }}
-              >
-                <Droppable droppableId="row-list" direction="vertical">
-                  {(provided) => (
-                    <Box
-                      {...provided.droppableProps}
-                      ref={provided.innerRef}
-                      {...getTableBodyProps()}
-                    >
-                      {rows.map((row, index) => {
-                        prepareRow(row);
-                        return (
-                          <Draggable
-                            key={row.id}
-                            index={index}
-                            draggableId={row.id}
-                            isDragDisabled={
-                              (filters &&
-                                sorts &&
-                                (filters?.length > 0 || sorts?.length > 0)) ||
-                              membership?.role === "viewer"
-                            }
+                    }
+                  );
+                }
+              }}
+            >
+              <Droppable droppableId="column-list" direction="horizontal">
+                {(provided) => {
+                  return (
+                    <>
+                      <Box {...provided.droppableProps} ref={provided.innerRef}>
+                        {headerGroups.map((headerGroup) => (
+                          <Box
+                            {...headerGroup.getHeaderGroupProps()}
+                            sx={(theme) => ({
+                              backgroundColor: theme.colors.dark[8],
+                            })}
                           >
-                            {(provided) => {
-                              return (
+                            {headerGroup.headers.map((column, index) => (
+                              <HeaderCell
+                                index={index}
+                                workspaceId={workspaceId}
+                                key={column.id}
+                                column={column}
+                              />
+                            ))}
+                            {provided.placeholder}
+                          </Box>
+                        ))}
+                      </Box>
+                    </>
+                  );
+                }}
+              </Droppable>
+            </DragDropContext>
+            <DragDropContext
+              onDragEnd={async ({ destination, source }) => {
+                if (
+                  source &&
+                  destination &&
+                  source.index !== destination.index
+                ) {
+                  const recordsCopy = cloneDeep(records);
+                  handlers.reorder({
+                    from: source.index,
+                    to: destination.index,
+                  });
+                  const id = recordsCopy[source.index].id;
+                  const rank = getNewRank(
+                    recordsCopy,
+                    source.index,
+                    destination.index
+                  ).toString();
+                  await updateRowRank.mutateAsync(
+                    { id, rank },
+                    {
+                      onSuccess: () => {
+                        // utils.refetchQueries(rowsQueryKey);
+                        utils.setQueryData(
+                          ["rows.byTableId", { tableId, viewId }],
+                          (old) => {
+                            if (!old) return [];
+                            const cloned = [...old];
+                            const item = old[source.index];
+
+                            cloned.splice(source.index, 1);
+                            cloned.splice(destination.index, 0, item);
+
+                            return cloned.map((row) =>
+                              row.id === id ? { ...row, rank } : row
+                            );
+                          }
+                        );
+                      },
+                    }
+                  );
+                }
+                console.log("INFO: Reordering stored");
+              }}
+            >
+              <Droppable droppableId="row-list" direction="vertical">
+                {(provided) => (
+                  <Box
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    {...getTableBodyProps()}
+                  >
+                    {rows.map((row, index) => {
+                      prepareRow(row);
+                      return (
+                        <Draggable
+                          key={row.id}
+                          index={index}
+                          draggableId={row.id}
+                          isDragDisabled={
+                            (filters &&
+                              sorts &&
+                              (filters?.length > 0 || sorts?.length > 0)) ||
+                            membership?.role === "viewer"
+                          }
+                        >
+                          {(provided) => {
+                            return (
+                              <Box
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                              >
                                 <Box
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
+                                  {...row.getRowProps()}
+                                  className={cx(classes.rowUnselected, {
+                                    [classes.rowSelected]:
+                                      row.id in state.selectedRowIds,
+                                  })}
                                 >
-                                  <Box
-                                    {...row.getRowProps()}
-                                    className={cx(classes.rowUnselected, {
-                                      [classes.rowSelected]:
-                                        row.id in state.selectedRowIds,
-                                    })}
-                                  >
-                                    {row.cells.map((cell) => {
-                                      if (cell.column.id === "selection") {
-                                        return (
-                                          <Box
-                                            className={classes.cell}
-                                            {...cell.getCellProps()}
-                                            {...provided.dragHandleProps}
-                                          >
-                                            {cell.render("Cell")}
-                                          </Box>
-                                        );
-                                      }
+                                  {row.cells.map((cell) => {
+                                    if (cell.column.id === "selection") {
                                       return (
                                         <Box
                                           className={classes.cell}
-                                          sx={{
-                                            padding: 0,
-                                            width: cell.column.width,
-                                          }}
                                           {...cell.getCellProps()}
+                                          {...provided.dragHandleProps}
                                         >
                                           {cell.render("Cell")}
                                         </Box>
                                       );
-                                    })}
-                                  </Box>
+                                    }
+                                    return (
+                                      <Box
+                                        className={classes.cell}
+                                        sx={{
+                                          padding: 0,
+                                          width: cell.column.width,
+                                        }}
+                                        {...cell.getCellProps()}
+                                      >
+                                        {cell.render("Cell")}
+                                      </Box>
+                                    );
+                                  })}
                                 </Box>
-                              );
-                            }}
-                          </Draggable>
-                        );
-                      })}
-                      {provided.placeholder}
-                    </Box>
-                  )}
-                </Droppable>
-              </DragDropContext>
-            </Box>
-            <Group spacing="sm" p="sm" align="center">
-              <Tooltip withArrow label="shift + enter" position="bottom">
-                <Button
-                  loading={addRow.isLoading}
-                  variant="default"
-                  color="dark"
-                  leftIcon={<IconPlus size={16} />}
-                  onClick={createNewRow}
-                  compact
-                >
-                  New Row
-                </Button>
-              </Tooltip>
-              <Button color="dark" variant="default" compact disabled>
-                Load More
-              </Button>
-            </Group>
+                              </Box>
+                            );
+                          }}
+                        </Draggable>
+                      );
+                    })}
+                    {provided.placeholder}
+                  </Box>
+                )}
+              </Droppable>
+            </DragDropContext>
           </Box>
-        </ScrollArea>
-      </Box>
+          <Group spacing="sm" p="sm" align="center">
+            <Tooltip withArrow label="shift + enter" position="bottom">
+              <Button
+                loading={addRow.isLoading}
+                variant="default"
+                color="dark"
+                leftIcon={<IconPlus size={16} />}
+                onClick={createNewRow}
+                compact
+              >
+                New Row
+              </Button>
+            </Tooltip>
+            <Button color="dark" variant="default" compact disabled>
+              Load More
+            </Button>
+          </Group>
+        </Box>
+      </DataViewLayout>
     </TableContextProvider>
   );
 };
